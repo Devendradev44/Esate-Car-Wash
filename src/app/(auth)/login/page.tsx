@@ -1,4 +1,6 @@
 "use client";
+// Add this import at the very top of the file
+import { useRouter } from "next/navigation";
 
 import { useState } from "react";
 import { ArrowRight, User, Phone, Shield, Lock } from "lucide-react";
@@ -22,21 +24,47 @@ export default function LoginPage() {
   const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-m-blue-dark focus:outline-none transition-colors appearance-none";
   const labelClasses = "block text-xs font-bold uppercase tracking-machined text-muted mb-3";
 
+  // Inside the export default function LoginPage() { ... add this:
+const router = useRouter();
+
+  const handleLogin = () => {
+    // Mock redirection based on role
+    if (role === Role.ADMIN) {
+      router.push("/dashboard");
+    } else if (role === Role.STAFF) {
+      router.push("/staff-dashboard");
+    } else {
+      router.push("/my-dashboard");
+    }
+  };
+
+  const handleVerifyOTP = () => {
+    // If OTP is verified, check if user is new. If new, go to signup step.
+    // If existing user, redirect immediately.
+    const isNewUser = true; // Mock this logic based on backend response
+    
+    if (isNewUser) {
+      setStep(Step.SIGNUP); // Go to name collection step
+    } else {
+      router.push("/my-dashboard"); // Go straight to customer app
+    }
+  }
+
   const handleRequestOTP = () => {
     // Backend will send OTP via MSG91/Twilio
     alert(`OTP Sent to ${phone}! (Mocked)`);
     setStep(Step.OTP);
   };
 
-  const handleVerifyOTP = () => {
-    // If new user, Better Auth creates User, then we need CustomerProfile (firstName/lastName)
-    alert(`OTP Verified! Is new user? -> Go to Signup Step. (Mocked)`);
-    setStep(Step.SIGNUP); // Force signup step for UI demo
-  };
+  // const handleVerifyOTP = () => {
+  //   // If new user, Better Auth creates User, then we need CustomerProfile (firstName/lastName)
+  //   alert(`OTP Verified! Is new user? -> Go to Signup Step. (Mocked)`);
+  //   setStep(Step.SIGNUP); // Force signup step for UI demo
+  // };
 
-  const handleLogin = () => {
-    alert(`Logged in as ${role}! Redirecting... (Mocked)`);
-  };
+  // const handleLogin = () => {
+  //   alert(`Logged in as ${role}! Redirecting... (Mocked)`);
+  // };
 
   return (
     <div className="w-full max-w-sm">

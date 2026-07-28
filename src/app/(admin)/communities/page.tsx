@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, Edit, Trash2, EyeOff } from "lucide-react";
+import { Plus, Search, Edit, Trash2, EyeOff, X } from "lucide-react";
 
-// Mock Data for Admin View
 const initialCommunities = [
   { id: "c1", name: "Prestige Shantiniketan", address: "Whitefield Main Rd, Bangalore", status: "ACTIVE" },
   { id: "c2", name: "Sobha Halcyon", address: "Jalahalli, Bangalore", status: "ACTIVE" },
@@ -13,6 +12,11 @@ const initialCommunities = [
 export default function CommunitiesPage() {
   const [communities, setCommunities] = useState(initialCommunities);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showModal, setShowModal] = useState(false); // Modal state
+  
+  // Form state for new community
+  const [newName, setNewName] = useState("");
+  const [newAddress, setNewAddress] = useState("");
 
   const filteredCommunities = communities.filter(c => 
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -24,37 +28,67 @@ export default function CommunitiesPage() {
     ));
   };
 
-  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-3 text-sm font-light focus:border-m-blue-dark focus:outline-none transition-colors appearance-none";
+  const handleAddCommunity = () => {
+    if (!newName || !newAddress) return;
+    const newCommunity = {
+      id: `c${Date.now()}`,
+      name: newName,
+      address: newAddress,
+      status: "ACTIVE"
+    };
+    setCommunities([newCommunity, ...communities]);
+    setNewName("");
+    setNewAddress("");
+    setShowModal(false);
+  };
+
+  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-m-blue-dark focus:outline-none transition-colors appearance-none";
+  const labelClasses = "block text-xs font-bold uppercase tracking-machined text-muted mb-3";
 
   return (
-    <div className="p-12">
+    <div className="p-12 relative">
+      {/* Add Community Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+          <div className="w-full max-w-md border border-hairline bg-surface-soft p-8">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-xl font-bold uppercase text-ink">Add Community</h3>
+              <button onClick={() => setShowModal(false)} className="text-muted hover:text-ink"><X size={20} /></button>
+            </div>
+            <div className="mb-4">
+              <label className={labelClasses}>Community Name</label>
+              <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Adarsh Palm Retreat" className={inputClasses} />
+            </div>
+            <div className="mb-8">
+              <label className={labelClasses}>Address</label>
+              <input type="text" value={newAddress} onChange={(e) => setNewAddress(e.target.value)} placeholder="e.g. Bellandur, Bangalore" className={inputClasses} />
+            </div>
+            <button onClick={handleAddCommunity} className="flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light">
+              Save Community
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header & Actions */}
       <div className="flex items-center justify-between mb-10">
         <div>
           <h2 className="text-3xl font-bold uppercase tracking-normal text-ink">Communities</h2>
           <p className="mt-2 text-sm font-light text-body">Manage gated communities and their visibility.</p>
         </div>
-        <button className="flex items-center gap-2 bg-m-blue-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light transition-colors">
+        <button onClick={() => setShowModal(true)} className="flex items-center gap-2 bg-m-blue-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light transition-colors">
           <Plus size={14} /> Add Community
         </button>
       </div>
 
-      {/* Search Bar */}
+      {/* Search & Table (Same as before) */}
       <div className="mb-6 flex items-center gap-3 border border-hairline bg-surface-card p-3">
         <Search size={16} className="text-muted" />
-        <input 
-          type="text" 
-          placeholder="Search communities..." 
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className={inputClasses + " border-none bg-transparent p-0 focus:outline-none"}
-        />
+        <input type="text" placeholder="Search communities..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={inputClasses + " border-none bg-transparent p-0 focus:outline-none"} />
       </div>
 
-      {/* Data Table */}
       <div className="border border-hairline overflow-x-auto">
         <table className="w-full min-w-[600px]">
-          {/* Table Head - BMW M Style (Uppercase, Machined) */}
           <thead className="border-b border-hairline bg-surface-soft">
             <tr>
               <th className="py-4 px-6 text-left text-xs font-bold uppercase tracking-machined text-muted">Name</th>
@@ -63,8 +97,6 @@ export default function CommunitiesPage() {
               <th className="py-4 px-6 text-right text-xs font-bold uppercase tracking-machined text-muted">Actions</th>
             </tr>
           </thead>
-          
-          {/* Table Body */}
           <tbody>
             {filteredCommunities.map(c => (
               <tr key={c.id} className="border-b border-hairline hover:bg-surface-card transition-colors">
