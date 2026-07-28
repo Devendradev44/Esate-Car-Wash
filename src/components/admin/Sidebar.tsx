@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Car, Building2, CalendarDays, IndianRupee, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, Car, Building2, CalendarDays, IndianRupee, Settings, LogOut, Receipt } from "lucide-react";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: CalendarDays, label: "Bookings", href: "/bookings" },
   { icon: Building2, label: "Communities", href: "/communities" },
   { icon: Car, label: "Vehicles", href: "/vehicles" },
+  { icon: Car, label: "Services", href: "/services" }, // Note: You might want to use Wrench icon for Services to differentiate from Vehicles
   { icon: Users, label: "Staff", href: "/staff" },
   { icon: IndianRupee, label: "Revenue", href: "/revenue" },
+  { icon: Receipt, label: "Expenses", href: "/expenses" }, // NEW ADDITION
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 

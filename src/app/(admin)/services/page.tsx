@@ -3,8 +3,16 @@
 import { useState } from "react";
 import { Plus, Search, Edit, Trash2, X } from "lucide-react";
 
-// Mock existing services with their category pricing matrix
-const initialServices = [
+// 1. Define a strict Type so TypeScript knows exactly what shape the data is
+type ServiceItem = {
+  id: string;
+  name: string;
+  description: string;
+  pricing: Record<string, number>; // This tells TS pricing can have any string key with a number value
+};
+
+// 2. Use the Type explicitly here
+const initialServices: ServiceItem[] = [
   { 
     id: "s1", name: "Exterior Wash", description: "Basic exterior foam wash", 
     pricing: { Hatchback: 250, Sedan: 300, SUV: 350, Luxury: 600 } 
@@ -15,48 +23,54 @@ const initialServices = [
   },
 ];
 
-// Categories pulled from Prisma VehicleCategory
 const vehicleCategories = ["Hatchback", "Sedan", "SUV", "Luxury"];
 
 export default function ServicesPage() {
-  const [services, setServices] = useState(initialServices);
+  // 3. Apply the type to the state
+  const [services, setServices] = useState<ServiceItem[]>(initialServices);
   const [searchQuery, setSearchQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
   
-  // Form State for New Service
+  // Form State for New Service (Prices are strings for the input, converted later)
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
-  const [newPricing, setNewPricing] = useState<Record<string, string>>({ Hatchback: "", Sedan: "", SUV: "", Luxury: "" });
+  const [newPricing, setNewPricing] = useState<Record<string, string>>({
+    Hatchback: "", Sedan: "", SUV: "", Luxury: ""
+  });
 
   const filteredServices = services.filter(s => 
     s.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handlePricingChange = (category: string, value: string) => {
+    setNewPricing(prev => ({ ...prev, [category]: value }));
+  };
+
+  // 4. Fix the Add function to properly convert strings to numbers and match the Type
   const handleAddService = () => {
     if (!newName) return;
-    // Convert string prices to numbers for the data table
+    
+    // Convert string inputs to numbers for the data table
     const numericPricing: Record<string, number> = {};
-    for (const [cat, price] of Object.entries(newPricing)) {
-      numericPricing[cat] = Number(price) || 0; // Default to 0 if left blank
+    for (const [cat, priceStr] of Object.entries(newPricing)) {
+      numericPricing[cat] = Number(priceStr) || 0; // Default to 0 if left blank
     }
 
-    const newService = {
+    const newService: ServiceItem = {
       id: `s${Date.now()}`,
       name: newName,
       description: newDesc,
       pricing: numericPricing
     };
+
     setServices([newService, ...services]);
     // Reset form
     setNewName("");
     setNewDesc("");
-    setNewPricing({ Hatchback: "", Sedan: "", SUV: "", Luxury: "" }); // Reset to empty strings
+    setNewPricing({ Hatchback: "", Sedan: "", SUV: "", Luxury: "" });
     setShowModal(false);
-};
+  };
 
-  const handlePricingChange = (category: string, value: string) => {
-    setNewPricing(prev => ({ ...prev, [category]: value }));
-};
 
   const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-m-blue-dark focus:outline-none transition-colors appearance-none";
   const labelClasses = "block text-xs font-bold uppercase tracking-machined text-muted mb-3";
