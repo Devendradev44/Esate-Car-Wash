@@ -2,20 +2,18 @@
 
 import { useState } from "react";
 import { Plus, Search, Trash2, X } from "lucide-react";
-
-// Mock Data matching Prisma Expense + ExpenseCategory enums
-const initialExpenses = [
-  { id: "e1", date: "01-05-2025", name: "May Staff Salaries", category: "SALARY", amount: 25000, paymentType: "UPI", notes: "Paid to 3 staff members" },
-  { id: "e2", date: "05-05-2025", name: "Community Rent", category: "RENT", amount: 15000, paymentType: "ACCOUNT_TRANSFER", notes: "Prestige Shantiniketan monthly fee" },
-  { id: "e3", date: "10-05-2025", name: "Car Shampoo Bulk", category: "CLEANING_MATERIAL", amount: 4500, paymentType: "CASH", notes: "" },
-];
+import { useStore } from "@/lib/store"; // IMPORT THE GLOBAL STORE!
 
 // Exact Enums from your Prisma Schema
 const expenseCategories = ["SALARY", "RENT", "WATER", "ELECTRICITY", "MAINTENANCE", "TRAVEL", "FUEL", "EQUIPMENT", "REPAIR", "FOOD", "CLEANING_MATERIAL", "MARKETING", "MISCELLANEOUS"];
 const expensePaymentMethods = ["CASH", "UPI", "CHEQUE", "ACCOUNT_TRANSFER"];
 
 export default function ExpensesPage() {
-  const [expenses, setExpenses] = useState(initialExpenses);        
+  // --- READ FROM GLOBAL STORE ---
+  const expenses = useStore((state) => state.expenses); // USE STORE!
+  const addExpense = useStore((state) => state.addExpense); // USE STORE!
+
+  // --- LOCAL UI STATE ---
   const [searchQuery, setSearchQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
   
@@ -31,9 +29,12 @@ export default function ExpensesPage() {
     e.name.toLowerCase().includes(searchQuery.toLowerCase()) || e.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // --- WRITE TO GLOBAL STORE ---
   const handleAddExpense = () => {
     if (!newName || !newAmount || !newDate) return;
-    const newExpense = {
+    
+    // CALL THE GLOBAL STORE ACTION!
+    addExpense({
       id: `e${Date.now()}`,
       date: newDate,
       name: newName,
@@ -41,8 +42,8 @@ export default function ExpensesPage() {
       amount: Number(newAmount),
       paymentType: newPaymentType,
       notes: newNotes
-    };
-    setExpenses([newExpense, ...expenses]);
+    });
+
     // Reset form
     setNewDate(""); setNewName(""); setNewAmount(""); setNewNotes(""); setNewCategory(expenseCategories[0]); setNewPaymentType(expensePaymentMethods[0]);
     setShowModal(false);

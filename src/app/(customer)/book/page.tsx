@@ -1,30 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Check, MapPin, Car, Wrench, Calendar } from "lucide-react";
 import { useStore } from "@/lib/store"; 
 
 export default function BookService() {
+  // --- HYDRATION FIX ---
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   // Read global data from Zustand Store
   const allCommunities = useStore((state) => state.communities);
-const activeCommunities = allCommunities.filter(c => c.status === "ACTIVE");
+  const activeCommunities = allCommunities.filter(c => c.status === "ACTIVE");
   const vehicleHierarchy = useStore((state) => state.vehicles);
   const services = useStore((state) => state.services);
   const addBooking = useStore((state) => state.addBooking); 
+  const savedAddresses = useStore((state) => state.addresses);
+  const addAddress = useStore((state) => state.addAddress);
+  const savedVehicles = useStore((state) => state.customerGarage);
+  const addCustomerVehicle = useStore((state) => state.addCustomerVehicle);
 
-  // Mock user data (Hardcoded for MVP demo)
-  const savedAddresses = [
-    { id: "a1", community: "Prestige Shantiniketan", flat: "A-401" },
-    { id: "a2", community: "Sobha Halcyon", flat: "B-1202" },
-  ];
-  const savedVehicles = [
-    { id: "v1", category: "SUV", brand: "Toyota", model: "Fortuner", reg: "TG 09 AB 1234" },
-    { id: "v2", category: "Hatchback", brand: "Maruti Suzuki", model: "Swift", reg: "TG 11 CX 5678" },
-  ];
   const timeSlots = ["08:00–10:00 AM", "10:00–12:00 PM", "12:00–02:00 PM", "02:00–04:00 PM", "04:00–06:00 PM"];
 
   // Local UI State
-  const [error, setError] = useState(""); // Added error state
+  const [error, setError] = useState("");
   const [selectedAddressId, setSelectedAddressId] = useState("");
   const [showAddAddress, setShowAddAddress] = useState(false);
   const [newCommunity, setNewCommunity] = useState("");
@@ -45,13 +44,13 @@ const activeCommunities = allCommunities.filter(c => c.status === "ACTIVE");
   const brandsForNewCat = vehicleHierarchy.find(c => c.id === newCat)?.brands || [];
   const modelsForNewBrand = brandsForNewCat.find(b => b.id === newBrand)?.models || [];
 
-  // Dynamic Pricing Logic
+  // Dynamic Pricing Logic - Bulletproof version
   const selectedVehicleObj = savedVehicles.find(v => v.id === selectedVehicleId);
+  const currentCategory = selectedVehicleObj?.category || vehicleHierarchy.find(c => c.id === newCat)?.name || "";
+
   const getPrice = (service: typeof services[0]) => {
-    if (!selectedVehicleObj) return 0;
-    if (selectedVehicleObj.category === "SUV") return service.pricing["SUV"] || 0;
-    if (selectedVehicleObj.category === "Luxury") return service.pricing["Luxury"] || 0;
-    return service.pricing["Hatchback"] || 0;
+    if (!currentCategory) return 0;
+    return service.pricing[currentCategory] || 0;
   };
 
   const getTodayDate = () => {
@@ -63,34 +62,34 @@ const activeCommunities = allCommunities.filter(c => c.status === "ACTIVE");
   const labelClasses = "flex items-center gap-2 text-xs font-bold uppercase tracking-machined text-muted mb-4 mt-8";
   const cardClasses = "w-full border p-4 text-left transition-colors";
 
-  // --- CLEAN, UNIFIED HANDLE RESERVE FUNCTION ---
   const handleReserve = () => {
-    setError(""); // clear old errors
+    setError("");
     
-    // 1. Date Validation
     if (!selectedDate) { setError("Please select a date."); return; }
     const today = new Date(); today.setHours(0,0,0,0);
     const selected = new Date(selectedDate + "T00:00:00");
     if (selected < today) { setError("Past dates are not allowed. Please select today or a future date."); return; }
 
-    // 2. Service Validation
     const serviceObj = services.find(s => s.name === selectedService);
     if (!serviceObj) { setError("Please select a service."); return; }
 
-    // 3. Snapshot Data Collection
     const addressObj = savedAddresses.find(a => a.id === selectedAddressId) || { community: newCommunity, flat: newFlat };
-    const vehicleObj = savedVehicles.find(v => v.id === selectedVehicleId) || { category: newCat, brand: newBrand, model: newModel, reg: newReg };
+    const vehicleObj = savedVehicles.find(v => v.id === selectedVehicleId) || { 
+      category: currentCategory, 
+      brand: brandsForNewCat.find(b => b.id === newBrand)?.name || "", 
+      model: modelsForNewBrand.find(m => m.id === newModel)?.name || "", 
+      reg: newReg 
+    };
 
-    // 4. ADD TO GLOBAL ZUSTAND STORE!
     addBooking({
       id: `b${Date.now()}`,
       bookingCode: `ECW-${1000 + useStore.getState().bookings.length + 1}`,
       date: selectedDate,
       time: selectedTime,
-      customer: "Rahul Sharma", // Hardcoded mock user
+      customer: "Rahul Sharma",
       flat: addressObj.flat || "Unknown",
       community: addressObj.community || "Unknown",
-      vehicle: `${vehicleObj.brand || ""} ${vehicleObj.model || ""} (${vehicleObj.category || ""})`,
+      vehicle: `${vehicleObj.brand} ${vehicleObj.model} (${vehicleObj.category})`,
       regNumber: vehicleObj.reg || "Unknown",
       service: serviceObj.name,
       amount: getPrice(serviceObj),
@@ -98,12 +97,14 @@ const activeCommunities = allCommunities.filter(c => c.status === "ACTIVE");
       paymentStatus: "PENDING"
     });
 
-    alert("Booking Confirmed! Check the Admin Bookings table.");
+    alert(`Booking Confirmed!\n\nVehicle: ${vehicleObj.brand} ${vehicleObj.model}\nService: ${serviceObj.name}\nAmount: ₹${getPrice(serviceObj)}\nTime: ${selectedTime}`);
   };
+
+  // Prevent render until mounted on client to avoid hydration mismatch
+  if (!mounted) return null;
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas pb-44">
-      {/* Header */}
       <div className="border-b border-hairline bg-surface-soft p-6">
         <h1 className="text-2xl font-bold uppercase text-ink">Book a Service</h1>
         <p className="mt-1 text-sm font-light text-body">Fill in the details below to reserve your wash.</p>
@@ -135,7 +136,13 @@ const activeCommunities = allCommunities.filter(c => c.status === "ACTIVE");
               {activeCommunities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
             </select>
             <input type="text" value={newFlat} onChange={(e) => setNewFlat(e.target.value)} placeholder="Flat Number (e.g. C-503)" className={inputClasses} />
-            <button onClick={() => { setSelectedAddressId("new"); setShowAddAddress(false); }} className="bg-m-blue-dark w-full py-3 text-xs font-bold uppercase tracking-machined text-ink">Save Address</button>
+            <button onClick={() => { 
+              if (!newCommunity || !newFlat) return;
+              const newAddr = { id: `a${Date.now()}`, community: newCommunity, flat: newFlat };
+              addAddress(newAddr);
+              setSelectedAddressId(newAddr.id); 
+              setShowAddAddress(false); 
+            }} className="bg-m-blue-dark w-full py-3 text-xs font-bold uppercase tracking-machined text-ink">Save Address</button>
           </div>
         )}
 
@@ -182,7 +189,23 @@ const activeCommunities = allCommunities.filter(c => c.status === "ACTIVE");
             )}
 
             {newModel && newReg && (
-              <button onClick={() => { setSelectedVehicleId("new"); setShowAddVehicle(false); }} className="bg-m-blue-dark w-full py-3 text-xs font-bold uppercase tracking-machined text-ink">Save Vehicle</button>
+              <button onClick={() => { 
+                const catName = vehicleHierarchy.find(c => c.id === newCat)?.name || "";
+                const brandName = brandsForNewCat.find(b => b.id === newBrand)?.name || "";
+                const modelName = modelsForNewBrand.find(m => m.id === newModel)?.name || "";
+                
+                const newVeh = { 
+                  id: `v${Date.now()}`, 
+                  category: catName, 
+                  brand: brandName, 
+                  model: modelName, 
+                  reg: newReg, 
+                  isDefault: false 
+                };
+                addCustomerVehicle(newVeh);
+                setSelectedVehicleId(newVeh.id); 
+                setShowAddVehicle(false); 
+              }} className="bg-m-blue-dark w-full py-3 text-xs font-bold uppercase tracking-machined text-ink">Save Vehicle</button>
             )}
           </div>
         )}
@@ -192,7 +215,7 @@ const activeCommunities = allCommunities.filter(c => c.status === "ACTIVE");
         
         {selectedVehicleId ? (
           <div className="space-y-3 mb-8">
-            <p className="text-xs font-light text-muted">Prices for: <span className="text-ink font-bold">{selectedVehicleObj?.category || "New Vehicle"}</span></p>
+            <p className="text-xs font-light text-muted">Prices for: <span className="text-ink font-bold">{currentCategory || "New Vehicle"}</span></p>
             {services.map(s => (
               <button key={s.id} onClick={() => setSelectedService(s.name)}
                 className={`${cardClasses} ${selectedService === s.name ? "border-m-blue-dark bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body"}`}>
@@ -231,7 +254,6 @@ const activeCommunities = allCommunities.filter(c => c.status === "ACTIVE");
 
       {/* ================= FIXED BOTTOM RESERVE BUTTON ================= */}
       <div className="fixed bottom-[70px] left-0 right-0 z-40 border-t border-hairline bg-canvas p-4">
-        {/* Error Message Display */}
         {error && (
           <p className="text-xs font-bold uppercase tracking-machined text-m-red mb-3 text-center">
             {error}

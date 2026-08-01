@@ -1,7 +1,7 @@
 "use client";
 // Add this import at the very top of the file
 import { useRouter } from "next/navigation";
-
+import { useStore } from "@/lib/store";
 import { useState } from "react";
 import { ArrowRight, User, Phone, Shield, Lock } from "lucide-react";
 
@@ -27,28 +27,55 @@ export default function LoginPage() {
   // Inside the export default function LoginPage() { ... add this:
 const router = useRouter();
 
-  const handleLogin = () => {
-    // Mock redirection based on role
-    if (role === Role.ADMIN) {
-      router.push("/dashboard");
-    } else if (role === Role.STAFF) {
-      router.push("/staff-dashboard");
-    } else {
-      router.push("/my-dashboard");
-    }
-  };
+    // Inside LoginPage component:
+    const setMockUser = useStore((state) => state.setMockUser);
 
-  const handleVerifyOTP = () => {
-    // If OTP is verified, check if user is new. If new, go to signup step.
-    // If existing user, redirect immediately.
-    const isNewUser = true; // Mock this logic based on backend response
-    
-    if (isNewUser) {
-      setStep(Step.SIGNUP); // Go to name collection step
-    } else {
-      router.push("/my-dashboard"); // Go straight to customer app
+    const handleLogin = () => {
+      // Save mock user before redirecting
+      setMockUser({
+        id: "mock_123",
+        role: role,
+        name: role === "ADMIN" ? "Admin User" : role === "STAFF" ? "Staff User" : "Customer User",
+        email: role === "ADMIN" ? email : undefined,
+        phone: role !== "ADMIN" ? phone : undefined,
+      });
+
+      if (role === Role.ADMIN) router.push("/dashboard");
+      else if (role === Role.STAFF) router.push("/staff-dashboard");
+      else router.push("/my-dashboard");
+    };
+
+    // Make sure to call handleLogin() at the end of handleVerifyOTP for existing users!
+    const handleVerifyOTP = () => {
+      const isNewUser = true; 
+      if (isNewUser) {
+        setStep(Step.SIGNUP);
+      } else {
+        handleLogin(); // <-- This will save the user and redirect
+      }
     }
-  }
+  // const handleLogin = () => {
+  //   // Mock redirection based on role
+  //   if (role === Role.ADMIN) {
+  //     router.push("/dashboard");
+  //   } else if (role === Role.STAFF) {
+  //     router.push("/staff-dashboard");
+  //   } else {
+  //     router.push("/my-dashboard");
+  //   }
+  // };
+
+  // const handleVerifyOTP = () => {
+  //   // If OTP is verified, check if user is new. If new, go to signup step.
+  //   // If existing user, redirect immediately.
+  //   const isNewUser = true; // Mock this logic based on backend response
+    
+  //   if (isNewUser) {
+  //     setStep(Step.SIGNUP); // Go to name collection step
+  //   } else {
+  //     router.push("/my-dashboard"); // Go straight to customer app
+  //   }
+  // }
 
   const handleRequestOTP = () => {
     // Backend will send OTP via MSG91/Twilio

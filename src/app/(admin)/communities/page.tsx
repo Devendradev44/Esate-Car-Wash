@@ -2,17 +2,17 @@
 
 import { useState } from "react";
 import { Plus, Search, Edit, Trash2, EyeOff, X } from "lucide-react";
-
-const initialCommunities = [
-  { id: "c1", name: "Prestige Shantiniketan", address: "Whitefield Main Rd, Bangalore", status: "ACTIVE" },
-  { id: "c2", name: "Sobha Halcyon", address: "Jalahalli, Bangalore", status: "ACTIVE" },
-  { id: "c3", name: "Brigade Gateway", address: "Malleshwaram, Bangalore", status: "HIDDEN" },
-];
+import { useStore } from "@/lib/store"; // IMPORT STORE!
 
 export default function CommunitiesPage() {
-  const [communities, setCommunities] = useState(initialCommunities);
+  // --- READ FROM GLOBAL STORE ---
+  const communities = useStore((state) => state.communities);
+  const addCommunity = useStore((state) => state.addCommunity);
+  const updateCommunityStatus = useStore((state) => state.updateCommunityStatus); // NEW
+
+  // --- LOCAL UI STATE ---
   const [searchQuery, setSearchQuery] = useState("");
-  const [showModal, setShowModal] = useState(false); // Modal state
+  const [showModal, setShowModal] = useState(false);
   
   // Form state for new community
   const [newName, setNewName] = useState("");
@@ -22,21 +22,25 @@ export default function CommunitiesPage() {
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // --- WRITE TO GLOBAL STORE ---
   const toggleStatus = (id: string) => {
-    setCommunities(communities.map(c => 
-      c.id === id ? { ...c, status: c.status === "ACTIVE" ? "HIDDEN" : "ACTIVE" } : c
-    ));
+    const currentStatus = communities.find(c => c.id === id)?.status;
+    const newStatus = currentStatus === "ACTIVE" ? "HIDDEN" : "ACTIVE";
+    updateCommunityStatus(id, newStatus); // CALL STORE!
   };
 
   const handleAddCommunity = () => {
     if (!newName || !newAddress) return;
-    const newCommunity = {
+    
+    // CALL STORE!
+    addCommunity({
       id: `c${Date.now()}`,
       name: newName,
       address: newAddress,
       status: "ACTIVE"
-    };
-    setCommunities([newCommunity, ...communities]);
+    });
+
+    // Reset form
     setNewName("");
     setNewAddress("");
     setShowModal(false);
@@ -44,6 +48,7 @@ export default function CommunitiesPage() {
 
   const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-m-blue-dark focus:outline-none transition-colors appearance-none";
   const labelClasses = "block text-xs font-bold uppercase tracking-machined text-muted mb-3";
+
 
   return (
     <div className="p-12 relative">
