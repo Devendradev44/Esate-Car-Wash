@@ -1,37 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Filter, CalendarDays, XCircle, CheckCircle2, Banknote } from "lucide-react";
-
-// Mock Data mapping to Prisma Booking + Payment schema
-const initialBookings = [
-  { 
-    id: "b1", bookingCode: "ECW-1001", date: "22-05-2025", time: "10:00–12:00 PM", 
-    customer: "Rahul Sharma", flat: "A-401", community: "Prestige Shantiniketan",
-    vehicle: "Toyota Fortuner (SUV)", regNumber: "TG 09 AB 1234", 
-    service: "Exterior Wash", amount: 350, 
-    bookingStatus: "BOOKED", paymentStatus: "PENDING"
-  },
-  { 
-    id: "b2", bookingCode: "ECW-1002", date: "22-05-2025", time: "02:00–04:00 PM", 
-    customer: "Priya Patel", flat: "B-1202", community: "Sobha Halcyon",
-    vehicle: "Hyundai Creta (SUV)", regNumber: "TG 11 CX 5678", 
-    service: "Interior Detail", amount: 1200, 
-    bookingStatus: "COMPLETED", paymentStatus: "PAID"
-  },
-  { 
-    id: "b3", bookingCode: "ECW-1003", date: "21-05-2025", time: "08:00–10:00 AM", 
-    customer: "Amit Kumar", flat: "C-503", community: "Prestige Shantiniketan",
-    vehicle: "Maruti Swift (Hatchback)", regNumber: "TG 38 JU 8765", 
-    service: "Exterior Wash", amount: 250, 
-    bookingStatus: "CANCELLED", paymentStatus: "REFUNDED"
-  },
-];
+import { Search, CalendarDays, XCircle, CheckCircle2, Banknote } from "lucide-react";
+import { useStore } from "@/lib/store"; // IMPORT THE STORE!
 
 type BookingStatusType = "ALL" | "BOOKED" | "COMPLETED" | "CANCELLED";
 
 export default function BookingsPage() {
-  const [bookings, setBookings] = useState(initialBookings);
+  // READ FROM GLOBAL STORE!
+  const bookings = useStore((state) => state.bookings);
+  const cancelBooking = useStore((state) => state.cancelBooking);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<BookingStatusType>("ALL");
 
@@ -46,14 +25,14 @@ export default function BookingsPage() {
     return matchesSearch && matchesFilter;
   });
 
-  const cancelBooking = (id: string) => {
-    setBookings(bookings.map(b => 
-      b.id === id ? { ...b, bookingStatus: "CANCELLED", paymentStatus: "REFUNDED" } : b
-    ));
+  // Use the global store action instead of local state
+  const handleCancelBooking = (id: string) => {
+    cancelBooking(id);
   };
 
   const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-3 text-sm font-light focus:border-m-blue-dark focus:outline-none transition-colors appearance-none";
 
+  // ... (Leave the rest of the JSX exactly as it is! Just make sure the table maps over `filteredBookings` and uses `handleCancelBooking`)
   return (
     <div className="p-12">
       {/* Header */}

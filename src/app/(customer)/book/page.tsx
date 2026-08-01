@@ -2,10 +2,29 @@
 
 import { useState } from "react";
 import { Plus, Check, MapPin, Car, Wrench, Calendar } from "lucide-react";
-import { vehicleHierarchy, savedAddresses, savedVehicles, services, timeSlots } from "@/lib/mockData";
+import { useStore } from "@/lib/store"; 
 
 export default function BookService() {
-  // Form State
+  // Read global data from Zustand Store
+  const allCommunities = useStore((state) => state.communities);
+const activeCommunities = allCommunities.filter(c => c.status === "ACTIVE");
+  const vehicleHierarchy = useStore((state) => state.vehicles);
+  const services = useStore((state) => state.services);
+  const addBooking = useStore((state) => state.addBooking); 
+
+  // Mock user data (Hardcoded for MVP demo)
+  const savedAddresses = [
+    { id: "a1", community: "Prestige Shantiniketan", flat: "A-401" },
+    { id: "a2", community: "Sobha Halcyon", flat: "B-1202" },
+  ];
+  const savedVehicles = [
+    { id: "v1", category: "SUV", brand: "Toyota", model: "Fortuner", reg: "TG 09 AB 1234" },
+    { id: "v2", category: "Hatchback", brand: "Maruti Suzuki", model: "Swift", reg: "TG 11 CX 5678" },
+  ];
+  const timeSlots = ["08:00–10:00 AM", "10:00–12:00 PM", "12:00–02:00 PM", "02:00–04:00 PM", "04:00–06:00 PM"];
+
+  // Local UI State
+  const [error, setError] = useState(""); // Added error state
   const [selectedAddressId, setSelectedAddressId] = useState("");
   const [showAddAddress, setShowAddAddress] = useState(false);
   const [newCommunity, setNewCommunity] = useState("");
@@ -21,7 +40,6 @@ export default function BookService() {
   const [selectedService, setSelectedService] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
-  const [error, setError] = useState("");
 
   // Cascading Logic for New Vehicle
   const brandsForNewCat = vehicleHierarchy.find(c => c.id === newCat)?.brands || [];
@@ -31,9 +49,9 @@ export default function BookService() {
   const selectedVehicleObj = savedVehicles.find(v => v.id === selectedVehicleId);
   const getPrice = (service: typeof services[0]) => {
     if (!selectedVehicleObj) return 0;
-    if (selectedVehicleObj.category === "SUV") return service.suvPrice;
-    if (selectedVehicleObj.category === "Luxury") return service.luxuryPrice;
-    return service.hatchbackPrice;
+    if (selectedVehicleObj.category === "SUV") return service.pricing["SUV"] || 0;
+    if (selectedVehicleObj.category === "Luxury") return service.pricing["Luxury"] || 0;
+    return service.pricing["Hatchback"] || 0;
   };
 
   const getTodayDate = () => {
@@ -43,27 +61,44 @@ export default function BookService() {
 
   const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-m-blue-dark focus:outline-none transition-colors appearance-none";
   const labelClasses = "flex items-center gap-2 text-xs font-bold uppercase tracking-machined text-muted mb-4 mt-8";
-  const cardClasses = `w-full border p-4 text-left transition-colors`;
+  const cardClasses = "w-full border p-4 text-left transition-colors";
 
-    const handleReserve = () => {
+  // --- CLEAN, UNIFIED HANDLE RESERVE FUNCTION ---
+  const handleReserve = () => {
     setError(""); // clear old errors
     
-    // Check if date is in the past
-    if (!selectedDate) {
-      setError("Please select a date.");
-      return;
-    }
-    
-    const today = new Date();
-    today.setHours(0,0,0,0); // reset time to midnight for accurate comparison
-    const selected = new Date(selectedDate + "T00:00:00"); // add T00:00:00 to avoid timezone offset bugs
-    
-    if (selected < today) {
-      setError("Past dates are not allowed. Please select today or a future date.");
-      return;
-    }
+    // 1. Date Validation
+    if (!selectedDate) { setError("Please select a date."); return; }
+    const today = new Date(); today.setHours(0,0,0,0);
+    const selected = new Date(selectedDate + "T00:00:00");
+    if (selected < today) { setError("Past dates are not allowed. Please select today or a future date."); return; }
 
-    alert("Booking Confirmed! Redirecting to dashboard...");
+    // 2. Service Validation
+    const serviceObj = services.find(s => s.name === selectedService);
+    if (!serviceObj) { setError("Please select a service."); return; }
+
+    // 3. Snapshot Data Collection
+    const addressObj = savedAddresses.find(a => a.id === selectedAddressId) || { community: newCommunity, flat: newFlat };
+    const vehicleObj = savedVehicles.find(v => v.id === selectedVehicleId) || { category: newCat, brand: newBrand, model: newModel, reg: newReg };
+
+    // 4. ADD TO GLOBAL ZUSTAND STORE!
+    addBooking({
+      id: `b${Date.now()}`,
+      bookingCode: `ECW-${1000 + useStore.getState().bookings.length + 1}`,
+      date: selectedDate,
+      time: selectedTime,
+      customer: "Rahul Sharma", // Hardcoded mock user
+      flat: addressObj.flat || "Unknown",
+      community: addressObj.community || "Unknown",
+      vehicle: `${vehicleObj.brand || ""} ${vehicleObj.model || ""} (${vehicleObj.category || ""})`,
+      regNumber: vehicleObj.reg || "Unknown",
+      service: serviceObj.name,
+      amount: getPrice(serviceObj),
+      bookingStatus: "BOOKED",
+      paymentStatus: "PENDING"
+    });
+
+    alert("Booking Confirmed! Check the Admin Bookings table.");
   };
 
   return (
@@ -97,7 +132,7 @@ export default function BookService() {
           <div className="border border-hairline bg-surface-soft p-4 mb-8 space-y-3">
             <select value={newCommunity} onChange={(e) => setNewCommunity(e.target.value)} className={inputClasses}>
               <option value="" disabled>Choose community</option>
-              {["Prestige Shantiniketan", "Sobha Halcyon", "Brigade Gateway"].map(c => <option key={c} value={c}>{c}</option>)}
+              {activeCommunities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
             </select>
             <input type="text" value={newFlat} onChange={(e) => setNewFlat(e.target.value)} placeholder="Flat Number (e.g. C-503)" className={inputClasses} />
             <button onClick={() => { setSelectedAddressId("new"); setShowAddAddress(false); }} className="bg-m-blue-dark w-full py-3 text-xs font-bold uppercase tracking-machined text-ink">Save Address</button>
@@ -159,7 +194,7 @@ export default function BookService() {
           <div className="space-y-3 mb-8">
             <p className="text-xs font-light text-muted">Prices for: <span className="text-ink font-bold">{selectedVehicleObj?.category || "New Vehicle"}</span></p>
             {services.map(s => (
-              <button key={s.name} onClick={() => setSelectedService(s.name)}
+              <button key={s.id} onClick={() => setSelectedService(s.name)}
                 className={`${cardClasses} ${selectedService === s.name ? "border-m-blue-dark bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body"}`}>
                 <div className="flex justify-between items-center">
                   <p className="text-sm font-bold text-ink">{s.name}</p>
@@ -195,7 +230,6 @@ export default function BookService() {
       </div>
 
       {/* ================= FIXED BOTTOM RESERVE BUTTON ================= */}
-            {/* ================= FIXED BOTTOM RESERVE BUTTON ================= */}
       <div className="fixed bottom-[70px] left-0 right-0 z-40 border-t border-hairline bg-canvas p-4">
         {/* Error Message Display */}
         {error && (

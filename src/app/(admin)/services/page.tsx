@@ -2,32 +2,16 @@
 
 import { useState } from "react";
 import { Plus, Search, Edit, Trash2, X } from "lucide-react";
-
-// 1. Define a strict Type so TypeScript knows exactly what shape the data is
-type ServiceItem = {
-  id: string;
-  name: string;
-  description: string;
-  pricing: Record<string, number>; // This tells TS pricing can have any string key with a number value
-};
-
-// 2. Use the Type explicitly here
-const initialServices: ServiceItem[] = [
-  { 
-    id: "s1", name: "Exterior Wash", description: "Basic exterior foam wash", 
-    pricing: { Hatchback: 250, Sedan: 300, SUV: 350, Luxury: 600 } 
-  },
-  { 
-    id: "s2", name: "Interior & Exterior Detail", description: "Deep clean inside and out", 
-    pricing: { Hatchback: 800, Sedan: 1000, SUV: 1200, Luxury: 2500 } 
-  },
-];
+import { useStore } from "@/lib/store"; // IMPORT THE STORE!
 
 const vehicleCategories = ["Hatchback", "Sedan", "SUV", "Luxury"];
 
 export default function ServicesPage() {
-  // 3. Apply the type to the state
-  const [services, setServices] = useState<ServiceItem[]>(initialServices);
+  // --- READ FROM GLOBAL STORE ---
+  const services = useStore((state) => state.services);
+  const addService = useStore((state) => state.addService);
+
+  // --- LOCAL UI STATE ---
   const [searchQuery, setSearchQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
   
@@ -46,7 +30,7 @@ export default function ServicesPage() {
     setNewPricing(prev => ({ ...prev, [category]: value }));
   };
 
-  // 4. Fix the Add function to properly convert strings to numbers and match the Type
+  // --- WRITE TO GLOBAL STORE ---
   const handleAddService = () => {
     if (!newName) return;
     
@@ -56,21 +40,20 @@ export default function ServicesPage() {
       numericPricing[cat] = Number(priceStr) || 0; // Default to 0 if left blank
     }
 
-    const newService: ServiceItem = {
+    // CALL THE ZUSTAND ACTION!
+    addService({
       id: `s${Date.now()}`,
       name: newName,
       description: newDesc,
       pricing: numericPricing
-    };
+    });
 
-    setServices([newService, ...services]);
     // Reset form
     setNewName("");
     setNewDesc("");
     setNewPricing({ Hatchback: "", Sedan: "", SUV: "", Luxury: "" });
     setShowModal(false);
   };
-
 
   const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-m-blue-dark focus:outline-none transition-colors appearance-none";
   const labelClasses = "block text-xs font-bold uppercase tracking-machined text-muted mb-3";

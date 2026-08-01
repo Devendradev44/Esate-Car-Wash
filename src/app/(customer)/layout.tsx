@@ -1,6 +1,7 @@
 import { BottomNav } from "@/components/customer/BottomNav";
 import Link from "next/link";
 import { Home, CalendarPlus, Car, User } from "lucide-react";
+import Hydration from "@/components/Hydration";
 
 export default function CustomerLayout({
   children,
@@ -34,7 +35,9 @@ export default function CustomerLayout({
 
       {/* MAIN CONTENT - Adds bottom padding only on mobile to clear the BottomNav */}
       <main className="flex-1 pb-20 md:pb-0">
-        {children}
+        <Hydration>
+          {children}
+        </Hydration>
       </main>
       
       {/* MOBILE BOTTOM NAV (Hidden on Desktop) */}
