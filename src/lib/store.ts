@@ -83,6 +83,7 @@ type AppStore = {
   addBooking: (booking: BookingItem) => void;
   addExpense: (expense: ExpenseItem) => void;
   cancelBooking: (id: string) => void;
+  addStaff: (staff: StaffItem) => void;
   
   addVehicleCategory: (category: VehicleCategory) => void;
   addVehicleBrand: (categoryId: string, brand: VehicleBrand) => void;
@@ -107,6 +108,7 @@ export const useStore = create<AppStore>()(
       bookings: initialBookings,
       expenses: initialExpenses,
       staff: initialStaff,
+      
       addresses: [
         { id: "a1", community: "Prestige Shantiniketan", flat: "A-401" },
         { id: "a2", community: "Sobha Halcyon", flat: "B-1202" },
@@ -129,6 +131,7 @@ export const useStore = create<AppStore>()(
       cancelBooking: (id) => set((state) => ({
         bookings: state.bookings.map(b => b.id === id ? { ...b, bookingStatus: "CANCELLED" as const, paymentStatus: "REFUNDED" as const } : b)
       })),
+      addStaff: (newStaff) => set((state) => ({ staff: [...state.staff, newStaff] })),
       
       // VEHICLES
       addVehicleCategory: (newCategory) => set((state) => ({ vehicles: [...state.vehicles, newCategory] })),
@@ -139,7 +142,7 @@ export const useStore = create<AppStore>()(
         vehicles: state.vehicles.map(cat => {
           if (cat.id !== categoryId) return cat;
           
-          // Check if brand already exists by NAME
+        // Check if brand already exists by NAME
           const brandExists = cat.brands.find(b => b.name === brandName);
           
           if (brandExists) {

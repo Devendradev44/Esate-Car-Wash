@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { CalendarDays, User } from "lucide-react";
 
 const navItems = [
-  { icon: CalendarDays, label: "Schedule", href: "/staff-dashboard" },
-  { icon: User, label: "Profile", href: "/staff-profile" },
+  { icon: CalendarDays, label: "Schedule", href: "/staff/staff-dashboard" },
+  { icon: User, label: "Profile", href: "/staff/staff-profile" },
 ];
 
 export function StaffNav() {

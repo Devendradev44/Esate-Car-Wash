@@ -41,8 +41,8 @@ const router = useRouter();
       });
 
       if (role === Role.ADMIN) router.push("/dashboard");
-      else if (role === Role.STAFF) router.push("/staff-dashboard");
-      else router.push("/my-dashboard");
+      else if (role === Role.STAFF) router.push("/staff/staff-dashboard");
+      else router.push("/customer/my-dashboard");
     };
 
     // Make sure to call handleLogin() at the end of handleVerifyOTP for existing users!
@@ -54,28 +54,6 @@ const router = useRouter();
         handleLogin(); // <-- This will save the user and redirect
       }
     }
-  // const handleLogin = () => {
-  //   // Mock redirection based on role
-  //   if (role === Role.ADMIN) {
-  //     router.push("/dashboard");
-  //   } else if (role === Role.STAFF) {
-  //     router.push("/staff-dashboard");
-  //   } else {
-  //     router.push("/my-dashboard");
-  //   }
-  // };
-
-  // const handleVerifyOTP = () => {
-  //   // If OTP is verified, check if user is new. If new, go to signup step.
-  //   // If existing user, redirect immediately.
-  //   const isNewUser = true; // Mock this logic based on backend response
-    
-  //   if (isNewUser) {
-  //     setStep(Step.SIGNUP); // Go to name collection step
-  //   } else {
-  //     router.push("/my-dashboard"); // Go straight to customer app
-  //   }
-  // }
 
   const handleRequestOTP = () => {
     // Backend will send OTP via MSG91/Twilio
@@ -83,15 +61,6 @@ const router = useRouter();
     setStep(Step.OTP);
   };
 
-  // const handleVerifyOTP = () => {
-  //   // If new user, Better Auth creates User, then we need CustomerProfile (firstName/lastName)
-  //   alert(`OTP Verified! Is new user? -> Go to Signup Step. (Mocked)`);
-  //   setStep(Step.SIGNUP); // Force signup step for UI demo
-  // };
-
-  // const handleLogin = () => {
-  //   alert(`Logged in as ${role}! Redirecting... (Mocked)`);
-  // };
 
   return (
     <div className="w-full max-w-sm">

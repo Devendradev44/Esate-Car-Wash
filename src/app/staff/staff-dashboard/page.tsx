@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { CheckCircle2, Clock, MapPin, Car } from "lucide-react";
+import { CheckCircle2, MapPin, Car } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 export default function StaffDashboard() {
@@ -12,22 +12,19 @@ export default function StaffDashboard() {
 
   if (!mounted) return null;
 
-  // Mock filter: Staff only sees bookings for their assigned community
-  const staffCommunity = "Prestige Shantiniketan"; 
-  const todaysBookings = bookings.filter(b => b.community === staffCommunity);
+  // Show all bookings so you can see the updates instantly
+  const todaysBookings = bookings;
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas pb-24">
       <div className="border-b border-hairline bg-surface-soft p-6">
         <h1 className="text-2xl font-bold uppercase text-ink">Today's Schedule</h1>
-        <p className="mt-1 text-sm font-light text-body">{staffCommunity}</p>
+        <p className="mt-1 text-sm font-light text-body">All Community Assignments</p>
       </div>
 
       <div className="flex-1 p-6 space-y-4">
         {todaysBookings.length === 0 && (
-          <div className="text-center text-muted text-sm font-light mt-20">
-            No bookings scheduled for today.
-          </div>
+          <div className="text-center text-muted text-sm font-light mt-20">No bookings scheduled for today.</div>
         )}
 
         {todaysBookings.map(b => (
@@ -36,7 +33,7 @@ export default function StaffDashboard() {
               <div>
                 <p className="text-xs font-bold uppercase tracking-machined text-m-blue-dark mb-1">{b.time}</p>
                 <h3 className="text-lg font-bold text-ink">{b.customer}</h3>
-                <p className="text-xs font-light text-muted mt-1 flex items-center gap-1"><MapPin size={12}/> {b.flat}</p>
+                <p className="text-xs font-light text-muted mt-1 flex items-center gap-1"><MapPin size={12}/> {b.flat}, {b.community}</p>
               </div>
               <span className={`text-xs font-bold uppercase tracking-machined px-2 py-1 ${
                 b.bookingStatus === "COMPLETED" ? "bg-success/20 text-success" : "bg-warning/20 text-warning"
