@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, Check, MapPin, Car, Wrench, Calendar } from "lucide-react";
 import { useStore } from "@/lib/store"; 
 
@@ -8,6 +9,7 @@ export default function BookService() {
   // --- HYDRATION FIX ---
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  const router = useRouter();
 
   // Read global data from Zustand Store
   const allCommunities = useStore((state) => state.communities);
@@ -97,7 +99,8 @@ export default function BookService() {
       paymentStatus: "PENDING"
     });
 
-    alert(`Booking Confirmed!\n\nVehicle: ${vehicleObj.brand} ${vehicleObj.model}\nService: ${serviceObj.name}\nAmount: ₹${getPrice(serviceObj)}\nTime: ${selectedTime}`);
+    // alert(`Booking Confirmed!\n\nVehicle: ${vehicleObj.brand} ${vehicleObj.model}\nService: ${serviceObj.name}\nAmount: ₹${getPrice(serviceObj)}\nTime: ${selectedTime}`);
+    router.push("/customer/my-dashboard");
   };
 
   // Prevent render until mounted on client to avoid hydration mismatch

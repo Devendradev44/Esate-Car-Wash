@@ -9,7 +9,7 @@ export default function CustomerLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-canvas flex flex-col">
+    <div className="min-h-screen bg-canvas flex flex-col">  
       
       {/* DESKTOP TOP HEADER (Hidden on Mobile) */}
       <header className="hidden md:flex items-center justify-between border-b border-hairline bg-surface-card px-12 py-4">
