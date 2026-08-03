@@ -21,10 +21,10 @@ export default function CustomerLayout({
         {/* Desktop Navigation Links */}
         <nav className="flex items-center gap-8">
           {[
-            { icon: Home, label: "Dashboard", href: "/my-dashboard" },
-            { icon: CalendarPlus, label: "Book Service", href: "/book" },
-            { icon: Car, label: "My Garage", href: "/garage" },
-            { icon: User, label: "Profile", href: "/profile" },
+            { icon: Home, label: "Dashboard", href: "/customer/my-dashboard" },
+            { icon: CalendarPlus, label: "Book Service", href: "/customer/book" },
+            { icon: Car, label: "My Garage", href: "/customer/garage" },
+            { icon: User, label: "Profile", href: "/customer/profile" },
           ].map(item => (
             <Link key={item.label} href={item.href} className="flex items-center gap-2 text-xs font-bold uppercase tracking-machined text-body hover:text-ink transition-colors">
               <item.icon size={14} /> {item.label}

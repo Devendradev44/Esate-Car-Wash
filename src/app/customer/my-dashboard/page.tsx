@@ -1,14 +1,16 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { CalendarDays, Car, Wrench, ArrowRight } from "lucide-react";
+import { CalendarDays, Car, Wrench, ArrowRight, XCircle } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 export default function CustomerDashboard() {
   const [mounted, setMounted] = useState(false);
+  
   useEffect(() => setMounted(true), []);
   
   const bookings = useStore((state) => state.bookings);
+  const cancelBooking = useStore((state) => state.cancelBooking); // ADD THIS LINE!
 
   if (!mounted) return null;
 
@@ -55,8 +57,45 @@ export default function CustomerDashboard() {
                   <div className="flex items-center gap-2 text-xs font-light text-muted mb-3">
                     <CalendarDays size={12} /> {b.date} · {b.time}
                   </div>
-                  <div className="flex items-center gap-2 text-xs font-light text-body">
+                  <div className="flex items-center gap-2 text-xs font-light text-body mb-4">
                     <Car size={12} /> {b.vehicle}
+                  </div>
+                  
+                  {/* ADD THIS CANCEL BUTTON */}
+                  <button 
+                    onClick={() => cancelBooking(b.id)}
+                    className="flex w-full items-center justify-center gap-2 border border-m-red/50 text-m-red py-3 text-xs font-bold uppercase tracking-machined hover:bg-m-red hover:text-ink transition-colors"
+                  >
+                    <XCircle size={14} /> Cancel Booking
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+                {/* Booking History (Completed / Cancelled) */}
+        <div className="mt-8">
+          <h2 className="text-xs font-bold uppercase tracking-machined text-muted mb-4">Booking History</h2>
+          {myBookings.filter(b => b.bookingStatus !== "BOOKED").length === 0 ? (
+            <div className="border border-hairline p-6 text-center">
+              <p className="text-sm font-light text-muted">No past bookings.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {myBookings.filter(b => b.bookingStatus !== "BOOKED").map(b => (
+                <div key={b.id} className="border border-hairline bg-surface-card p-5 opacity-70">
+                  <div className="flex justify-between mb-2">
+                    <p className="text-sm font-bold text-ink">{b.service}</p>
+                    <span className={`text-xs font-bold uppercase ${b.bookingStatus === "COMPLETED" ? "text-success" : "text-m-red"}`}>
+                      {b.bookingStatus}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs font-light text-muted mb-3">
+                    <CalendarDays size={12} /> {b.date} · {b.time}
+                  </div>
+                  <div className="flex items-center justify-between text-xs font-light text-body">
+                    <span className="flex items-center gap-2"><Car size={12} /> {b.vehicle}</span>
+                    <span className={`font-bold ${b.paymentStatus === "PAID" ? "text-success" : "text-muted"}`}>{b.paymentStatus}</span>
                   </div>
                 </div>
               ))}
