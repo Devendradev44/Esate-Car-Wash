@@ -84,6 +84,8 @@ type AppStore = {
   addExpense: (expense: ExpenseItem) => void;
   cancelBooking: (id: string) => void;
   addStaff: (staff: StaffItem) => void;
+  deleteCommunity: (id: string) => void;
+  updateCommunity: (id: string, name: string, address: string) => void;
   
   addVehicleCategory: (category: VehicleCategory) => void;
   addVehicleBrand: (categoryId: string, brand: VehicleBrand) => void;
@@ -122,6 +124,10 @@ export const useStore = create<AppStore>()(
       addCommunity: (newCommunity) => set((state) => ({ communities: [...state.communities, newCommunity] })),
       updateCommunityStatus: (id, status) => set((state) => ({
         communities: state.communities.map(c => c.id === id ? { ...c, status } : c)
+      })),
+      deleteCommunity: (id) => set((state) => ({ communities: state.communities.filter(c => c.id !== id) })),
+      updateCommunity: (id, name, address) => set((state) => ({
+        communities: state.communities.map(c => c.id === id ? { ...c, name, address } : c)
       })),
       addAddress: (newAddress) => set((state) => ({ addresses: [...state.addresses, newAddress] })),
       addCustomerVehicle: (newVehicle) => set((state) => ({ customerGarage: [...state.customerGarage, newVehicle] })),

@@ -19,9 +19,9 @@ import { StaffNav } from "@/components/staff/StaffNav";
 export default function StaffLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-canvas flex flex-col">
-      <div className="flex-1 pb-20">
+      <main className="flex-1 pb-24">
         {children}
-      </div>
+      </main>
       <StaffNav />
     </div>
   );

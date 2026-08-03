@@ -95,10 +95,15 @@ const router = useRouter();
       {role === Role.CUSTOMER && step === Step.LOGIN && (
         <div>
           <label className={labelClasses}>Phone Number</label>
-          <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 98765 43210" className={inputClasses} />
+          <input type="tel" maxLength={10}value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} placeholder="+91 98765 43210" className={inputClasses} />
           <button onClick={handleRequestOTP} className="mt-6 flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light">
             Get OTP <ArrowRight size={14} />
           </button>
+
+          {/* ADD SIGNUP NOTE HERE */}
+          <p className="mt-4 text-center text-xs font-light text-muted">
+            New here? Just enter your phone number to automatically sign up.
+          </p>
         </div>
       )}
 
@@ -134,7 +139,7 @@ const router = useRouter();
       {role === Role.STAFF && (
         <div>
           <label className={labelClasses}>Phone Number</label>
-          <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 98765 43210" className={inputClasses + " mb-4"} />
+          <input type="tel" maxLength={10} value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))} placeholder="+91 98765 43210" className={inputClasses + " mb-4"} />
           <label className={labelClasses}>4-Digit PIN</label>
           <input type="password" value={pin} onChange={(e) => setPin(e.target.value)} placeholder="****" maxLength={4} className={inputClasses + " text-center text-xl tracking-[0.5em]"} />
           <button onClick={handleLogin} className="mt-6 flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light">
@@ -150,6 +155,14 @@ const router = useRouter();
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@estatecarwash.com" className={inputClasses + " mb-4"} />
           <label className={labelClasses}>Password</label>
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className={inputClasses} />
+          <div className="text-right mt-3 mb-6">
+            <button 
+              onClick={() => alert("Forgot Password flow: Admin enters email -> receives reset link -> sets new password.")}
+              className="text-xs font-bold uppercase tracking-machined text-muted hover:text-m-blue-dark transition-colors"
+            >
+              Forgot Password?
+            </button>
+          </div>
           <button onClick={handleLogin} className="mt-6 flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light">
             Login <Lock size={14} />
           </button>
