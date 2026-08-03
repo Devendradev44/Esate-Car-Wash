@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useState, useEffect } from 'react';
 
-// --- TYPES (Based on Prisma Schema) ---
+// --- TYPES ---
+type MockUser = { id: string; role: "CUSTOMER" | "STAFF" | "ADMIN"; name: string; phone?: string; email?: string };
 type CustomerVehicle = { id: string; category: string; brand: string; model: string; reg: string; isDefault: boolean };
 type CustomerAddress = { id: string; community: string; flat: string };
 type Community = { id: string; name: string; address: string; status: "ACTIVE" | "HIDDEN" };
@@ -19,9 +20,6 @@ type ExpenseItem = { id: string; date: string; name: string; category: string; a
 type StaffItem = { id: string; name: string; phone: string; community: string; pin: string; status: "ACTIVE" | "DISABLED" };
 
 // --- INITIAL MOCK DATA ---
-
-type MockUser = { id: string; role: "CUSTOMER" | "STAFF" | "ADMIN"; name: string; phone?: string; email?: string };
-
 const initialCommunities: Community[] = [
   { id: "c1", name: "Prestige Shantiniketan", address: "Whitefield Main Rd, Bangalore", status: "ACTIVE" },
   { id: "c2", name: "Sobha Halcyon", address: "Jalahalli, Bangalore", status: "ACTIVE" },
@@ -63,6 +61,10 @@ const initialStaff: StaffItem[] = [
 
 // --- THE STORE ---
 type AppStore = {
+  mockUser: MockUser | null;
+  setMockUser: (user: MockUser) => void;
+  logoutMockUser: () => void;
+
   communities: Community[];
   vehicles: VehicleCategory[];
   services: ServiceItem[];
@@ -71,13 +73,9 @@ type AppStore = {
   staff: StaffItem[];
   addresses: CustomerAddress[];
   customerGarage: CustomerVehicle[];
-  
 
   // Actions
   addCommunity: (community: Community) => void;
-  mockUser: MockUser | null;
-  setMockUser: (user: MockUser) => void;
-  logoutMockUser: () => void;
   updateCommunityStatus: (id: string, status: "ACTIVE" | "HIDDEN") => void;
   addAddress: (address: CustomerAddress) => void;
   addCustomerVehicle: (vehicle: CustomerVehicle) => void;
@@ -85,14 +83,24 @@ type AppStore = {
   addBooking: (booking: BookingItem) => void;
   addExpense: (expense: ExpenseItem) => void;
   cancelBooking: (id: string) => void;
-  addVehicleCategory: (category: VehicleCategory) => void; // NEW
-  addVehicleBrand: (categoryId: string, brand: VehicleBrand) => void; // NEW
-  addVehicleModel: (categoryId: string, brandId: string, model: VehicleModel) => void; // NEW
+  
+  addVehicleCategory: (category: VehicleCategory) => void;
+  addVehicleBrand: (categoryId: string, brand: VehicleBrand) => void;
+  addVehicleModel: (categoryId: string, brandId: string, model: VehicleModel) => void;
+  deleteVehicleCategory: (id: string) => void;
+  deleteVehicleBrand: (categoryId: string, brandId: string) => void;
+  deleteVehicleModel: (categoryId: string, brandId: string, modelId: string) => void;
+  
+  completeBooking: (id: string) => void;
 };
 
 export const useStore = create<AppStore>()(
   persist(
     (set) => ({
+      mockUser: null,
+      setMockUser: (user) => set({ mockUser: user }),
+      logoutMockUser: () => set({ mockUser: null }),
+
       communities: initialCommunities,
       vehicles: initialVehicles,
       services: initialServices,
@@ -113,48 +121,66 @@ export const useStore = create<AppStore>()(
       updateCommunityStatus: (id, status) => set((state) => ({
         communities: state.communities.map(c => c.id === id ? { ...c, status } : c)
       })),
-      mockUser: null,
-      setMockUser: (user) => set({ mockUser: user }),
-      logoutMockUser: () => set({ mockUser: null }),
       addAddress: (newAddress) => set((state) => ({ addresses: [...state.addresses, newAddress] })),
       addCustomerVehicle: (newVehicle) => set((state) => ({ customerGarage: [...state.customerGarage, newVehicle] })),
       addService: (newService) => set((state) => ({ services: [...state.services, newService] })),
       addBooking: (newBooking) => set((state) => ({ bookings: [newBooking, ...state.bookings] })),
       addExpense: (newExpense) => set((state) => ({ expenses: [newExpense, ...state.expenses] })),
-            addVehicleCategory: (newCategory) => set((state) => ({ vehicles: [...state.vehicles, newCategory] })),
-      
-      addVehicleBrand: (categoryId, newBrand) => set((state) => ({
-        vehicles: state.vehicles.map(cat => 
-          cat.id === categoryId ? { ...cat, brands: [...cat.brands, newBrand] } : cat
-        )
-      })),
-      
-      addVehicleModel: (categoryId, brandId, newModel) => set((state) => ({
-        vehicles: state.vehicles.map(cat => 
-          cat.id === categoryId ? {
-            ...cat,
-            brands: cat.brands.map(brand => 
-              brand.id === brandId ? { ...brand, models: [...brand.models, newModel] } : brand
-            )
-          } : cat
-        )
-      })),
       cancelBooking: (id) => set((state) => ({
-        bookings: state.bookings.map(b => 
-          b.id === id ? { ...b, bookingStatus: "CANCELLED" as const, paymentStatus: "REFUNDED" as const } : b
-        )
+        bookings: state.bookings.map(b => b.id === id ? { ...b, bookingStatus: "CANCELLED" as const, paymentStatus: "REFUNDED" as const } : b)
+      })),
+      
+      // VEHICLES
+      addVehicleCategory: (newCategory) => set((state) => ({ vehicles: [...state.vehicles, newCategory] })),
+      addVehicleBrand: (categoryId, newBrand) => set((state) => ({
+        vehicles: state.vehicles.map(cat => cat.id === categoryId ? { ...cat, brands: [...cat.brands, newBrand] } : cat)
+      })),
+      addVehicleModel: (categoryId, brandName, newModel) => set((state) => ({
+        vehicles: state.vehicles.map(cat => {
+          if (cat.id !== categoryId) return cat;
+          
+          // Check if brand already exists by NAME
+          const brandExists = cat.brands.find(b => b.name === brandName);
+          
+          if (brandExists) {
+            // Brand exists, just add the model
+            return {
+              ...cat,
+              brands: cat.brands.map(brand => 
+                brand.name === brandName ? { ...brand, models: [...brand.models, newModel] } : brand
+              )
+            };
+          } else {
+            // Brand doesn't exist, create it and add the model!
+            return {
+              ...cat,
+              brands: [...cat.brands, { id: `brand_${Date.now()}`, name: brandName, models: [newModel] }]
+            };
+          }
+        })
+      })),
+      deleteVehicleCategory: (id) => set((state) => ({ vehicles: state.vehicles.filter(c => c.id !== id) })),
+      deleteVehicleBrand: (categoryId, brandId) => set((state) => ({
+        vehicles: state.vehicles.map(c => c.id === categoryId ? { ...c, brands: c.brands.filter(b => b.id !== brandId) } : c)
+      })),
+      deleteVehicleModel: (categoryId, brandId, modelId) => set((state) => ({
+        vehicles: state.vehicles.map(c => c.id === categoryId ? {
+          ...c,
+          brands: c.brands.map(b => b.id === brandId ? { ...b, models: b.models.filter(m => m.id !== modelId) } : b)
+        } : c)
+      })),
+
+      // STAFF
+      completeBooking: (id) => set((state) => ({
+        bookings: state.bookings.map(b => b.id === id ? { ...b, bookingStatus: "COMPLETED" as const, paymentStatus: "PAID" as const } : b)
       })),
     }),
     {
-      // CHANGED NAME TO FORCE FRESH START - Fixes corrupted cache!
-      name: 'estate-car-wash-v2', 
+      name: 'estate-car-wash-v4', // FORCED FRESH START
     }
   )
 );
 
-
-
-// Add this to the bottom of src/lib/store.ts
 export const useHydrated = () => {
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {

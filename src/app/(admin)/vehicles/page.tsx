@@ -3,6 +3,11 @@ import { useState, useEffect } from "react";
 import { Plus, ChevronDown, ChevronRight, Trash2, Edit, X } from "lucide-react";
 import { useStore } from "@/lib/store";
 
+const POPULAR_BRANDS = [
+  "Maruti Suzuki", "Hyundai", "Tata", "Mahindra", "Toyota", "Honda", "Kia", 
+  "Volkswagen", "Skoda", "Nissan", "BMW", "Mercedes-Benz", "Audi", "Renault", "Porsche"
+];
+
 export default function VehiclesPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -11,6 +16,10 @@ export default function VehiclesPage() {
   const addVehicleCategory = useStore((state) => state.addVehicleCategory);
   const addVehicleBrand = useStore((state) => state.addVehicleBrand);
   const addVehicleModel = useStore((state) => state.addVehicleModel);
+  
+  const deleteVehicleCategory = useStore((state) => state.deleteVehicleCategory);
+  const deleteVehicleBrand = useStore((state) => state.deleteVehicleBrand);
+  const deleteVehicleModel = useStore((state) => state.deleteVehicleModel);
 
   const [isOpen, setIsOpen] = useState<Record<string, boolean>>({});
   const [showModal, setShowModal] = useState(false);
@@ -23,6 +32,8 @@ export default function VehiclesPage() {
   if (!mounted) return null;
 
   const handleAddItem = () => {
+    console.log("Save Item Clicked!", { addLevel, newName, selectedParentCat, selectedParentBrand }); // CHECK CONSOLE FOR THIS!
+    
     if (!newName.trim()) return;
 
     if (addLevel === "CATEGORY") {
@@ -35,7 +46,6 @@ export default function VehiclesPage() {
       addVehicleModel(selectedParentCat, selectedParentBrand, { id: `model_${Date.now()}`, name: newName });
     }
 
-    // Reset everything
     setNewName(""); 
     setSelectedParentCat(""); 
     setSelectedParentBrand(""); 
@@ -91,7 +101,7 @@ export default function VehiclesPage() {
                     value={selectedParentCat} 
                     onChange={(e) => {
                       setSelectedParentCat(e.target.value); 
-                      setSelectedParentBrand(""); // Reset brand when category changes
+                      setSelectedParentBrand("");
                     }} 
                     className={inputClasses}
                   >
@@ -105,8 +115,8 @@ export default function VehiclesPage() {
                     <label className={labelClasses}>Under which Brand?</label>
                     <select value={selectedParentBrand} onChange={(e) => setSelectedParentBrand(e.target.value)} className={inputClasses}>
                       <option value="" disabled>Select brand</option>
-                      {hierarchy.find(c => c.id === selectedParentCat)?.brands.map(b => (
-                        <option key={b.id} value={b.id}>{b.name}</option>
+                      {[...new Set([...POPULAR_BRANDS, ...hierarchy.find(c => c.id === selectedParentCat)?.brands.map(b => b.name) || []])].sort().map(b => (
+                        <option key={b} value={b}>{b}</option>
                       ))}
                     </select>
                   </div>
@@ -127,8 +137,7 @@ export default function VehiclesPage() {
 
             <button 
               onClick={handleAddItem} 
-              disabled={addLevel !== "CATEGORY" && (!selectedParentCat || (addLevel === "MODEL" && !selectedParentBrand))}
-              className="flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light"
             >
               Save Item
             </button>
@@ -136,7 +145,6 @@ export default function VehiclesPage() {
         </div>
       )}
 
-      {/* Header & Actions */}
       <div className="flex items-center justify-between mb-10">
         <div>
           <h2 className="text-3xl font-bold uppercase tracking-normal text-ink">Vehicle Master</h2>
@@ -160,7 +168,7 @@ export default function VehiclesPage() {
               </div>
               <div className="flex gap-3">
                 <button className="text-muted hover:text-ink transition-colors"><Edit size={16} /></button>
-                <button className="text-muted hover:text-m-red transition-colors"><Trash2 size={16} /></button>
+                <button onClick={(e) => { e.stopPropagation(); deleteVehicleCategory(cat.id); }} className="text-muted hover:text-m-red transition-colors"><Trash2 size={16} /></button>
               </div>
             </div>
 
@@ -176,7 +184,7 @@ export default function VehiclesPage() {
                           <p className="text-sm font-bold text-ink">{brand.name}</p>
                           <div className="flex gap-3">
                             <button className="text-muted hover:text-ink transition-colors"><Edit size={14} /></button>
-                            <button className="text-muted hover:text-m-red transition-colors"><Trash2 size={14} /></button>
+                            <button onClick={() => deleteVehicleBrand(cat.id, brand.id)} className="text-muted hover:text-m-red transition-colors"><Trash2 size={14} /></button>
                           </div>
                         </div>
 
@@ -186,7 +194,7 @@ export default function VehiclesPage() {
                               <p className="text-xs font-light text-body">{model.name}</p>
                               <div className="flex gap-3">
                                 <button className="text-muted hover:text-ink transition-colors"><Edit size={12} /></button>
-                                <button className="text-muted hover:text-m-red transition-colors"><Trash2 size={12} /></button>
+                                <button onClick={() => deleteVehicleModel(cat.id, brand.id, model.id)} className="text-muted hover:text-m-red transition-colors"><Trash2 size={12} /></button>
                               </div>
                             </div>
                           </div>
