@@ -55,9 +55,29 @@ export default function BookService() {
     return service.pricing[currentCategory] || 0;
   };
 
-  const getTodayDate = () => {
+    const getTodayDate = () => {
     const today = new Date();
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  };
+
+  // ADD THIS: Disable past time slots if selected date is today
+  const isSlotDisabled = (slotLabel: string) => {
+    if (selectedDate !== getTodayDate()) return false;
+    
+    // Extract the end time from the slot label (e.g., "08:00–10:00 AM" -> "10:00 AM")
+    const endTimeStr = slotLabel.split("–")[1].trim();
+    const slotEndTime = new Date(`${getTodayDate()}T${convertTo24Hour(endTimeStr)}`);
+    
+    return slotEndTime < new Date();
+  };
+
+  // Helper to convert 12-hour to 24-hour for comparison
+  const convertTo24Hour = (time12h: string) => {
+    const [time, modifier] = time12h.split(" ");
+    let [hours, minutes] = time.split(":");
+    if (hours === "12") hours = "00";
+    if (modifier === "PM") hours = String(parseInt(hours, 10) + 12);
+    return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
   };
 
   const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-m-blue-dark focus:outline-none transition-colors appearance-none";
@@ -245,8 +265,14 @@ export default function BookService() {
           <p className="text-xs font-bold uppercase tracking-machined text-muted mb-2">Time Slot</p>
           <div className="grid grid-cols-2 gap-3">
             {timeSlots.map(t => (
-              <button key={t} onClick={() => setSelectedTime(t)}
-                className={`border p-3 text-center transition-colors ${selectedTime === t ? "border-m-blue-dark bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body"}`}>
+              <button 
+                key={t} 
+                onClick={() => setSelectedTime(t)}
+                disabled={isSlotDisabled(t)} 
+                className={`border p-3 text-center transition-colors ${
+                  selectedTime === t ? "border-m-blue-dark bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body"
+                } ${isSlotDisabled(t) ? "opacity-30 cursor-not-allowed hover:border-hairline" : ""}`} // ADD THIS
+              >
                 <p className="text-xs font-bold text-ink">{t}</p>
               </button>
             ))}

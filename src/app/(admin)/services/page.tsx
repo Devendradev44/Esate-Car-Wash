@@ -1,57 +1,79 @@
 "use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Search, Edit, Trash2, X } from "lucide-react";
-import { useStore } from "@/lib/store"; // IMPORT THE STORE!
+import { useStore } from "@/lib/store";
 
 const vehicleCategories = ["Hatchback", "Sedan", "SUV", "Luxury"];
 
 export default function ServicesPage() {
-  // --- READ FROM GLOBAL STORE ---
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const services = useStore((state) => state.services);
   const addService = useStore((state) => state.addService);
+  const updateService = useStore((state) => state.updateService);
+  const deleteService = useStore((state) => state.deleteService);
 
-  // --- LOCAL UI STATE ---
   const [searchQuery, setSearchQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentId, setCurrentId] = useState("");
   
-  // Form State for New Service (Prices are strings for the input, converted later)
-  const [newName, setNewName] = useState("");
-  const [newDesc, setNewDesc] = useState("");
-  const [newPricing, setNewPricing] = useState<Record<string, string>>({
+  const [name, setName] = useState("");
+  const [desc, setDesc] = useState("");
+  const [pricing, setPricing] = useState<Record<string, string>>({
     Hatchback: "", Sedan: "", SUV: "", Luxury: ""
   });
+
+  if (!mounted) return null;
 
   const filteredServices = services.filter(s => 
     s.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handlePricingChange = (category: string, value: string) => {
-    setNewPricing(prev => ({ ...prev, [category]: value }));
+  const openAddModal = () => {
+    setIsEditing(false);
+    setName(""); setDesc("");
+    setPricing({ Hatchback: "", Sedan: "", SUV: "", Luxury: "" });
+    setShowModal(true);
   };
 
-  // --- WRITE TO GLOBAL STORE ---
-  const handleAddService = () => {
-    if (!newName) return;
+  const openEditModal = (id: string, n: string, d: string, p: Record<string, number>) => {
+    setIsEditing(true);
+    setCurrentId(id);
+    setName(n); setDesc(d);
+    // Convert numbers back to strings for the form inputs
+    const stringPricing: Record<string, string> = {};
+    vehicleCategories.forEach(cat => stringPricing[cat] = p[cat]?.toString() || "");
+    setPricing(stringPricing);
+    setShowModal(true);
+  };
+
+  const handlePricingChange = (category: string, value: string) => {
+    setPricing(prev => ({ ...prev, [category]: value }));
+  };
+
+  const handleSaveService = () => {
+    if (!name) return;
     
-    // Convert string inputs to numbers for the data table
     const numericPricing: Record<string, number> = {};
-    for (const [cat, priceStr] of Object.entries(newPricing)) {
-      numericPricing[cat] = Number(priceStr) || 0; // Default to 0 if left blank
+    for (const [cat, priceStr] of Object.entries(pricing)) {
+      numericPricing[cat] = Number(priceStr) || 0;
     }
 
-    // CALL THE ZUSTAND ACTION!
-    addService({
-      id: `s${Date.now()}`,
-      name: newName,
-      description: newDesc,
-      pricing: numericPricing
-    });
+    if (isEditing) {
+      updateService(currentId, name, desc, numericPricing);
+    } else {
+      addService({
+        id: `s${Date.now()}`,
+        name,
+        description: desc,
+        pricing: numericPricing
+      });
+    }
 
-    // Reset form
-    setNewName("");
-    setNewDesc("");
-    setNewPricing({ Hatchback: "", Sedan: "", SUV: "", Luxury: "" });
+    setName(""); setDesc("");
+    setPricing({ Hatchback: "", Sedan: "", SUV: "", Luxury: "" });
     setShowModal(false);
   };
 
@@ -60,26 +82,24 @@ export default function ServicesPage() {
 
   return (
     <div className="p-12 relative">
-      {/* Add Service Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 overflow-y-auto py-10">
           <div className="w-full max-w-lg border border-hairline bg-surface-soft p-8 mx-4">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-bold uppercase text-ink">Add Service & Pricing</h3>
+              <h3 className="text-xl font-bold uppercase text-ink">{isEditing ? "Edit Service" : "Add Service & Pricing"}</h3>
               <button onClick={() => setShowModal(false)} className="text-muted hover:text-ink"><X size={20} /></button>
             </div>
             
             <div className="mb-6">
               <label className={labelClasses}>Service Name</label>
-              <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Premium Wash" className={inputClasses} />
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Premium Wash" className={inputClasses} />
             </div>
             
             <div className="mb-8">
               <label className={labelClasses}>Description</label>
-              <input type="text" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="e.g. Deep interior detailing" className={inputClasses} />
+              <input type="text" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="e.g. Deep interior detailing" className={inputClasses} />
             </div>
 
-            {/* The Pricing Matrix (Crucial for Schema alignment!) */}
             <label className={labelClasses}>Pricing by Vehicle Category (₹)</label>
             <div className="grid grid-cols-2 gap-4 mb-8">
               {vehicleCategories.map(cat => (
@@ -88,7 +108,7 @@ export default function ServicesPage() {
                   <input 
                     type="number" 
                     min="0"
-                    value={newPricing[cat]} 
+                    value={pricing[cat]} 
                     onChange={(e) => handlePricingChange(cat, e.target.value)} 
                     placeholder="0" 
                     className={inputClasses + " text-center"} 
@@ -97,38 +117,34 @@ export default function ServicesPage() {
               ))}
             </div>
 
-            <button onClick={handleAddService} className="flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light">
-              Save Service
+            <button onClick={handleSaveService} className="flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light">
+              {isEditing ? "Save Changes" : "Save Service"}
             </button>
           </div>
         </div>
       )}
 
-      {/* Header & Actions */}
-      <div className="flex items-center justify-between mb-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
         <div>
           <h2 className="text-3xl font-bold uppercase tracking-normal text-ink">Services & Pricing</h2>
           <p className="mt-2 text-sm font-light text-body">Define services and their category-specific prices.</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="flex items-center gap-2 bg-m-blue-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light transition-colors">
+        <button onClick={openAddModal} className="flex items-center justify-center gap-2 bg-m-blue-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light transition-colors">
           <Plus size={14} /> Add Service
         </button>
       </div>
 
-      {/* Search Bar */}
       <div className="mb-6 flex items-center gap-3 border border-hairline bg-surface-card p-3">
         <Search size={16} className="text-muted" />
         <input type="text" placeholder="Search services..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={inputClasses + " border-none bg-transparent p-0 focus:outline-none"} />
       </div>
 
-      {/* Data Table */}
-      <div className="border border-hairline overflow-x-auto">
+      <div className="border border-hairline overflow-x-auto bg-surface-card">
         <table className="w-full min-w-[800px]">
           <thead className="border-b border-hairline bg-surface-soft">
             <tr>
               <th className="py-4 px-6 text-left text-xs font-bold uppercase tracking-machined text-muted">Name</th>
               <th className="py-4 px-6 text-left text-xs font-bold uppercase tracking-machined text-muted">Desc</th>
-              {/* Dynamically generate category columns */}
               {vehicleCategories.map(cat => (
                 <th key={cat} className="py-4 px-6 text-center text-xs font-bold uppercase tracking-machined text-muted">{cat} Price</th>
               ))}
@@ -137,22 +153,27 @@ export default function ServicesPage() {
           </thead>
           
           <tbody>
-            {filteredServices.map(s => (
-              <tr key={s.id} className="border-b border-hairline hover:bg-surface-card transition-colors">
-                <td className="py-4 px-6 text-sm font-bold text-ink">{s.name}</td>
-                <td className="py-4 px-6 text-sm font-light text-body">{s.description}</td>
-                {/* Render the prices in the matrix */}
-                {vehicleCategories.map(cat => (
-                  <td key={cat} className="py-4 px-6 text-sm font-bold text-m-blue-dark text-center">₹{s.pricing[cat]}</td>
-                ))}
-                <td className="py-4 px-6 text-right">
-                  <div className="flex items-center justify-end gap-3">
-                    <button className="text-muted hover:text-ink transition-colors"><Edit size={16} /></button>
-                    <button className="text-muted hover:text-m-red transition-colors"><Trash2 size={16} /></button>
-                  </div>
-                </td>
+            {filteredServices.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-10 text-center text-sm font-light text-muted">No services added yet.</td>
               </tr>
-            ))}
+            ) : (
+              filteredServices.map(s => (
+                <tr key={s.id} className="border-b border-hairline last:border-none hover:bg-surface-elevated transition-colors">
+                  <td className="py-4 px-6 text-sm font-bold text-ink">{s.name}</td>
+                  <td className="py-4 px-6 text-sm font-light text-body">{s.description}</td>
+                  {vehicleCategories.map(cat => (
+                    <td key={cat} className="py-4 px-6 text-sm font-bold text-m-blue-dark text-center">₹{s.pricing[cat] || 0}</td>
+                  ))}
+                  <td className="py-4 px-6 text-right">
+                    <div className="flex items-center justify-end gap-3">
+                      <button onClick={() => openEditModal(s.id, s.name, s.description, s.pricing)} className="text-muted hover:text-ink transition-colors"><Edit size={16} /></button>
+                      <button onClick={() => deleteService(s.id)} className="text-muted hover:text-m-red transition-colors"><Trash2 size={16} /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

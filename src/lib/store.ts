@@ -74,38 +74,51 @@ type AppStore = {
   addresses: CustomerAddress[];
   customerGarage: CustomerVehicle[];
 
-  // Actions
+  // Community Actions
   addCommunity: (community: Community) => void;
   updateCommunityStatus: (id: string, status: "ACTIVE" | "HIDDEN") => void;
-  addAddress: (address: CustomerAddress) => void;
-  addCustomerVehicle: (vehicle: CustomerVehicle) => void;
-  addService: (service: ServiceItem) => void;
-  addBooking: (booking: BookingItem) => void;
-  addExpense: (expense: ExpenseItem) => void;
-  cancelBooking: (id: string) => void;
-  addStaff: (staff: StaffItem) => void;
-  deleteCommunity: (id: string) => void;
   updateCommunity: (id: string, name: string, address: string) => void;
-  updateStaff: (id: string, name: string, phone: string, community: string) => void;
-  deleteStaff: (id: string) => void;
-  updateVehicleCategory: (id: string, name: string) => void;
-  updateVehicleBrand: (categoryId: string, brandId: string, name: string) => void;
-  updateVehicleModel: (categoryId: string, brandId: string, modelId: string, name: string) => void;
-  updateService: (id: string, name: string, description: string, pricing: Record<string, number>) => void;
-  deleteService: (id: string) => void;
-  updateExpense: (id: string, date: string, name: string, amount: number, category: string, paymentType: string, notes: string) => void;
-  deleteExpense: (id: string) => void;
+  deleteCommunity: (id: string) => void;
+
+  // Address Actions
+  addAddress: (address: CustomerAddress) => void;
+  updateAddress: (id: string, community: string, flat: string) => void;
+  deleteAddress: (id: string) => void;
+
+  // Vehicle Actions
+  addCustomerVehicle: (vehicle: CustomerVehicle) => void;
   updateCustomerVehicle: (id: string, reg: string) => void;
   deleteCustomerVehicle: (id: string) => void;
   
   addVehicleCategory: (category: VehicleCategory) => void;
   addVehicleBrand: (categoryId: string, brand: VehicleBrand) => void;
   addVehicleModel: (categoryId: string, brandId: string, model: VehicleModel) => void;
+  updateVehicleCategory: (id: string, name: string) => void;
+  updateVehicleBrand: (categoryId: string, brandId: string, name: string) => void;
+  updateVehicleModel: (categoryId: string, brandId: string, modelId: string, name: string) => void;
   deleteVehicleCategory: (id: string) => void;
   deleteVehicleBrand: (categoryId: string, brandId: string) => void;
   deleteVehicleModel: (categoryId: string, brandId: string, modelId: string) => void;
-  
+
+  // Service Actions
+  addService: (service: ServiceItem) => void;
+  updateService: (id: string, name: string, description: string, pricing: Record<string, number>) => void;
+  deleteService: (id: string) => void;
+
+  // Booking Actions
+  addBooking: (booking: BookingItem) => void;
+  cancelBooking: (id: string) => void;
   completeBooking: (id: string) => void;
+
+  // Expense Actions
+  addExpense: (expense: ExpenseItem) => void;
+  updateExpense: (id: string, date: string, name: string, amount: number, category: string, paymentType: string, notes: string) => void;
+  deleteExpense: (id: string) => void;
+
+  // Staff Actions
+  addStaff: (staff: StaffItem) => void;
+  updateStaff: (id: string, name: string, phone: string, community: string) => void;
+  deleteStaff: (id: string) => void;
 };
 
 export const useStore = create<AppStore>()(
@@ -132,6 +145,7 @@ export const useStore = create<AppStore>()(
       ],
 
       // --- MUTATIONS ---
+      // Community
       addCommunity: (newCommunity) => set((state) => ({ communities: [...state.communities, newCommunity] })),
       updateCommunityStatus: (id, status) => set((state) => ({
         communities: state.communities.map(c => c.id === id ? { ...c, status } : c)
@@ -140,20 +154,45 @@ export const useStore = create<AppStore>()(
       updateCommunity: (id, name, address) => set((state) => ({
         communities: state.communities.map(c => c.id === id ? { ...c, name, address } : c)
       })),
-      addAddress: (newAddress) => set((state) => ({ addresses: [...state.addresses, newAddress] })),
-      addCustomerVehicle: (newVehicle) => set((state) => ({ customerGarage: [...state.customerGarage, newVehicle] })),
-      addService: (newService) => set((state) => ({ services: [...state.services, newService] })),
-      addBooking: (newBooking) => set((state) => ({ bookings: [newBooking, ...state.bookings] })),
-      addExpense: (newExpense) => set((state) => ({ expenses: [newExpense, ...state.expenses] })),
-      cancelBooking: (id) => set((state) => ({
-        bookings: state.bookings.map(b => b.id === id ? { ...b, bookingStatus: "CANCELLED" as const, paymentStatus: "REFUNDED" as const } : b)
-      })),
-      addStaff: (newStaff) => set((state) => ({ staff: [...state.staff, newStaff] })),
-        updateStaff: (id, name, phone, community) => set((state) => ({
-        staff: state.staff.map(s => s.id === id ? { ...s, name, phone, community } : s)
-      })),
-      deleteStaff: (id) => set((state) => ({ staff: state.staff.filter(s => s.id !== id) })),
 
+      // Address
+      addAddress: (newAddress) => set((state) => ({ addresses: [...state.addresses, newAddress] })),
+      updateAddress: (id, community, flat) => set((state) => ({ 
+        addresses: state.addresses.map(a => a.id === id ? { ...a, community, flat } : a) 
+      })),
+      deleteAddress: (id) => set((state) => ({ addresses: state.addresses.filter(a => a.id !== id) })),
+
+      // Customer Vehicles
+      addCustomerVehicle: (newVehicle) => set((state) => ({ customerGarage: [...state.customerGarage, newVehicle] })),
+      updateCustomerVehicle: (id, reg) => set((state) => ({
+        customerGarage: state.customerGarage.map(v => v.id === id ? { ...v, reg } : v)
+      })),
+      deleteCustomerVehicle: (id) => set((state) => ({ customerGarage: state.customerGarage.filter(v => v.id !== id) })),
+
+      // Vehicle Master
+      addVehicleCategory: (newCategory) => set((state) => ({ vehicles: [...state.vehicles, newCategory] })),
+      addVehicleBrand: (categoryId, newBrand) => set((state) => ({
+        vehicles: state.vehicles.map(cat => cat.id === categoryId ? { ...cat, brands: [...cat.brands, newBrand] } : cat)
+      })),
+      addVehicleModel: (categoryId, brandName, newModel) => set((state) => ({
+        vehicles: state.vehicles.map(cat => {
+          if (cat.id !== categoryId) return cat;
+          const brandExists = cat.brands.find(b => b.name === brandName);
+          if (brandExists) {
+            return {
+              ...cat,
+              brands: cat.brands.map(brand => 
+                brand.name === brandName ? { ...brand, models: [...brand.models, newModel] } : brand
+              )
+            };
+          } else {
+            return {
+              ...cat,
+              brands: [...cat.brands, { id: `brand_${Date.now()}`, name: brandName, models: [newModel] }]
+            };
+          }
+        })
+      })),
       updateVehicleCategory: (id, name) => set((state) => ({
         vehicles: state.vehicles.map(c => c.id === id ? { ...c, name } : c)
       })),
@@ -172,50 +211,6 @@ export const useStore = create<AppStore>()(
           } : b)
         } : c)
       })),
-      updateService: (id, name, description, pricing) => set((state) => ({
-        services: state.services.map(s => s.id === id ? { ...s, name, description, pricing } : s)
-      })),
-      deleteService: (id) => set((state) => ({ services: state.services.filter(s => s.id !== id) })),
-
-      updateExpense: (id, date, name, amount, category, paymentType, notes) => set((state) => ({
-        expenses: state.expenses.map(e => e.id === id ? { ...e, date, name, amount, category, paymentType, notes } : e)
-      })),
-      deleteExpense: (id) => set((state) => ({ expenses: state.expenses.filter(e => e.id !== id) })),
-
-      updateCustomerVehicle: (id, reg) => set((state) => ({
-        customerGarage: state.customerGarage.map(v => v.id === id ? { ...v, reg } : v)
-      })),
-      deleteCustomerVehicle: (id) => set((state) => ({ customerGarage: state.customerGarage.filter(v => v.id !== id) })),
-          
-      // VEHICLES
-      addVehicleCategory: (newCategory) => set((state) => ({ vehicles: [...state.vehicles, newCategory] })),
-      addVehicleBrand: (categoryId, newBrand) => set((state) => ({
-        vehicles: state.vehicles.map(cat => cat.id === categoryId ? { ...cat, brands: [...cat.brands, newBrand] } : cat)
-      })),
-      addVehicleModel: (categoryId, brandName, newModel) => set((state) => ({
-        vehicles: state.vehicles.map(cat => {
-          if (cat.id !== categoryId) return cat;
-          
-        // Check if brand already exists by NAME
-          const brandExists = cat.brands.find(b => b.name === brandName);
-          
-          if (brandExists) {
-            // Brand exists, just add the model
-            return {
-              ...cat,
-              brands: cat.brands.map(brand => 
-                brand.name === brandName ? { ...brand, models: [...brand.models, newModel] } : brand
-              )
-            };
-          } else {
-            // Brand doesn't exist, create it and add the model!
-            return {
-              ...cat,
-              brands: [...cat.brands, { id: `brand_${Date.now()}`, name: brandName, models: [newModel] }]
-            };
-          }
-        })
-      })),
       deleteVehicleCategory: (id) => set((state) => ({ vehicles: state.vehicles.filter(c => c.id !== id) })),
       deleteVehicleBrand: (categoryId, brandId) => set((state) => ({
         vehicles: state.vehicles.map(c => c.id === categoryId ? { ...c, brands: c.brands.filter(b => b.id !== brandId) } : c)
@@ -227,13 +222,38 @@ export const useStore = create<AppStore>()(
         } : c)
       })),
 
-      // STAFF
+      // Services
+      addService: (newService) => set((state) => ({ services: [...state.services, newService] })),
+      updateService: (id, name, description, pricing) => set((state) => ({
+        services: state.services.map(s => s.id === id ? { ...s, name, description, pricing } : s)
+      })),
+      deleteService: (id) => set((state) => ({ services: state.services.filter(s => s.id !== id) })),
+
+      // Bookings
+      addBooking: (newBooking) => set((state) => ({ bookings: [newBooking, ...state.bookings] })),
+      cancelBooking: (id) => set((state) => ({
+        bookings: state.bookings.map(b => b.id === id ? { ...b, bookingStatus: "CANCELLED" as const, paymentStatus: "REFUNDED" as const } : b)
+      })),
       completeBooking: (id) => set((state) => ({
         bookings: state.bookings.map(b => b.id === id ? { ...b, bookingStatus: "COMPLETED" as const, paymentStatus: "PAID" as const } : b)
       })),
+
+      // Expenses
+      addExpense: (newExpense) => set((state) => ({ expenses: [...state.expenses, newExpense] })),
+      updateExpense: (id, date, name, amount, category, paymentType, notes) => set((state) => ({
+        expenses: state.expenses.map(e => e.id === id ? { ...e, date, name, amount, category, paymentType, notes } : e)
+      })),
+      deleteExpense: (id) => set((state) => ({ expenses: state.expenses.filter(e => e.id !== id) })),
+
+      // Staff
+      addStaff: (newStaff) => set((state) => ({ staff: [...state.staff, newStaff] })),
+      updateStaff: (id, name, phone, community) => set((state) => ({
+        staff: state.staff.map(s => s.id === id ? { ...s, name, phone, community } : s)
+      })),
+      deleteStaff: (id) => set((state) => ({ staff: state.staff.filter(s => s.id !== id) })),
     }),
     {
-      name: 'estate-car-wash-v4', // FORCED FRESH START
+      name: 'estate-car-wash-v5', // Bumped to v5 to ensure clean state
     }
   )
 );

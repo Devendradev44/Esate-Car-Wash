@@ -36,14 +36,19 @@ export default function ProfilePage() {
         </div>
 
         {/* Details List */}
+                
         <div className="border border-hairline bg-surface-card divide-y divide-hairline">
           <div className="flex items-center p-4">
             <Phone size={16} className="text-muted mr-4" />
-            <p className="text-sm font-light text-ink">+91 98765 43210</p>
+            <p className="text-sm font-light text-ink">{mockUser?.phone || "9999999999"}</p>
           </div>
           <div className="flex items-center p-4">
             <Mail size={16} className="text-muted mr-4" />
-            <p className="text-sm font-light text-ink">Not added</p>
+            <input 
+              type="email" 
+              defaultValue="rahul.sharma@example.com" 
+              className="bg-transparent text-sm font-light text-ink focus:outline-none w-full" 
+            />
             <ChevronRight size={16} className="text-muted ml-auto" />
           </div>
         </div>
