@@ -86,6 +86,17 @@ type AppStore = {
   addStaff: (staff: StaffItem) => void;
   deleteCommunity: (id: string) => void;
   updateCommunity: (id: string, name: string, address: string) => void;
+  updateStaff: (id: string, name: string, phone: string, community: string) => void;
+  deleteStaff: (id: string) => void;
+  updateVehicleCategory: (id: string, name: string) => void;
+  updateVehicleBrand: (categoryId: string, brandId: string, name: string) => void;
+  updateVehicleModel: (categoryId: string, brandId: string, modelId: string, name: string) => void;
+  updateService: (id: string, name: string, description: string, pricing: Record<string, number>) => void;
+  deleteService: (id: string) => void;
+  updateExpense: (id: string, date: string, name: string, amount: number, category: string, paymentType: string, notes: string) => void;
+  deleteExpense: (id: string) => void;
+  updateCustomerVehicle: (id: string, reg: string) => void;
+  deleteCustomerVehicle: (id: string) => void;
   
   addVehicleCategory: (category: VehicleCategory) => void;
   addVehicleBrand: (categoryId: string, brand: VehicleBrand) => void;
@@ -138,7 +149,44 @@ export const useStore = create<AppStore>()(
         bookings: state.bookings.map(b => b.id === id ? { ...b, bookingStatus: "CANCELLED" as const, paymentStatus: "REFUNDED" as const } : b)
       })),
       addStaff: (newStaff) => set((state) => ({ staff: [...state.staff, newStaff] })),
-      
+        updateStaff: (id, name, phone, community) => set((state) => ({
+        staff: state.staff.map(s => s.id === id ? { ...s, name, phone, community } : s)
+      })),
+      deleteStaff: (id) => set((state) => ({ staff: state.staff.filter(s => s.id !== id) })),
+
+      updateVehicleCategory: (id, name) => set((state) => ({
+        vehicles: state.vehicles.map(c => c.id === id ? { ...c, name } : c)
+      })),
+      updateVehicleBrand: (categoryId, brandId, name) => set((state) => ({
+        vehicles: state.vehicles.map(c => c.id === categoryId ? {
+          ...c,
+          brands: c.brands.map(b => b.id === brandId ? { ...b, name } : b)
+        } : c)
+      })),
+      updateVehicleModel: (categoryId, brandId, modelId, name) => set((state) => ({
+        vehicles: state.vehicles.map(c => c.id === categoryId ? {
+          ...c,
+          brands: c.brands.map(b => b.id === brandId ? {
+            ...b,
+            models: b.models.map(m => m.id === modelId ? { ...m, name } : m)
+          } : b)
+        } : c)
+      })),
+      updateService: (id, name, description, pricing) => set((state) => ({
+        services: state.services.map(s => s.id === id ? { ...s, name, description, pricing } : s)
+      })),
+      deleteService: (id) => set((state) => ({ services: state.services.filter(s => s.id !== id) })),
+
+      updateExpense: (id, date, name, amount, category, paymentType, notes) => set((state) => ({
+        expenses: state.expenses.map(e => e.id === id ? { ...e, date, name, amount, category, paymentType, notes } : e)
+      })),
+      deleteExpense: (id) => set((state) => ({ expenses: state.expenses.filter(e => e.id !== id) })),
+
+      updateCustomerVehicle: (id, reg) => set((state) => ({
+        customerGarage: state.customerGarage.map(v => v.id === id ? { ...v, reg } : v)
+      })),
+      deleteCustomerVehicle: (id) => set((state) => ({ customerGarage: state.customerGarage.filter(v => v.id !== id) })),
+          
       // VEHICLES
       addVehicleCategory: (newCategory) => set((state) => ({ vehicles: [...state.vehicles, newCategory] })),
       addVehicleBrand: (categoryId, newBrand) => set((state) => ({
