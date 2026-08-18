@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { CheckCircle2, MapPin, Car } from "lucide-react";
+import { CheckCircle2, MapPin, Car, XCircle } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 export default function StaffDashboard() {
@@ -9,6 +9,7 @@ export default function StaffDashboard() {
 
   const bookings = useStore((state) => state.bookings);
   const completeBooking = useStore((state) => state.completeBooking);
+   const cancelBooking = useStore((state) => state.cancelBooking);
 
   if (!mounted) return null;
 
@@ -50,12 +51,20 @@ export default function StaffDashboard() {
             </div>
 
             {b.bookingStatus === "BOOKED" && (
-              <button 
-                onClick={() => completeBooking(b.id)}
-                className="flex w-full items-center justify-center gap-2 bg-success py-4 text-xs font-bold uppercase tracking-machined text-ink hover:brightness-110 transition-colors"
-              >
-                <CheckCircle2 size={14} /> Mark Complete & Collect ₹{b.amount}
-              </button>
+              <>
+                <button 
+                  onClick={() => completeBooking(b.id)}
+                  className="flex w-full items-center justify-center gap-2 bg-success py-4 text-xs font-bold uppercase tracking-machined text-ink hover:brightness-110 transition-colors mb-2"
+                >
+                  <CheckCircle2 size={14} /> Mark Complete & Collect ₹{b.amount}
+                </button>
+                <button 
+                  onClick={() => cancelBooking(b.id, "STAFF")}
+                  className="flex w-full items-center justify-center gap-2 border border-m-red/50 text-m-red py-3 text-xs font-bold uppercase tracking-machined hover:bg-m-red hover:text-ink transition-colors"
+                >
+                  <XCircle size={14} /> Cancel Booking (No Show)
+                </button>
+              </>
             )}
           </div>
         ))}

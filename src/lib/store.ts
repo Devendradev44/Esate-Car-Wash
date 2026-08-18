@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { useState, useEffect } from 'react';
 
 // --- TYPES ---
-type MockUser = { id: string; role: "CUSTOMER" | "STAFF" | "ADMIN"; name: string; phone?: string; email?: string };
+type MockUser = { id: string; role: "CUSTOMER" | "STAFF" | "ADMIN"; name: string; phone: string; email: string };
 type CustomerVehicle = { id: string; category: string; brand: string; model: string; reg: string; isDefault: boolean };
 type CustomerAddress = { id: string; community: string; flat: string };
 type Community = { id: string; name: string; address: string; status: "ACTIVE" | "HIDDEN" };
@@ -14,10 +14,11 @@ type ServiceItem = { id: string; name: string; description: string; pricing: Rec
 type BookingItem = { 
   id: string; bookingCode: string; date: string; time: string; 
   customer: string; flat: string; community: string; vehicle: string; regNumber: string; 
-  service: string; amount: number; bookingStatus: "BOOKED" | "COMPLETED" | "CANCELLED"; paymentStatus: "PENDING" | "PAID" | "REFUNDED"
+  service: string; amount: number; bookingStatus: "BOOKED" | "COMPLETED" | "CANCELLED"; paymentStatus: "PENDING" | "PAID" | "REFUNDED";
+  cancelledBy?: "CUSTOMER" | "ADMIN" | "STAFF"; // ADD THIS
 };
 type ExpenseItem = { id: string; date: string; name: string; category: string; amount: number; paymentType: string; notes: string };
-type StaffItem = { id: string; name: string; phone: string; community: string; pin: string; status: "ACTIVE" | "DISABLED" };
+type StaffItem = { id: string; name: string; phone: string; community: string; pin: string; status: "ACTIVE" | "DISABLED"; role: "STAFF" | "ADMIN" };
 
 // --- INITIAL MOCK DATA ---
 const initialCommunities: Community[] = [
@@ -55,8 +56,16 @@ const initialExpenses: ExpenseItem[] = [
 ];
 
 const initialStaff: StaffItem[] = [
-  { id: "st1", name: "Ramesh Kumar", phone: "9876543210", community: "Prestige Shantiniketan", pin: "1234", status: "ACTIVE" },
-  { id: "st2", name: "Suresh Babu", phone: "9876543211", community: "Sobha Halcyon", pin: "5678", status: "ACTIVE" },
+  { id: "st1", name: "Ramesh Kumar", phone: "9876543210", community: "Prestige Shantiniketan", pin: "1234", status: "ACTIVE", role: "STAFF" },
+  { id: "st2", name: "Suresh Babu ", phone: "9876543211", community: "Sobha Halcyon", pin: "5678", status: "ACTIVE", role: "STAFF" },
+];
+
+const initialTimeSlots = [
+  { id: "ts1", label: "08:00 - 10:00 AM" },
+  { id: "ts2", label: "10:00 - 12:00 PM" },
+  { id: "ts3", label: "12:00 - 02:00 PM" },
+  { id: "ts4", label: "02:00 - 04:00 PM" },
+  { id: "ts5", label: "04:00 - 06:00 PM" },
 ];
 
 // --- THE STORE ---
@@ -73,6 +82,13 @@ type AppStore = {
   staff: StaffItem[];
   addresses: CustomerAddress[];
   customerGarage: CustomerVehicle[];
+
+  updateMockUser: (data: { name?: string; phone?: string; email?: string }) => void;
+  cancelBooking: (id: string, cancelledBy: "CUSTOMER" | "ADMIN" | "STAFF") => void;
+
+  timeSlots: { id: string; label: string }[];
+  addTimeSlot: (label: string) => void;
+  deleteTimeSlot: (id: string) => void;
 
   // Community Actions
   addCommunity: (community: Community) => void;
@@ -107,7 +123,7 @@ type AppStore = {
 
   // Booking Actions
   addBooking: (booking: BookingItem) => void;
-  cancelBooking: (id: string) => void;
+  // cancelBooking: (id: string) => void;
   completeBooking: (id: string) => void;
 
   // Expense Actions
@@ -135,6 +151,20 @@ export const useStore = create<AppStore>()(
       expenses: initialExpenses,
       staff: initialStaff,
       
+      updateMockUser: (data) => set((state) => ({
+        mockUser: state.mockUser ? { ...state.mockUser, ...data } : null
+      })),
+      
+      cancelBooking: (id, cancelledBy) => set((state) => ({
+        bookings: state.bookings.map(b => 
+          b.id === id ? { ...b, bookingStatus: "CANCELLED" as const, paymentStatus: "REFUNDED" as const, cancelledBy } : b
+        )
+      })),
+
+      timeSlots: initialTimeSlots,
+      addTimeSlot: (label) => set((state) => ({ timeSlots: [...state.timeSlots, { id: `ts${Date.now()}`, label }] })),
+      deleteTimeSlot: (id) => set((state) => ({ timeSlots: state.timeSlots.filter(t => t.id !== id) })),
+
       addresses: [
         { id: "a1", community: "Prestige Shantiniketan", flat: "A-401" },
         { id: "a2", community: "Sobha Halcyon", flat: "B-1202" },
@@ -231,9 +261,9 @@ export const useStore = create<AppStore>()(
 
       // Bookings
       addBooking: (newBooking) => set((state) => ({ bookings: [newBooking, ...state.bookings] })),
-      cancelBooking: (id) => set((state) => ({
-        bookings: state.bookings.map(b => b.id === id ? { ...b, bookingStatus: "CANCELLED" as const, paymentStatus: "REFUNDED" as const } : b)
-      })),
+      // cancelBooking: (id) => set((state) => ({
+      //   bookings: state.bookings.map(b => b.id === id ? { ...b, bookingStatus: "CANCELLED" as const, paymentStatus: "REFUNDED" as const } : b)
+      // })),
       completeBooking: (id) => set((state) => ({
         bookings: state.bookings.map(b => b.id === id ? { ...b, bookingStatus: "COMPLETED" as const, paymentStatus: "PAID" as const } : b)
       })),
@@ -253,7 +283,7 @@ export const useStore = create<AppStore>()(
       deleteStaff: (id) => set((state) => ({ staff: state.staff.filter(s => s.id !== id) })),
     }),
     {
-      name: 'estate-car-wash-v5', // Bumped to v5 to ensure clean state
+      name: 'estate-car-wash-v6', // Bumped to v5 to ensure clean state
     }
   )
 );

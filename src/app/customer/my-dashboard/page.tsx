@@ -6,17 +6,16 @@ import { useStore } from "@/lib/store";
 
 export default function CustomerDashboard() {
   const [mounted, setMounted] = useState(false);
-  
   useEffect(() => setMounted(true), []);
   
   const bookings = useStore((state) => state.bookings);
-  const cancelBooking = useStore((state) => state.cancelBooking); // ADD THIS LINE!
+  const cancelBooking = useStore((state) => state.cancelBooking);
 
   if (!mounted) return null;
 
-  // Filter for this mock customer
   const myBookings = bookings.filter(b => b.customer === "Rahul Sharma");
   const upcomingBookings = myBookings.filter(b => b.bookingStatus === "BOOKED");
+  const pastBookings = myBookings.filter(b => b.bookingStatus !== "BOOKED");
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas pb-24">
@@ -61,9 +60,9 @@ export default function CustomerDashboard() {
                     <Car size={12} /> {b.vehicle}
                   </div>
                   
-                  {/* ADD THIS CANCEL BUTTON */}
+                  {/* CANCEL BUTTON */}
                   <button 
-                    onClick={() => cancelBooking(b.id)}
+                    onClick={() => cancelBooking(b.id, "CUSTOMER")}
                     className="flex w-full items-center justify-center gap-2 border border-m-red/50 text-m-red py-3 text-xs font-bold uppercase tracking-machined hover:bg-m-red hover:text-ink transition-colors"
                   >
                     <XCircle size={14} /> Cancel Booking
@@ -73,19 +72,22 @@ export default function CustomerDashboard() {
             </div>
           )}
         </div>
-                {/* Booking History (Completed / Cancelled) */}
+
+        {/* Booking History (Completed / Cancelled) */}
         <div className="mt-8">
           <h2 className="text-xs font-bold uppercase tracking-machined text-muted mb-4">Booking History</h2>
-          {myBookings.filter(b => b.bookingStatus !== "BOOKED").length === 0 ? (
+          {pastBookings.length === 0 ? (
             <div className="border border-hairline p-6 text-center">
               <p className="text-sm font-light text-muted">No past bookings.</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {myBookings.filter(b => b.bookingStatus !== "BOOKED").map(b => (
-                <div key={b.id} className="border border-hairline bg-surface-card p-5 opacity-70">
+              {pastBookings.map(b => (
+                // CHANGED: Removed red border, just using standard card with slight opacity
+                <div key={b.id} className="border border-hairline bg-surface-card p-5 opacity-80">
                   <div className="flex justify-between mb-2">
                     <p className="text-sm font-bold text-ink">{b.service}</p>
+                    {/* CHANGED: Only the badge is red, not the whole card */}
                     <span className={`text-xs font-bold uppercase ${b.bookingStatus === "COMPLETED" ? "text-success" : "text-m-red"}`}>
                       {b.bookingStatus}
                     </span>

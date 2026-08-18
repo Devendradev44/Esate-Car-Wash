@@ -1,18 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { Search, CalendarDays, XCircle, CheckCircle2, Banknote } from "lucide-react";
-import { useStore } from "@/lib/store"; // IMPORT THE STORE!
+import { useState, useEffect } from "react";
+import { Search, CalendarDays, XCircle, CheckCircle2, Banknote, User, Car, Wrench } from "lucide-react";
+import { useStore } from "@/lib/store";
 
 type BookingStatusType = "ALL" | "BOOKED" | "COMPLETED" | "CANCELLED";
 
 export default function BookingsPage() {
-  // READ FROM GLOBAL STORE!
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const bookings = useStore((state) => state.bookings);
   const cancelBooking = useStore((state) => state.cancelBooking);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<BookingStatusType>("ALL");
+
+  if (!mounted) return null;
 
   const filteredBookings = bookings.filter(b => {
     const matchesSearch = 
@@ -25,37 +29,29 @@ export default function BookingsPage() {
     return matchesSearch && matchesFilter;
   });
 
-  // Use the global store action instead of local state
-  const handleCancelBooking = (id: string) => {
-    cancelBooking(id);
-  };
-
   const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-3 text-sm font-light focus:border-m-blue-dark focus:outline-none transition-colors appearance-none";
 
-  // ... (Leave the rest of the JSX exactly as it is! Just make sure the table maps over `filteredBookings` and uses `handleCancelBooking`)
   return (
-    <div className="p-12">
+    <div className="p-6 md:p-12">
       {/* Header */}
       <div className="mb-10">
-        <h2 className="text-3xl font-bold uppercase tracking-normal text-ink">Booking Management</h2>
+        <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-normal text-ink">Booking Management</h2>
         <p className="mt-2 text-sm font-light text-body">View, filter, and manage all customer reservations.</p>
       </div>
 
       {/* Search & Filter Controls */}
       <div className="mb-6 flex flex-col md:flex-row gap-4">
-        {/* Search Bar */}
         <div className="flex-1 flex items-center gap-3 border border-hairline bg-surface-card p-3">
           <Search size={16} className="text-muted" />
-          <input type="text" placeholder="Search by Code, Name, or Reg Number..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={inputClasses + " border-none bg-transparent p-0 focus:outline-none"} />
+          <input type="text" placeholder="Search by Code, Name, or Reg..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={inputClasses + " border-none bg-transparent p-0 focus:outline-none"} />
         </div>
 
-        {/* Status Filter Tabs (BMW M Style) */}
-        <div className="flex border border-hairline bg-surface-card">
+        <div className="flex border border-hairline bg-surface-card overflow-x-auto">
           {(["ALL", "BOOKED", "COMPLETED", "CANCELLED"] as BookingStatusType[]).map(filter => (
             <button 
               key={filter}
               onClick={() => setActiveFilter(filter)}
-              className={`px-4 py-3 text-xs font-bold uppercase tracking-machined transition-colors ${
+              className={`flex-1 px-4 py-3 text-xs font-bold uppercase tracking-machined transition-colors ${
                 activeFilter === filter ? "bg-m-blue-dark text-ink" : "text-muted hover:text-ink"
               }`}
             >
@@ -65,8 +61,66 @@ export default function BookingsPage() {
         </div>
       </div>
 
-      {/* Data Table */}
-      <div className="border border-hairline overflow-x-auto">
+      {/* =========================================
+          MOBILE VIEW: CARDS
+          (Hidden on Desktop, shown on Mobile) 
+          ========================================= */}
+      <div className="md:hidden space-y-4">
+        {filteredBookings.length === 0 ? (
+          <p className="text-center text-muted text-sm font-light py-10">No bookings found.</p>
+        ) : (
+          filteredBookings.map(b => (
+            <div key={b.id} className="border border-hairline bg-surface-card p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <p className="text-sm font-bold text-m-blue-dark">{b.bookingCode}</p>
+                  <p className="text-lg font-bold text-ink mt-1 flex items-center gap-2"><User size={14} className="text-muted"/> {b.customer}</p>
+                  <p className="text-xs font-light text-muted">{b.flat}, {b.community}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-ink">₹{b.amount}</p>
+                  <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-machined mt-1 ${
+                    b.bookingStatus === "BOOKED" ? "text-warning" : 
+                    b.bookingStatus === "COMPLETED" ? "text-success" : "text-muted"
+                  }`}>
+                    {b.bookingStatus === "BOOKED" && <CalendarDays size={10}/>}
+                    {b.bookingStatus === "COMPLETED" && <CheckCircle2 size={10}/>}
+                    {b.bookingStatus === "CANCELLED" && <XCircle size={10}/>}
+                    {b.bookingStatus}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="space-y-2 border-t border-hairline pt-3 mb-4 text-xs font-light text-body">
+                <p className="flex items-center gap-2"><CalendarDays size={12} className="text-muted"/> {b.date} · {b.time}</p>
+                <p className="flex items-center gap-2"><Car size={12} className="text-muted"/> {b.vehicle}</p>
+                <p className="flex items-center gap-2"><Wrench size={12} className="text-muted"/> {b.service}</p>
+                <p className="flex items-center gap-2"><Banknote size={12} className="text-muted"/> {b.paymentStatus}</p>
+              </div>
+
+              {b.bookingStatus === "BOOKED" && (
+                <button 
+                  onClick={() => cancelBooking(b.id, "ADMIN")} 
+                  className="w-full border border-m-red/50 text-m-red py-2 text-xs font-bold uppercase tracking-machined hover:bg-m-red hover:text-ink transition-colors"
+                >
+                  Cancel Booking
+                </button>
+              )}
+              {b.bookingStatus === "CANCELLED" && (
+                <div className="text-right">
+                  <span className="text-[10px] font-light text-muted">By: {b.cancelledBy || "N/A"}</span>
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* =========================================
+          DESKTOP VIEW: TABLE
+          (Hidden on Mobile, shown on Desktop) 
+          ========================================= */}
+      <div className="hidden md:block border border-hairline overflow-x-auto">
         <table className="w-full min-w-[1000px]">
           <thead className="border-b border-hairline bg-surface-soft">
             <tr>
@@ -121,11 +175,22 @@ export default function BookingsPage() {
                 </td>
                 <td className="py-4 px-4 text-right">
                   {b.bookingStatus === "BOOKED" && (
-                    <button onClick={() => cancelBooking(b.id)} className="text-xs font-bold uppercase tracking-machined text-muted hover:text-m-red transition-colors">
+                    <button 
+                      onClick={() => cancelBooking(b.id, "ADMIN")} 
+                      className="text-xs font-bold uppercase tracking-machined text-muted hover:text-m-red transition-colors"
+                    >
                       Cancel
                     </button>
                   )}
                   {b.bookingStatus === "CANCELLED" && (
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-xs font-bold uppercase tracking-machined text-m-red">Cancelled</span>
+                      {b.cancelledBy && (
+                        <span className="text-[10px] font-light text-muted">By: {b.cancelledBy}</span>
+                      )}
+                    </div>
+                  )}
+                  {b.bookingStatus === "COMPLETED" && (
                     <span className="text-xs font-light text-muted">—</span>
                   )}
                 </td>

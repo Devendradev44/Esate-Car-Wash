@@ -127,7 +127,7 @@ export default function BookService() {
   if (!mounted) return null;
 
   return (
-    <div className="flex min-h-screen flex-col bg-canvas pb-44">
+    <div className="flex min-h-screen flex-col bg-canvas pb-44 md:pb-32">
       <div className="border-b border-hairline bg-surface-soft p-6">
         <h1 className="text-2xl font-bold uppercase text-ink">Book a Service</h1>
         <p className="mt-1 text-sm font-light text-body">Fill in the details below to reserve your wash.</p>
@@ -258,7 +258,14 @@ export default function BookService() {
 
         <div className="mb-4">
           <p className="text-xs font-bold uppercase tracking-machined text-muted mb-2">Date</p>
-          <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} min={getTodayDate()} className={inputClasses} />
+          <input 
+            type="date" 
+            value={selectedDate} 
+            onChange={(e) => setSelectedDate(e.target.value)} 
+            min={getTodayDate()} 
+            max={`${new Date().getFullYear() + 1}-12-31`} // ADDED THIS to restrict year
+            className={inputClasses} 
+          />
         </div>
 
         <div className="mb-8">
@@ -282,7 +289,7 @@ export default function BookService() {
       </div>
 
       {/* ================= FIXED BOTTOM RESERVE BUTTON ================= */}
-      <div className="fixed bottom-[70px] left-0 right-0 z-40 border-t border-hairline bg-canvas p-4">
+      <div className="fixed bottom-[60px] md:bottom-0 left-0 right-0 z-40 border-t border-hairline bg-canvas p-4 ">
         {error && (
           <p className="text-xs font-bold uppercase tracking-machined text-m-red mb-3 text-center">
             {error}

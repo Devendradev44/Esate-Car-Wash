@@ -32,7 +32,7 @@ export default function VehiclesPage() {
   const [selectedParentCat, setSelectedParentCat] = useState("");
   const [selectedParentBrand, setSelectedParentBrand] = useState("");
 
-  // Edit Modal State (Unified for all 3 levels)
+  // Edit Modal State
   const [showEditModal, setShowEditModal] = useState(false);
   const [editLevel, setEditLevel] = useState<"CATEGORY" | "BRAND" | "MODEL">("CATEGORY");
   const [editName, setEditName] = useState("");
@@ -40,7 +40,6 @@ export default function VehiclesPage() {
 
   if (!mounted) return null;
 
-  // --- ADD LOGIC ---
   const handleAddItem = () => {
     if (!newName.trim()) return;
     if (addLevel === "CATEGORY") {
@@ -53,7 +52,6 @@ export default function VehiclesPage() {
     setNewName(""); setSelectedParentCat(""); setSelectedParentBrand(""); setShowAddModal(false);
   };
 
-  // --- EDIT LOGIC ---
   const openEditModal = (level: "CATEGORY" | "BRAND" | "MODEL", name: string, ids: { catId?: string, brandId?: string, modelId?: string }) => {
     setEditLevel(level);
     setEditName(name);
@@ -77,7 +75,7 @@ export default function VehiclesPage() {
   const labelClasses = "block text-xs font-bold uppercase tracking-machined text-muted mb-3";
 
   return (
-    <div className="p-12 relative">
+    <div className="p-6 md:p-12 relative">
       {/* ADD MODAL */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
@@ -86,7 +84,6 @@ export default function VehiclesPage() {
               <h3 className="text-xl font-bold uppercase text-ink">Add Vehicle Item</h3>
               <button onClick={() => setShowAddModal(false)} className="text-muted hover:text-ink"><X size={20} /></button>
             </div>
-            {/* ... Add Modal Inputs (Same as you have right now) ... */}
             <div className="mb-4">
               <label className={labelClasses}>What are you adding?</label>
               <select value={addLevel} onChange={(e) => { setAddLevel(e.target.value); setNewName(""); setSelectedParentCat(""); setSelectedParentBrand(""); }} className={inputClasses}>
@@ -155,22 +152,69 @@ export default function VehiclesPage() {
         </div>
       )}
 
-      {/* Header & Actions */}
-      <div className="flex items-center justify-between mb-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
         <div>
-          <h2 className="text-3xl font-bold uppercase tracking-normal text-ink">Vehicle Master</h2>
+          <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-normal text-ink">Vehicle Master</h2>
           <p className="mt-2 text-sm font-light text-body">Manage the 3-tier Category → Brand → Model hierarchy.</p>
         </div>
-        <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 bg-m-blue-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light transition-colors">
+        <button onClick={() => setShowAddModal(true)} className="flex items-center justify-center gap-2 bg-m-blue-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light transition-colors">
           <Plus size={14} /> Add Item
         </button>
       </div>
 
-      {/* Hierarchy Tree */}
-      <div className="border border-hairline bg-surface-card">
+      {/* MOBILE ACCORDION CARDS */}
+      <div className="md:hidden space-y-4">
         {hierarchy.map(cat => (
-          <div key={cat.id} className="border-b border-hairline">
-            {/* CATEGORY LEVEL */}
+          <div key={cat.id} className="border border-hairline bg-surface-card">
+            <div className="flex items-center justify-between p-4 cursor-pointer" onClick={() => setIsOpen(prev => ({ ...prev, [cat.id]: !prev[cat.id] }))}>
+              <div className="flex items-center gap-2">
+                {isOpen[cat.id] ? <ChevronDown size={16} className="text-ink" /> : <ChevronRight size={16} className="text-muted" />}
+                <p className="text-lg font-bold uppercase text-ink">{cat.name}</p>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={(e) => { e.stopPropagation(); openEditModal("CATEGORY", cat.name, { catId: cat.id }); }} className="text-muted hover:text-ink"><Edit size={16} /></button>
+                <button onClick={(e) => { e.stopPropagation(); deleteVehicleCategory(cat.id); }} className="text-muted hover:text-m-red"><Trash2 size={16} /></button>
+              </div>
+            </div>
+            
+            {isOpen[cat.id] && (
+              <div className="border-t border-hairline bg-surface-soft p-4 space-y-3">
+                {cat.brands.length === 0 ? (
+                  <p className="text-xs font-light text-muted text-center py-4">No brands added yet.</p>
+                ) : (
+                  cat.brands.map(brand => (
+                    <div key={brand.id} className="border border-hairline bg-surface-card p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-bold text-ink">{brand.name}</p>
+                        <div className="flex gap-3">
+                          <button onClick={() => openEditModal("BRAND", brand.name, { catId: cat.id, brandId: brand.id })} className="text-muted hover:text-ink"><Edit size={14} /></button>
+                          <button onClick={() => deleteVehicleBrand(cat.id, brand.id)} className="text-muted hover:text-m-red"><Trash2 size={14} /></button>
+                        </div>
+                      </div>
+                      <div className="space-y-1 mt-2 border-t border-hairline pt-2">
+                        {brand.models.map(m => (
+                          <div key={m.id} className="flex items-center justify-between py-1">
+                            <p className="text-xs font-light text-body">{m.name}</p>
+                            <div className="flex gap-3">
+                              <button onClick={() => openEditModal("MODEL", m.name, { catId: cat.id, brandId: brand.id, modelId: m.id })} className="text-muted hover:text-ink"><Edit size={12} /></button>
+                              <button onClick={() => deleteVehicleModel(cat.id, brand.id, m.id)} className="text-muted hover:text-m-red"><Trash2 size={12} /></button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* DESKTOP TREE TABLE */}
+      <div className="hidden md:block border border-hairline bg-surface-card">
+        {hierarchy.map(cat => (
+          <div key={cat.id} className="border-b border-hairline last:border-none">
             <div className="w-full flex items-center justify-between p-6 hover:bg-surface-elevated transition-colors cursor-pointer" onClick={() => setIsOpen(prev => ({ ...prev, [cat.id]: !prev[cat.id] }))}>
               <div className="flex items-center gap-3">
                 {isOpen[cat.id] ? <ChevronDown size={16} className="text-ink" /> : <ChevronRight size={16} className="text-muted" />}
@@ -182,7 +226,6 @@ export default function VehiclesPage() {
               </div>
             </div>
 
-            {/* BRAND LEVEL */}
             {isOpen[cat.id] && (
               <div className="border-t border-hairline bg-surface-soft pl-12 min-h-[40px] flex items-center">
                 {cat.brands.length === 0 ? (
@@ -190,7 +233,7 @@ export default function VehiclesPage() {
                 ) : (
                   <div className="w-full">
                     {cat.brands.map(brand => (
-                      <div key={brand.id} className="border-t border-hairline bg-surface-soft">
+                      <div key={brand.id} className="border-t border-hairline bg-surface-soft first:border-none">
                         <div className="flex items-center justify-between p-4">
                           <p className="text-sm font-bold text-ink">{brand.name}</p>
                           <div className="flex gap-3">
@@ -199,7 +242,6 @@ export default function VehiclesPage() {
                           </div>
                         </div>
 
-                        {/* MODEL LEVEL */}
                         {brand.models.map(model => (
                           <div key={model.id} className="border-t border-hairline bg-surface-soft pl-24">
                             <div className="flex items-center justify-between p-3">

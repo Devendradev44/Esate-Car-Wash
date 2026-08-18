@@ -1,7 +1,6 @@
 "use client";
-
 import { useState, useEffect } from "react";
-import { Plus, Search, Edit, Trash2, EyeOff, Eye, X } from "lucide-react";
+import { Plus, Search, Edit, Trash2, EyeOff, Eye, X, MapPin, Building2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 export default function CommunitiesPage() {
@@ -15,12 +14,8 @@ export default function CommunitiesPage() {
   const updateCommunity = useStore((state) => state.updateCommunity);
 
   const [searchQuery, setSearchQuery] = useState("");
-  
-  // Modal State
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  
-  // Form state
   const [currentId, setCurrentId] = useState("");
   const [newName, setNewName] = useState("");
   const [newAddress, setNewAddress] = useState("");
@@ -39,35 +34,25 @@ export default function CommunitiesPage() {
 
   const openAddModal = () => {
     setIsEditing(false);
-    setNewName("");
-    setNewAddress("");
+    setNewName(""); setNewAddress("");
     setShowModal(true);
   };
 
   const openEditModal = (id: string, name: string, address: string) => {
     setIsEditing(true);
     setCurrentId(id);
-    setNewName(name);
-    setNewAddress(address);
+    setNewName(name); setNewAddress(address);
     setShowModal(true);
   };
 
   const handleSaveCommunity = () => {
     if (!newName || !newAddress) return;
-    
     if (isEditing) {
       updateCommunity(currentId, newName, newAddress);
     } else {
-      addCommunity({
-        id: `c${Date.now()}`,
-        name: newName,
-        address: newAddress,
-        status: "ACTIVE"
-      });
+      addCommunity({ id: `c${Date.now()}`, name: newName, address: newAddress, status: "ACTIVE" });
     }
-
-    setNewName("");
-    setNewAddress("");
+    setNewName(""); setNewAddress("");
     setShowModal(false);
   };
 
@@ -75,10 +60,9 @@ export default function CommunitiesPage() {
   const labelClasses = "block text-xs font-bold uppercase tracking-machined text-muted mb-3";
 
   return (
-    <div className="p-12 relative">
-      {/* Add/Edit Community Modal */}
+    <div className="p-6 md:p-12 relative">
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
           <div className="w-full max-w-md border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-bold uppercase text-ink">{isEditing ? "Edit Community" : "Add Community"}</h3>
@@ -99,24 +83,48 @@ export default function CommunitiesPage() {
         </div>
       )}
 
-      {/* Header & Actions */}
-      <div className="flex items-center justify-between mb-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
         <div>
-          <h2 className="text-3xl font-bold uppercase tracking-normal text-ink">Communities</h2>
+          <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-normal text-ink">Communities</h2>
           <p className="mt-2 text-sm font-light text-body">Manage gated communities and their visibility.</p>
         </div>
-        <button onClick={openAddModal} className="flex items-center gap-2 bg-m-blue-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light transition-colors">
+        <button onClick={openAddModal} className="flex items-center justify-center gap-2 bg-m-blue-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light transition-colors">
           <Plus size={14} /> Add Community
         </button>
       </div>
 
-      {/* Search & Table */}
       <div className="mb-6 flex items-center gap-3 border border-hairline bg-surface-card p-3">
         <Search size={16} className="text-muted" />
         <input type="text" placeholder="Search communities..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={inputClasses + " border-none bg-transparent p-0 focus:outline-none"} />
       </div>
 
-      <div className="border border-hairline overflow-x-auto">
+      {/* MOBILE CARDS */}
+      <div className="md:hidden space-y-4">
+        {filteredCommunities.map(c => (
+          <div key={c.id} className="border border-hairline bg-surface-card p-4">
+            <div className="flex justify-between items-start mb-3">
+              <div className="flex items-center gap-2">
+                <Building2 size={16} className="text-m-blue-dark" />
+                <p className="text-lg font-bold text-ink">{c.name}</p>
+              </div>
+              <span className={`text-[10px] font-bold uppercase tracking-machined px-2 py-1 ${c.status === "ACTIVE" ? "bg-success/20 text-success" : "bg-surface-elevated text-muted"}`}>
+                {c.status}
+              </span>
+            </div>
+            <p className="text-xs font-light text-muted mb-4 flex items-center gap-2"><MapPin size={12} /> {c.address}</p>
+            <div className="flex items-center justify-end gap-4 border-t border-hairline pt-3">
+              <button onClick={() => openEditModal(c.id, c.name, c.address)} className="text-muted hover:text-ink transition-colors"><Edit size={16} /></button>
+              <button onClick={() => toggleStatus(c.id)} className="text-muted hover:text-warning transition-colors">
+                {c.status === "ACTIVE" ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+              <button onClick={() => deleteCommunity(c.id)} className="text-muted hover:text-m-red transition-colors"><Trash2 size={16} /></button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* DESKTOP TABLE */}
+      <div className="hidden md:block border border-hairline overflow-x-auto bg-surface-card">
         <table className="w-full min-w-[600px]">
           <thead className="border-b border-hairline bg-surface-soft">
             <tr>
@@ -128,7 +136,7 @@ export default function CommunitiesPage() {
           </thead>
           <tbody>
             {filteredCommunities.map(c => (
-              <tr key={c.id} className="border-b border-hairline hover:bg-surface-card transition-colors">
+              <tr key={c.id} className="border-b border-hairline last:border-none hover:bg-surface-elevated transition-colors">
                 <td className="py-4 px-6 text-sm font-bold text-ink">{c.name}</td>
                 <td className="py-4 px-6 text-sm font-light text-body">{c.address}</td>
                 <td className="py-4 px-6">
@@ -138,15 +146,10 @@ export default function CommunitiesPage() {
                 </td>
                 <td className="py-4 px-6 text-right">
                   <div className="flex items-center justify-end gap-3">
-                    {/* EDIT BUTTON */}
                     <button onClick={() => openEditModal(c.id, c.name, c.address)} className="text-muted hover:text-ink transition-colors"><Edit size={16} /></button>
-                    
-                    {/* VISIBILITY TOGGLE */}
                     <button onClick={() => toggleStatus(c.id)} className="text-muted hover:text-warning transition-colors">
                       {c.status === "ACTIVE" ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
-                    
-                    {/* DELETE BUTTON */}
                     <button onClick={() => deleteCommunity(c.id)} className="text-muted hover:text-m-red transition-colors"><Trash2 size={16} /></button>
                   </div>
                 </td>
