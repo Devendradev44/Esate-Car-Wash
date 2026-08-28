@@ -19,6 +19,7 @@ export default function CommunitiesPage() {
   const [currentId, setCurrentId] = useState("");
   const [newName, setNewName] = useState("");
   const [newAddress, setNewAddress] = useState("");
+  const [slotCapacity, setSlotCapacity] = useState("1");
 
   if (!mounted) return null;
 
@@ -34,25 +35,26 @@ export default function CommunitiesPage() {
 
   const openAddModal = () => {
     setIsEditing(false);
-    setNewName(""); setNewAddress("");
+    setNewName(""); setNewAddress(""); setSlotCapacity("1");
     setShowModal(true);
   };
 
-  const openEditModal = (id: string, name: string, address: string) => {
+  const openEditModal = (id: string, name: string, address: string, capacity: number) => {
     setIsEditing(true);
     setCurrentId(id);
     setNewName(name); setNewAddress(address);
+    setSlotCapacity(capacity.toString());
     setShowModal(true);
   };
 
   const handleSaveCommunity = () => {
     if (!newName || !newAddress) return;
     if (isEditing) {
-      updateCommunity(currentId, newName, newAddress);
+      updateCommunity(currentId, newName, newAddress, Number(slotCapacity));
     } else {
-      addCommunity({ id: `c${Date.now()}`, name: newName, address: newAddress, status: "ACTIVE" });
+      addCommunity({ id: `c${Date.now()}`, name: newName, address: newAddress, status: "ACTIVE", slotCapacity: Number(slotCapacity) });
     }
-    setNewName(""); setNewAddress("");
+    setNewName(""); setNewAddress(""); setSlotCapacity("1");
     setShowModal(false);
   };
 
@@ -72,9 +74,30 @@ export default function CommunitiesPage() {
               <label className={labelClasses}>Community Name</label>
               <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Adarsh Palm Retreat" className={inputClasses} />
             </div>
-            <div className="mb-8">
+            <div className="mb-4">
               <label className={labelClasses}>Address</label>
               <input type="text" value={newAddress} onChange={(e) => setNewAddress(e.target.value)} placeholder="e.g. Bellandur, Bangalore" className={inputClasses} />
+            </div>
+            <div className="mb-8">
+              <label className={labelClasses}>Slot Capacity (Max 10 cars per slot)</label>
+              <input 
+                type="number" 
+                min="1" 
+                max="10" 
+                value={slotCapacity} 
+                onChange={(e) => {
+                  let val = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                  if (val === '') {
+                    setSlotCapacity('');
+                  } else if (Number(val) > 10) {
+                    setSlotCapacity("10"); // Hard cap at 10
+                  } else {
+                    setSlotCapacity(val);
+                  }
+                }} 
+                placeholder="e.g. 2" 
+                className={inputClasses} 
+              />
             </div>
             <button onClick={handleSaveCommunity} className="flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light">
               {isEditing ? "Save Changes" : "Save Community"}
@@ -111,9 +134,10 @@ export default function CommunitiesPage() {
                 {c.status}
               </span>
             </div>
-            <p className="text-xs font-light text-muted mb-4 flex items-center gap-2"><MapPin size={12} /> {c.address}</p>
+            <p className="text-xs font-light text-muted mb-2 flex items-center gap-2"><MapPin size={12} /> {c.address}</p>
+            <p className="text-xs font-bold text-m-blue-dark mb-4">Capacity: {c.slotCapacity} cars/slot</p>
             <div className="flex items-center justify-end gap-4 border-t border-hairline pt-3">
-              <button onClick={() => openEditModal(c.id, c.name, c.address)} className="text-muted hover:text-ink transition-colors"><Edit size={16} /></button>
+              <button onClick={() => openEditModal(c.id, c.name, c.address, c.slotCapacity)} className="text-muted hover:text-ink transition-colors"><Edit size={16} /></button>
               <button onClick={() => toggleStatus(c.id)} className="text-muted hover:text-warning transition-colors">
                 {c.status === "ACTIVE" ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -130,6 +154,7 @@ export default function CommunitiesPage() {
             <tr>
               <th className="py-4 px-6 text-left text-xs font-bold uppercase tracking-machined text-muted">Name</th>
               <th className="py-4 px-6 text-left text-xs font-bold uppercase tracking-machined text-muted">Address</th>
+              <th className="py-4 px-6 text-left text-xs font-bold uppercase tracking-machined text-muted">Capacity</th>
               <th className="py-4 px-6 text-left text-xs font-bold uppercase tracking-machined text-muted">Status</th>
               <th className="py-4 px-6 text-right text-xs font-bold uppercase tracking-machined text-muted">Actions</th>
             </tr>
@@ -139,6 +164,7 @@ export default function CommunitiesPage() {
               <tr key={c.id} className="border-b border-hairline last:border-none hover:bg-surface-elevated transition-colors">
                 <td className="py-4 px-6 text-sm font-bold text-ink">{c.name}</td>
                 <td className="py-4 px-6 text-sm font-light text-body">{c.address}</td>
+                <td className="py-4 px-6 text-sm font-bold text-m-blue-dark">{c.slotCapacity} cars/slot</td>
                 <td className="py-4 px-6">
                   <span className={`text-xs font-bold uppercase tracking-machined px-2 py-1 ${c.status === "ACTIVE" ? "text-success" : "text-muted"}`}>
                     {c.status}
@@ -146,7 +172,7 @@ export default function CommunitiesPage() {
                 </td>
                 <td className="py-4 px-6 text-right">
                   <div className="flex items-center justify-end gap-3">
-                    <button onClick={() => openEditModal(c.id, c.name, c.address)} className="text-muted hover:text-ink transition-colors"><Edit size={16} /></button>
+                    <button onClick={() => openEditModal(c.id, c.name, c.address, c.slotCapacity)} className="text-muted hover:text-ink transition-colors"><Edit size={16} /></button>
                     <button onClick={() => toggleStatus(c.id)} className="text-muted hover:text-warning transition-colors">
                       {c.status === "ACTIVE" ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>

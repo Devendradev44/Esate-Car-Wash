@@ -6,7 +6,8 @@ import { useState, useEffect } from 'react';
 type MockUser = { id: string; role: "CUSTOMER" | "STAFF" | "ADMIN"; name: string; phone: string; email: string };
 type CustomerVehicle = { id: string; category: string; brand: string; model: string; reg: string; isDefault: boolean };
 type CustomerAddress = { id: string; community: string; flat: string };
-type Community = { id: string; name: string; address: string; status: "ACTIVE" | "HIDDEN" };
+type Community = { id: string; name: string; address: string; status: "ACTIVE" | "HIDDEN"; slotCapacity: number };
+type TimeSlot = { id: string; label: string; startTime: string };
 type VehicleCategory = { id: string; name: string; brands: VehicleBrand[] };
 type VehicleBrand = { id: string; name: string; models: VehicleModel[] };
 type VehicleModel = { id: string; name: string };
@@ -15,16 +16,24 @@ type BookingItem = {
   id: string; bookingCode: string; date: string; time: string; 
   customer: string; flat: string; community: string; vehicle: string; regNumber: string; 
   service: string; amount: number; bookingStatus: "BOOKED" | "COMPLETED" | "CANCELLED"; paymentStatus: "PENDING" | "PAID" | "REFUNDED";
-  cancelledBy?: "CUSTOMER" | "ADMIN" | "STAFF"; // ADD THIS
+  cancelledBy?: "CUSTOMER" | "ADMIN" | "STAFF";
 };
 type ExpenseItem = { id: string; date: string; name: string; category: string; amount: number; paymentType: string; notes: string };
 type StaffItem = { id: string; name: string; phone: string; community: string; pin: string; status: "ACTIVE" | "DISABLED"; role: "STAFF" | "ADMIN" };
 
 // --- INITIAL MOCK DATA ---
 const initialCommunities: Community[] = [
-  { id: "c1", name: "Prestige Shantiniketan", address: "Whitefield Main Rd, Bangalore", status: "ACTIVE" },
-  { id: "c2", name: "Sobha Halcyon", address: "Jalahalli, Bangalore", status: "ACTIVE" },
-  { id: "c3", name: "Brigade Gateway", address: "Malleshwaram, Bangalore", status: "HIDDEN" },
+  { id: "c1", name: "Prestige Shantiniketan", address: "Whitefield Main Rd, Bangalore", status: "ACTIVE", slotCapacity: 2 },
+  { id: "c2", name: "Sobha Halcyon", address: "Jalahalli, Bangalore", status: "ACTIVE", slotCapacity: 2 },
+  { id: "c3", name: "Brigade Gateway", address: "Malleshwaram, Bangalore", status: "HIDDEN", slotCapacity: 1 },
+];
+
+const initialTimeSlots: TimeSlot[] = [
+  { id: "ts1", label: "08:00 - 10:00 AM", startTime: "08:00" },
+  { id: "ts2", label: "10:00 - 12:00 PM", startTime: "10:00" },
+  { id: "ts3", label: "12:00 - 02:00 PM", startTime: "12:00" },
+  { id: "ts4", label: "02:00 - 04:00 PM", startTime: "14:00" },
+  { id: "ts5", label: "04:00 - 06:00 PM", startTime: "16:00" },
 ];
 
 const initialVehicles: VehicleCategory[] = [
@@ -41,13 +50,15 @@ const initialVehicles: VehicleCategory[] = [
 ];
 
 const initialServices: ServiceItem[] = [
-  { id: "s1", name: "Exterior Wash", description: "Basic exterior foam wash", pricing: { Hatchback: 250, Sedan: 300, SUV: 350, Luxury: 600 } },
-  { id: "s2", name: "Interior & Exterior Detail", description: "Deep clean inside and out", pricing: { Hatchback: 800, Sedan: 1000, SUV: 1200, Luxury: 2500 } },
+  { id: "s1", name: "Basic Wash", description: "Essential exterior cleaning for everyday maintenance.", pricing: { Hatchback: 400, Sedan: 500, SUV: 600, Luxury: 600 } },
+  { id: "s2", name: "Deluxe Wash", description: "A more complete wash with interior vacuuming.", pricing: { Hatchback: 600, Sedan: 800, SUV: 1000, Luxury: 1000 } },
+  { id: "s3", name: "Premium Wash", description: "Deep exterior and interior care.", pricing: { Hatchback: 1000, Sedan: 1200, SUV: 1500, Luxury: 1500 } },
+  { id: "s4", name: "Deep Cleaning", description: "Complete interior and exterior deep cleaning.", pricing: { Hatchback: 3000, Sedan: 3500, SUV: 4000, Luxury: 4000 } }
 ];
 
 const initialBookings: BookingItem[] = [
-  { id: "b1", bookingCode: "ECW-1001", date: "22-05-2025", time: "10:00–12:00 PM", customer: "Rahul Sharma", flat: "A-401", community: "Prestige Shantiniketan", vehicle: "Toyota Fortuner (SUV)", regNumber: "TG 09 AB 1234", service: "Exterior Wash", amount: 350, bookingStatus: "BOOKED", paymentStatus: "PENDING" },
-  { id: "b2", bookingCode: "ECW-1002", date: "22-05-2025", time: "02:00–04:00 PM", customer: "Priya Patel", flat: "B-1202", community: "Sobha Halcyon", vehicle: "Hyundai Creta (SUV)", regNumber: "TG 11 CX 5678", service: "Interior Detail", amount: 1200, bookingStatus: "COMPLETED", paymentStatus: "PAID" },
+  { id: "b1", bookingCode: "ECW-1001", date: "22-05-2025", time: "10:00 - 12:00 PM", customer: "Rahul Sharma", flat: "A-401", community: "Prestige Shantiniketan", vehicle: "Toyota Fortuner (SUV)", regNumber: "TG 09 AB 1234", service: "Exterior Wash", amount: 350, bookingStatus: "BOOKED", paymentStatus: "PENDING" },
+  { id: "b2", bookingCode: "ECW-1002", date: "22-05-2025", time: "02:00 - 04:00 PM", customer: "Priya Patel", flat: "B-1202", community: "Sobha Halcyon", vehicle: "Hyundai Creta (SUV)", regNumber: "TG 11 CX 5678", service: "Interior Detail", amount: 1200, bookingStatus: "COMPLETED", paymentStatus: "PAID" },
 ];
 
 const initialExpenses: ExpenseItem[] = [
@@ -57,15 +68,7 @@ const initialExpenses: ExpenseItem[] = [
 
 const initialStaff: StaffItem[] = [
   { id: "st1", name: "Ramesh Kumar", phone: "9876543210", community: "Prestige Shantiniketan", pin: "1234", status: "ACTIVE", role: "STAFF" },
-  { id: "st2", name: "Suresh Babu ", phone: "9876543211", community: "Sobha Halcyon", pin: "5678", status: "ACTIVE", role: "STAFF" },
-];
-
-const initialTimeSlots = [
-  { id: "ts1", label: "08:00 - 10:00 AM" },
-  { id: "ts2", label: "10:00 - 12:00 PM" },
-  { id: "ts3", label: "12:00 - 02:00 PM" },
-  { id: "ts4", label: "02:00 - 04:00 PM" },
-  { id: "ts5", label: "04:00 - 06:00 PM" },
+  { id: "st2", name: "Suresh Babu", phone: "9876543211", community: "Sobha Halcyon", pin: "5678", status: "ACTIVE", role: "STAFF" },
 ];
 
 // --- THE STORE ---
@@ -86,14 +89,14 @@ type AppStore = {
   updateMockUser: (data: { name?: string; phone?: string; email?: string }) => void;
   cancelBooking: (id: string, cancelledBy: "CUSTOMER" | "ADMIN" | "STAFF") => void;
 
-  timeSlots: { id: string; label: string }[];
-  addTimeSlot: (label: string) => void;
+  timeSlots: TimeSlot[];
+  addTimeSlot: (label: string, startTime: string) => void;
   deleteTimeSlot: (id: string) => void;
 
   // Community Actions
   addCommunity: (community: Community) => void;
   updateCommunityStatus: (id: string, status: "ACTIVE" | "HIDDEN") => void;
-  updateCommunity: (id: string, name: string, address: string) => void;
+  updateCommunity: (id: string, name: string, address: string, slotCapacity: number) => void;
   deleteCommunity: (id: string) => void;
 
   // Address Actions
@@ -123,7 +126,6 @@ type AppStore = {
 
   // Booking Actions
   addBooking: (booking: BookingItem) => void;
-  // cancelBooking: (id: string) => void;
   completeBooking: (id: string) => void;
 
   // Expense Actions
@@ -162,7 +164,7 @@ export const useStore = create<AppStore>()(
       })),
 
       timeSlots: initialTimeSlots,
-      addTimeSlot: (label) => set((state) => ({ timeSlots: [...state.timeSlots, { id: `ts${Date.now()}`, label }] })),
+      addTimeSlot: (label, startTime) => set((state) => ({ timeSlots: [...state.timeSlots, { id: `ts${Date.now()}`, label, startTime }] })),
       deleteTimeSlot: (id) => set((state) => ({ timeSlots: state.timeSlots.filter(t => t.id !== id) })),
 
       addresses: [
@@ -181,8 +183,8 @@ export const useStore = create<AppStore>()(
         communities: state.communities.map(c => c.id === id ? { ...c, status } : c)
       })),
       deleteCommunity: (id) => set((state) => ({ communities: state.communities.filter(c => c.id !== id) })),
-      updateCommunity: (id, name, address) => set((state) => ({
-        communities: state.communities.map(c => c.id === id ? { ...c, name, address } : c)
+      updateCommunity: (id, name, address, slotCapacity) => set((state) => ({
+        communities: state.communities.map(c => c.id === id ? { ...c, name, address, slotCapacity } : c)
       })),
 
       // Address
@@ -261,9 +263,6 @@ export const useStore = create<AppStore>()(
 
       // Bookings
       addBooking: (newBooking) => set((state) => ({ bookings: [newBooking, ...state.bookings] })),
-      // cancelBooking: (id) => set((state) => ({
-      //   bookings: state.bookings.map(b => b.id === id ? { ...b, bookingStatus: "CANCELLED" as const, paymentStatus: "REFUNDED" as const } : b)
-      // })),
       completeBooking: (id) => set((state) => ({
         bookings: state.bookings.map(b => b.id === id ? { ...b, bookingStatus: "COMPLETED" as const, paymentStatus: "PAID" as const } : b)
       })),
@@ -283,7 +282,7 @@ export const useStore = create<AppStore>()(
       deleteStaff: (id) => set((state) => ({ staff: state.staff.filter(s => s.id !== id) })),
     }),
     {
-      name: 'estate-car-wash-v6', // Bumped to v5 to ensure clean state
+      name: 'estate-car-wash-v8', // Bumped to v7 to ensure clean state and apply type fixes
     }
   )
 );

@@ -21,8 +21,8 @@ export default function BookService() {
   const addAddress = useStore((state) => state.addAddress);
   const savedVehicles = useStore((state) => state.customerGarage);
   const addCustomerVehicle = useStore((state) => state.addCustomerVehicle);
-
-  const timeSlots = ["08:00–10:00 AM", "10:00–12:00 PM", "12:00–02:00 PM", "02:00–04:00 PM", "04:00–06:00 PM"];
+  const timeSlots = useStore((state) => state.timeSlots);
+  const bookings = useStore((state) => state.bookings);
 
   // Local UI State
   const [error, setError] = useState("");
@@ -42,6 +42,8 @@ export default function BookService() {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
 
+  
+
   // Cascading Logic for New Vehicle
   const brandsForNewCat = vehicleHierarchy.find(c => c.id === newCat)?.brands || [];
   const modelsForNewBrand = brandsForNewCat.find(b => b.id === newBrand)?.models || [];
@@ -55,20 +57,35 @@ export default function BookService() {
     return service.pricing[currentCategory] || 0;
   };
 
-    const getTodayDate = () => {
+  const getTodayDate = () => {
     const today = new Date();
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   };
 
-  // ADD THIS: Disable past time slots if selected date is today
+  // CAPACITY & PAST TIME LOGIC
+  const selectedCommunityName = savedAddresses.find(a => a.id === selectedAddressId)?.community || newCommunity;
+  const selectedCommunityObj = allCommunities.find(c => c.name === selectedCommunityName);
+  const slotCapacity = selectedCommunityObj?.slotCapacity || 1;
+
   const isSlotDisabled = (slotLabel: string) => {
-    if (selectedDate !== getTodayDate()) return false;
-    
-    // Extract the end time from the slot label (e.g., "08:00–10:00 AM" -> "10:00 AM")
-    const endTimeStr = slotLabel.split("–")[1].trim();
-    const slotEndTime = new Date(`${getTodayDate()}T${convertTo24Hour(endTimeStr)}`);
-    
-    return slotEndTime < new Date();
+    // 1. Check past time
+    if (selectedDate === getTodayDate()) {
+      const endTimeStr = slotLabel.split(" - ")[1]?.trim() || slotLabel.split("–")[1]?.trim();
+      if (endTimeStr) {
+        const slotEndTime = new Date(`${getTodayDate()}T${convertTo24Hour(endTimeStr)}`);
+        if (slotEndTime < new Date()) return true;
+      }
+    }
+
+    // 2. Check capacity
+    const bookedCount = bookings.filter(b => 
+      b.date === selectedDate && 
+      b.time === slotLabel && 
+      b.community === selectedCommunityName &&
+      b.bookingStatus === "BOOKED"
+    ).length;
+
+    return bookedCount >= slotCapacity;
   };
 
   // Helper to convert 12-hour to 24-hour for comparison
@@ -83,6 +100,14 @@ export default function BookService() {
   const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-m-blue-dark focus:outline-none transition-colors appearance-none";
   const labelClasses = "flex items-center gap-2 text-xs font-bold uppercase tracking-machined text-muted mb-4 mt-8";
   const cardClasses = "w-full border p-4 text-left transition-colors";
+
+  const formatRegNumber = (value: string) => {
+    return value.toUpperCase().replace(/[^A-Z0-9 ]/g, '');
+  };
+
+  const handleRegChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewReg(formatRegNumber(e.target.value));
+  };  
 
   const handleReserve = () => {
     setError("");
@@ -119,7 +144,6 @@ export default function BookService() {
       paymentStatus: "PENDING"
     });
 
-    // alert(`Booking Confirmed!\n\nVehicle: ${vehicleObj.brand} ${vehicleObj.model}\nService: ${serviceObj.name}\nAmount: ₹${getPrice(serviceObj)}\nTime: ${selectedTime}`);
     router.push("/customer/my-dashboard");
   };
 
@@ -208,11 +232,25 @@ export default function BookService() {
             )}
 
             {newModel && (
-              <input type="text" value={newReg} onChange={(e) => setNewReg(e.target.value)} placeholder="TG 09 AB 1234" className={inputClasses} />
+              <input 
+                type="text" 
+                value={newReg} 
+                onChange={handleRegChange} 
+                placeholder="AP 12 SM 1234" 
+                maxLength={14}
+                className={inputClasses} 
+              />
             )}
 
             {newModel && newReg && (
               <button onClick={() => { 
+                const regRegex = /^[A-Z]{2}\s?\d{1,2}\s?[A-Z]{1,3}\s?\d{1,4}$/;
+                if (!regRegex.test(newReg)) {
+                  setError("Invalid reg format. Use: AP 12 SM 1234");
+                  return;
+                }
+                setError(""); // Clear error
+                
                 const catName = vehicleHierarchy.find(c => c.id === newCat)?.name || "";
                 const brandName = brandsForNewCat.find(b => b.id === newBrand)?.name || "";
                 const modelName = modelsForNewBrand.find(m => m.id === newModel)?.name || "";
@@ -229,7 +267,7 @@ export default function BookService() {
                 setSelectedVehicleId(newVeh.id); 
                 setShowAddVehicle(false); 
               }} className="bg-m-blue-dark w-full py-3 text-xs font-bold uppercase tracking-machined text-ink">Save Vehicle</button>
-            )}
+            )}      
           </div>
         )}
 
@@ -263,26 +301,30 @@ export default function BookService() {
             value={selectedDate} 
             onChange={(e) => setSelectedDate(e.target.value)} 
             min={getTodayDate()} 
-            max={`${new Date().getFullYear() + 1}-12-31`} // ADDED THIS to restrict year
-            className={inputClasses} 
+            max={`${new Date().getFullYear() + 1}-12-31`}
+            className={inputClasses + " [color-scheme:dark]"} 
           />
         </div>
 
         <div className="mb-8">
           <p className="text-xs font-bold uppercase tracking-machined text-muted mb-2">Time Slot</p>
           <div className="grid grid-cols-2 gap-3">
-            {timeSlots.map(t => (
-              <button 
-                key={t} 
-                onClick={() => setSelectedTime(t)}
-                disabled={isSlotDisabled(t)} 
-                className={`border p-3 text-center transition-colors ${
-                  selectedTime === t ? "border-m-blue-dark bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body"
-                } ${isSlotDisabled(t) ? "opacity-30 cursor-not-allowed hover:border-hairline" : ""}`} // ADD THIS
-              >
-                <p className="text-xs font-bold text-ink">{t}</p>
-              </button>
-            ))}
+            {[...timeSlots].sort((a, b) => a.startTime.localeCompare(b.startTime)).map(t => {
+              const isFull = isSlotDisabled(t.label);
+              return (
+                <button 
+                  key={t.id} 
+                  onClick={() => setSelectedTime(t.label)}
+                  disabled={isFull} 
+                  className={`border p-3 text-center transition-colors ${
+                    selectedTime === t.label ? "border-m-blue-dark bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body"
+                  } ${isFull ? "opacity-30 cursor-not-allowed hover:border-hairline" : ""}`}
+                >
+                  <p className="text-xs font-bold text-ink">{t.label}</p>
+                  {isFull && <p className="text-[9px] text-m-red mt-1">Fully Booked</p>}
+                </button>
+              );
+            })}
           </div>
         </div>
 

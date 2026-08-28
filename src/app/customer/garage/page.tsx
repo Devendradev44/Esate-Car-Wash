@@ -7,6 +7,10 @@ export default function GaragePage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  const formatRegNumber = (value: string) => {
+    return value.toUpperCase().replace(/[^A-Z0-9 ]/g, '');
+  };
+
   const customerGarage = useStore((state) => state.customerGarage);
   const addCustomerVehicle = useStore((state) => state.addCustomerVehicle);
   const updateCustomerVehicle = useStore((state) => state.updateCustomerVehicle);
@@ -58,10 +62,14 @@ export default function GaragePage() {
   };
 
   const handleEditSave = () => {
-    if (!editReg.trim()) return;
-    updateCustomerVehicle(editId, editReg);
-    setShowEditModal(false);
-  };
+  const regRegex = /^[A-Z]{2}\s?\d{1,2}\s?[A-Z]{1,3}\s?\d{1,4}$/;
+  if (!regRegex.test(editReg)) {
+    alert("Invalid registration format. Use: AP 12 SM 1234");
+    return;
+  }
+  updateCustomerVehicle(editId, editReg);
+  setShowEditModal(false);
+};
 
   const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-m-blue-dark focus:outline-none transition-colors appearance-none";
 
@@ -128,11 +136,30 @@ export default function GaragePage() {
               )}
 
               {newModel && (
-                <input type="text" value={newReg} onChange={(e) => setNewReg(e.target.value)} placeholder="Registration (e.g. TG 09 AB 1234)" className={inputClasses} />
+                <input 
+                  type="text" 
+                  value={newReg} 
+                  onChange={(e) => setNewReg(formatRegNumber(e.target.value))} 
+                  maxLength={14}
+                  placeholder="AP 12 SM 1234" 
+                  className={inputClasses} 
+                />
               )}
             </div>
 
-            <button onClick={handleSaveVehicle} disabled={!newModel || !newReg} className="flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light disabled:opacity-50">
+            {/* ADDED REGEX VALIDATION TO SAVE BUTTON */}
+            <button 
+              onClick={() => {
+                const regRegex = /^[A-Z]{2}\s?\d{1,2}\s?[A-Z]{1,3}\s?\d{1,4}$/;
+                if (!regRegex.test(newReg)) {
+                  alert("Invalid registration format. Use: AP 12 SM 1234");
+                  return;
+                }
+                handleSaveVehicle();
+              }} 
+              disabled={!newModel || !newReg} 
+              className="flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light disabled:opacity-50"
+            >
               Save Vehicle
             </button>
           </div>
@@ -149,8 +176,14 @@ export default function GaragePage() {
             </div>
             <div className="mb-8">
               <label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Registration Number</label>
-              <input type="text" value={editReg} onChange={(e) => setEditReg(e.target.value)} className={inputClasses} />
-            </div>
+              <input 
+                type="text" 
+                value={editReg} 
+                onChange={(e) => setEditReg(formatRegNumber(e.target.value))} 
+                maxLength={14}
+                className={inputClasses} 
+              />   
+           </div>
             <button onClick={handleEditSave} className="flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light">
               Save Changes
             </button>

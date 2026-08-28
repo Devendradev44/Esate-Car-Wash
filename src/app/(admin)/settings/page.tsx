@@ -12,14 +12,25 @@ export default function AdminSettings() {
   const deleteTimeSlot = useStore((state) => state.deleteTimeSlot);
 
   const [showModal, setShowModal] = useState(false);
-  const [newSlot, setNewSlot] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
 
   if (!mounted) return null;
 
+  // Convert 24hr (HH:mm) to 12hr format (e.g. "14:00" -> "2:00 PM")
+  const formatTo12Hour = (time: string) => {
+    const [hours, minutes] = time.split(':');
+    let h = parseInt(hours, 10);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return `${h}:${minutes} ${ampm}`;
+  };
+
   const handleSaveSlot = () => {
-    if (!newSlot) return;
-    addTimeSlot(newSlot);
-    setNewSlot("");
+    if (!startTime || !endTime) return;
+    const label = `${formatTo12Hour(startTime)} - ${formatTo12Hour(endTime)}`;
+    addTimeSlot(label, startTime); // Pass startTime to store
+    setStartTime(""); setEndTime("");
     setShowModal(false);
   };
 
@@ -35,10 +46,28 @@ export default function AdminSettings() {
               <h3 className="text-xl font-bold uppercase text-ink">Add Time Slot</h3>
               <button onClick={() => setShowModal(false)} className="text-muted hover:text-ink"><X size={20} /></button>
             </div>
-            <div className="mb-8">
-              <label className={labelClasses}>Slot Label (e.g. 06:00 - 08:00 PM)</label>
-              <input type="text" value={newSlot} onChange={(e) => setNewSlot(e.target.value)} placeholder="06:00 - 08:00 PM" className={inputClasses} />
+            
+            <div className="grid grid-cols-2 gap-4 mb-8">
+              <div>
+                <label className={labelClasses}>Start Time</label>
+                <input 
+                  type="time" 
+                  value={startTime} 
+                  onChange={(e) => setStartTime(e.target.value)} 
+                  className={inputClasses + " [color-scheme:dark]"}
+                />
+              </div>
+              <div>
+                <label className={labelClasses}>End Time</label>
+                <input 
+                  type="time" 
+                  value={endTime} 
+                  onChange={(e) => setEndTime(e.target.value)} 
+                  className={inputClasses + " [color-scheme:dark]"}
+                />
+              </div>
             </div>
+
             <button onClick={handleSaveSlot} className="flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light">
               Save Slot
             </button>
@@ -65,7 +94,7 @@ export default function AdminSettings() {
           </div>
           
           <div className="space-y-3">
-            {timeSlots.map(slot => (
+            {[...timeSlots].sort((a, b) => a.startTime.localeCompare(b.startTime)).map(slot => (
               <div key={slot.id} className="flex items-center justify-between border border-hairline bg-surface-soft p-4">
                 <p className="text-sm font-bold text-ink flex items-center gap-3">
                   <Clock size={14} className="text-m-blue-dark" /> 
