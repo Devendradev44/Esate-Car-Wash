@@ -19,6 +19,7 @@ export default function StaffProfilePage() {
   const myStaffDetails = staff.find(s => s.name === mockUser?.name) || staff[0];
 
   const handleLogout = () => {
+    document.cookie = 'mock_session=; path=/; max-age=0'; // Clear cookie
     logoutMockUser();
     router.push("/login");
   };

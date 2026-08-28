@@ -16,6 +16,12 @@ export default function BookingsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<BookingStatusType>("ALL");
 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "";
+    const [year, month, day] = dateString.split("-");
+    return `${day}-${month}-${year}`;
+  };
+
   if (!mounted) return null;
 
   const filteredBookings = bookings.filter(b => {
@@ -92,7 +98,7 @@ export default function BookingsPage() {
               </div>
               
               <div className="space-y-2 border-t border-hairline pt-3 mb-4 text-xs font-light text-body">
-                <p className="flex items-center gap-2"><CalendarDays size={12} className="text-muted"/> {b.date} · {b.time}</p>
+                <p className="flex items-center gap-2"><CalendarDays size={12} className="text-muted"/> {formatDate(b.date)} · {b.time}</p>
                 <p className="flex items-center gap-2"><Car size={12} className="text-muted"/> {b.vehicle}</p>
                 <p className="flex items-center gap-2"><Wrench size={12} className="text-muted"/> {b.service}</p>
                 <p className="flex items-center gap-2"><Banknote size={12} className="text-muted"/> {b.paymentStatus}</p>
@@ -141,7 +147,7 @@ export default function BookingsPage() {
               <tr key={b.id} className="border-b border-hairline hover:bg-surface-card transition-colors">
                 <td className="py-4 px-4 text-sm font-bold text-m-blue-dark">{b.bookingCode}</td>
                 <td className="py-4 px-4">
-                  <p className="text-sm font-bold text-ink">{b.date}</p>
+                  <p className="text-sm font-bold text-ink">{formatDate(b.date)}</p>
                   <p className="text-xs font-light text-body">{b.time}</p>
                 </td>
                 <td className="py-4 px-4">

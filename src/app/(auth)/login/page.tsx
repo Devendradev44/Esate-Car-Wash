@@ -31,13 +31,16 @@ const router = useRouter();
     const setMockUser = useStore((state) => state.setMockUser);
 
     const handleLogin = () => {
+      // Set a mock cookie for the middleware to read
+      document.cookie = `mock_session=${role}; path=/; max-age=86400`; // Expires in 1 day
+      
       // Save mock user before redirecting
       setMockUser({
         id: "mock_123",
         role: role,
         name: role === "ADMIN" ? "Admin User" : role === "STAFF" ? "Staff User" : "Customer User",
-        email: role === "ADMIN" ? email : undefined,
-        phone: role !== "ADMIN" ? phone : undefined,
+        email: role === "ADMIN" ? email : "",
+        phone: role !== "ADMIN" ? phone : "",
       });
 
       if (role === Role.ADMIN) router.push("/dashboard");

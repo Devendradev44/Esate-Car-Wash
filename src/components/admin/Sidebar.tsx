@@ -22,6 +22,7 @@ export function Sidebar() {
   const logoutMockUser = useStore((state) => state.logoutMockUser);
 
   const handleLogout = () => {
+    document.cookie = 'mock_session=; path=/; max-age=0'; // Clear cookie
     logoutMockUser();
     router.push("/login");
   };

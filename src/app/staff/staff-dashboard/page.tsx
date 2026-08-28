@@ -9,7 +9,14 @@ export default function StaffDashboard() {
 
   const bookings = useStore((state) => state.bookings);
   const completeBooking = useStore((state) => state.completeBooking);
-   const cancelBooking = useStore((state) => state.cancelBooking);
+  const cancelBooking = useStore((state) => state.cancelBooking);
+
+  
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "";
+    const [year, month, day] = dateString.split("-");
+    return `${day}-${month}-${year}`;
+  };
 
   if (!mounted) return null;
 
@@ -32,7 +39,7 @@ export default function StaffDashboard() {
           <div key={b.id} className={`border ${b.bookingStatus === "COMPLETED" ? "border-success/30 bg-success/5" : "border-hairline bg-surface-card"} p-5`}>
             <div className="flex justify-between items-start mb-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-machined text-m-blue-dark mb-1">{b.time}</p>
+                <p className="text-xs font-bold uppercase tracking-machined text-m-blue-dark mb-1">{b.time} | {formatDate(b.date)}</p>
                 <h3 className="text-lg font-bold text-ink">{b.customer}</h3>
                 <p className="text-xs font-light text-muted mt-1 flex items-center gap-1"><MapPin size={12}/> {b.flat}, {b.community}</p>
               </div>

@@ -11,13 +11,21 @@ export default function CustomerDashboard() {
   const bookings = useStore((state) => state.bookings);
   const cancelBooking = useStore((state) => state.cancelBooking);
 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "";
+    const [year, month, day] = dateString.split("-");
+    return `${day}-${month}-${year}`;
+  };
+
   if (!mounted) return null;
 
   const myBookings = bookings.filter(b => b.customer === "Rahul Sharma");
   const upcomingBookings = myBookings.filter(b => b.bookingStatus === "BOOKED");
   const pastBookings = myBookings.filter(b => b.bookingStatus !== "BOOKED");
+  
 
   return (
+
     <div className="flex min-h-screen flex-col bg-canvas pb-24">
       <div className="border-b border-hairline bg-surface-soft p-6">
         <h1 className="text-2xl font-bold uppercase text-ink">My Dashboard</h1>
@@ -54,7 +62,7 @@ export default function CustomerDashboard() {
                     <span className="text-xs font-bold text-warning uppercase">{b.bookingStatus}</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs font-light text-muted mb-3">
-                    <CalendarDays size={12} /> {b.date} · {b.time}
+                    <CalendarDays size={12} /> {formatDate(b.date)} · {b.time}
                   </div>
                   <div className="flex items-center gap-2 text-xs font-light text-body mb-4">
                     <Car size={12} /> {b.vehicle}
@@ -93,7 +101,7 @@ export default function CustomerDashboard() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-xs font-light text-muted mb-3">
-                    <CalendarDays size={12} /> {b.date} · {b.time}
+                    <CalendarDays size={12} /> {formatDate(b.date)} · {b.time}
                   </div>
                   <div className="flex items-center justify-between text-xs font-light text-body">
                     <span className="flex items-center gap-2"><Car size={12} /> {b.vehicle}</span>

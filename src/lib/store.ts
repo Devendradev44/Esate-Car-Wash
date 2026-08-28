@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { useState, useEffect } from 'react';
 
 // --- TYPES ---
-type MockUser = { id: string; role: "CUSTOMER" | "STAFF" | "ADMIN"; name: string; phone: string; email: string };
+type MockUser = { id: string; role: "CUSTOMER" | "STAFF" | "ADMIN"; name: string; phone?: string; email?: string };
 type CustomerVehicle = { id: string; category: string; brand: string; model: string; reg: string; isDefault: boolean };
 type CustomerAddress = { id: string; community: string; flat: string };
 type Community = { id: string; name: string; address: string; status: "ACTIVE" | "HIDDEN"; slotCapacity: number };
@@ -57,13 +57,11 @@ const initialServices: ServiceItem[] = [
 ];
 
 const initialBookings: BookingItem[] = [
-  { id: "b1", bookingCode: "ECW-1001", date: "22-05-2025", time: "10:00 - 12:00 PM", customer: "Rahul Sharma", flat: "A-401", community: "Prestige Shantiniketan", vehicle: "Toyota Fortuner (SUV)", regNumber: "TG 09 AB 1234", service: "Exterior Wash", amount: 350, bookingStatus: "BOOKED", paymentStatus: "PENDING" },
-  { id: "b2", bookingCode: "ECW-1002", date: "22-05-2025", time: "02:00 - 04:00 PM", customer: "Priya Patel", flat: "B-1202", community: "Sobha Halcyon", vehicle: "Hyundai Creta (SUV)", regNumber: "TG 11 CX 5678", service: "Interior Detail", amount: 1200, bookingStatus: "COMPLETED", paymentStatus: "PAID" },
+  
 ];
 
 const initialExpenses: ExpenseItem[] = [
-  { id: "e1", date: "01-05-2025", name: "May Staff Salaries", category: "SALARY", amount: 25000, paymentType: "UPI", notes: "Paid to 3 staff" },
-  { id: "e2", date: "05-05-2025", name: "Community Rent", category: "RENT", amount: 15000, paymentType: "ACCOUNT_TRANSFER", notes: "Monthly fee" },
+
 ];
 
 const initialStaff: StaffItem[] = [
@@ -282,7 +280,7 @@ export const useStore = create<AppStore>()(
       deleteStaff: (id) => set((state) => ({ staff: state.staff.filter(s => s.id !== id) })),
     }),
     {
-      name: 'estate-car-wash-v8', // Bumped to v7 to ensure clean state and apply type fixes
+      name: 'estate-car-wash-v9', // Bumped to v7 to ensure clean state and apply type fixes
     }
   )
 );
