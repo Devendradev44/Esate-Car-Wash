@@ -19,7 +19,6 @@ export default function SignupPage() {
   const handleRegister = () => {
     setError("");
     
-    // Validation
     if (!name.trim()) { setError("Please enter your full name."); return; }
     if (phone.length !== 10) { setError("Please enter a valid 10-digit phone number."); return; }
     if (!email.includes("@") || !email.includes(".")) { setError("Please enter a valid email address."); return; }
@@ -34,27 +33,27 @@ export default function SignupPage() {
   };
 
   const inputClasses = "w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-3 text-sm font-normal focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400/50 transition-all rounded-lg appearance-none";
-  const labelClasses = "block text-[10px] font-bold uppercase tracking-wide text-zinc-500 mb-2";
+  const labelClasses = "block text-[10px] font-bold text-zinc-500 mb-2";
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 font-sans">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="mb-8 flex flex-row items-center justify-center gap-3">
-          <div className="bg-yellow-400 p-1.5 rounded-lg">
+          <div className="bg-yellow-400 p-2 rounded-lg">
             <Car size={24} className="text-black" />
           </div>
           <div className="text-left">
-            <h1 className="text-lg font-bold tracking-tight text-white leading-none">ESTATE CAR SPA</h1>
-            <p className="text-[9px] font-medium uppercase tracking-widest text-zinc-500 mt-1">Premium Car Care</p>
+            <h1 className="text-lg font-bold text-white leading-none">Estate Car Spa</h1>
+            <p className="text-[10px] font-medium text-zinc-500 mt-1">Premium Car Care</p>
           </div>
         </div>
 
         {/* Static Card Container */}
         <div className="bg-zinc-900 border border-zinc-800 p-8 min-h-[520px] flex flex-col rounded-xl shadow-2xl shadow-black/50 animate-fade-in-up">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-white mb-1 tracking-tight">Join Estate</h2>
-            <p className="text-xs font-light text-zinc-400">Register to book services and manage your garage.</p>
+            <h2 className="text-2xl font-bold text-white mb-1">Join Estate</h2>
+            <p className="text-xs text-zinc-400">Register to book services and manage your garage.</p>
           </div>
 
           <div className="flex-1 flex flex-col justify-center space-y-5">
@@ -82,11 +81,11 @@ export default function SignupPage() {
                   <button 
                     key={r} 
                     onClick={() => setRole(r)}
-                    className={`p-3 text-[10px] font-bold uppercase tracking-wide transition-all rounded-lg active:scale-95 ${
+                    className={`p-3 text-xs font-semibold transition-all rounded-lg active:scale-95 ${
                       role === r ? "bg-yellow-400 text-black hover:bg-yellow-300" : "bg-zinc-950 text-zinc-400 border border-zinc-800 hover:text-white hover:border-zinc-700"
                     }`}
                   >
-                    {r}
+                    {r.charAt(0) + r.slice(1).toLowerCase()}
                   </button>
                 ))}
               </div>
@@ -95,20 +94,20 @@ export default function SignupPage() {
 
           <button 
             onClick={handleRegister} 
-            className="mt-6 w-full bg-yellow-400 py-3 text-xs font-bold uppercase tracking-wide text-black hover:bg-yellow-300 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20"
+            className="mt-6 w-full bg-yellow-400 py-3 text-sm font-bold text-black hover:bg-yellow-300 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20"
           >
             Create account
           </button>
           
           {/* Error Display */}
           {error && (
-            <div className="mt-4 text-center text-xs font-bold uppercase tracking-wide text-red-500 bg-red-500/10 border border-red-500/20 py-2 rounded-lg">
+            <div className="mt-4 text-center text-xs font-semibold text-red-500 bg-red-500/10 border border-red-500/20 py-2 rounded-lg">
               {error}
             </div>
           )}
         </div>
 
-        <p className="mt-8 text-center text-xs font-light text-zinc-500">
+        <p className="mt-8 text-center text-xs text-zinc-500">
           Already have an account? <Link href="/login" className="text-yellow-400 font-bold hover:underline">Sign in</Link>
         </p>
       </div>
