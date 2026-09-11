@@ -59,17 +59,25 @@ export default function StaffDashboard() {
 
             {b.bookingStatus === "BOOKED" && (
               <>
-                <button 
-                  onClick={() => completeBooking(b.id)}
-                  className="flex w-full items-center justify-center gap-2 bg-success py-4 text-xs font-bold uppercase tracking-machined text-ink hover:brightness-110 transition-colors mb-2"
-                >
-                  <CheckCircle2 size={14} /> Mark Complete & Collect ₹{b.amount}
-                </button>
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  <button 
+                    onClick={() => completeBooking(b.id, "CASH")}
+                    className="flex items-center justify-center gap-2 bg-success py-4 text-xs font-bold uppercase tracking-machined text-ink hover:brightness-110 transition-colors"
+                  >
+                    <CheckCircle2 size={14} /> Cash ₹{b.amount}
+                  </button>
+                  <button 
+                    onClick={() => completeBooking(b.id, "UPI")}
+                    className="flex items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light transition-colors"
+                  >
+                    <CheckCircle2 size={14} /> UPI ₹{b.amount}
+                  </button>
+                </div>
                 <button 
                   onClick={() => cancelBooking(b.id, "STAFF")}
                   className="flex w-full items-center justify-center gap-2 border border-m-red/50 text-m-red py-3 text-xs font-bold uppercase tracking-machined hover:bg-m-red hover:text-ink transition-colors"
                 >
-                  <XCircle size={14} /> Cancel Booking (No Show)
+                  <XCircle size={14} /> Cancel (No Show)
                 </button>
               </>
             )}

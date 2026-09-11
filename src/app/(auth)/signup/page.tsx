@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { Car } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 
@@ -14,8 +14,17 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"CUSTOMER" | "STAFF" | "ADMIN">("CUSTOMER");
+  const [error, setError] = useState("");
 
   const handleRegister = () => {
+    setError("");
+    
+    // Validation
+    if (!name.trim()) { setError("Please enter your full name."); return; }
+    if (phone.length !== 10) { setError("Please enter a valid 10-digit phone number."); return; }
+    if (!email.includes("@") || !email.includes(".")) { setError("Please enter a valid email address."); return; }
+    if (password.length < 4) { setError("Password must be at least 4 characters."); return; }
+
     document.cookie = `mock_session=${role}; path=/; max-age=86400`;
     setMockUser({ id: `mock_${Date.now()}`, role, name, phone, email });
 
@@ -30,10 +39,10 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 font-sans">
       <div className="w-full max-w-md">
-        {/* Logo Beside Text */}
+        {/* Logo */}
         <div className="mb-8 flex flex-row items-center justify-center gap-3">
           <div className="bg-yellow-400 p-1.5 rounded-lg">
-            <Image src="/logo.svg" alt="Estate Car Spa" width={24} height={24} className="object-contain" />
+            <Car size={24} className="text-black" />
           </div>
           <div className="text-left">
             <h1 className="text-lg font-bold tracking-tight text-white leading-none">ESTATE CAR SPA</h1>
@@ -90,6 +99,13 @@ export default function SignupPage() {
           >
             Create account
           </button>
+          
+          {/* Error Display */}
+          {error && (
+            <div className="mt-4 text-center text-xs font-bold uppercase tracking-wide text-red-500 bg-red-500/10 border border-red-500/20 py-2 rounded-lg">
+              {error}
+            </div>
+          )}
         </div>
 
         <p className="mt-8 text-center text-xs font-light text-zinc-500">

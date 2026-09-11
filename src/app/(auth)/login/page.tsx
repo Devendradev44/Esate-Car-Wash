@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { Car } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 
@@ -14,6 +14,7 @@ export default function LoginPage() {
 
   const [role, setRole] = useState<Role>(Role.CUSTOMER);
   const [step, setStep] = useState<Step>(Step.LOGIN);
+  const [error, setError] = useState("");
 
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
@@ -28,11 +29,26 @@ export default function LoginPage() {
   const buttonClasses = "w-full bg-yellow-400 py-3 text-xs font-bold uppercase tracking-wide text-black hover:bg-yellow-300 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20";
 
   const handleLogin = () => {
+    setError("");
+
+    // Validation
+    if (role === Role.CUSTOMER) {
+      if (step === Step.SIGNUP && (!firstName.trim() || !lastName.trim())) {
+        setError("Please enter your first and last name."); return;
+      }
+    } else if (role === Role.STAFF) {
+      if (phone.length !== 10) { setError("Please enter a valid 10-digit phone number."); return; }
+      if (pin.length !== 4) { setError("Please enter a valid 4-digit PIN."); return; }
+    } else if (role === Role.ADMIN) {
+      if (!email.includes("@") || !email.includes(".")) { setError("Please enter a valid email address."); return; }
+      if (password.length < 4) { setError("Password must be at least 4 characters."); return; }
+    }
+
     document.cookie = `mock_session=${role}; path=/; max-age=86400`;
     setMockUser({
       id: "mock_123",
       role,
-      name: role === "ADMIN" ? "Admin User" : role === "STAFF" ? "Staff User" : "Customer User",
+      name: role === "ADMIN" ? "Admin User" : role === "STAFF" ? "Staff User" : (firstName || "Customer User"),
       email: role === "ADMIN" ? email : "",
       phone: role !== "ADMIN" ? phone : "",
     });
@@ -42,16 +58,25 @@ export default function LoginPage() {
     else router.push("/customer/my-dashboard");
   };
 
-  const handleVerifyOTP = () => setStep(Step.SIGNUP);
-  const handleRequestOTP = () => setStep(Step.OTP);
+  const handleRequestOTP = () => {
+    setError("");
+    if (phone.length !== 10) { setError("Please enter a valid 10-digit phone number."); return; }
+    setStep(Step.OTP);
+  };
+
+  const handleVerifyOTP = () => {
+    setError("");
+    if (otp.length !== 6) { setError("Please enter the 6-digit OTP."); return; }
+    setStep(Step.SIGNUP);
+  };
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 font-sans">
       <div className="w-full max-w-md">
-        {/* Logo Beside Text */}
+        {/* Logo */}
         <div className="mb-8 flex flex-row items-center justify-center gap-3">
           <div className="bg-yellow-400 p-1.5 rounded-lg">
-            <Image src="/logo.svg" alt="Estate Car Spa" width={24} height={24} className="object-contain" />
+            <Car size={24} className="text-black" />
           </div>
           <div className="text-left">
             <h1 className="text-lg font-bold tracking-tight text-white leading-none">ESTATE CAR SPA</h1>
@@ -60,7 +85,7 @@ export default function LoginPage() {
         </div>
 
         {/* Card Container */}
-        <div className="bg-zinc-900 border border-zinc-800 p-8 min-h-[460px] flex flex-col rounded-xl shadow-2xl shadow-black/50">
+        <div className="bg-zinc-900 border border-zinc-800 p-8 min-h-[480px] flex flex-col rounded-xl shadow-2xl shadow-black/50">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-white mb-1 tracking-tight">Sign in</h2>
             <p className="text-xs font-light text-zinc-400">Welcome back. Access your car spa portal.</p>
@@ -75,7 +100,7 @@ export default function LoginPage() {
             ].map(tab => (
               <button 
                 key={tab.role}
-                onClick={() => { setRole(tab.role); setStep(Step.LOGIN); }}
+                onClick={() => { setRole(tab.role); setStep(Step.LOGIN); setError(""); }}
                 className={`flex-1 pb-3 text-[10px] font-bold uppercase tracking-wide transition-colors ${
                   role === tab.role ? "text-yellow-400 border-b-2 border-yellow-400" : "text-zinc-500 hover:text-zinc-300"
                 }`}
@@ -102,7 +127,7 @@ export default function LoginPage() {
                 <div className="space-y-4">
                   <div>
                     <label className={labelClasses}>Enter OTP</label>
-                    <input type="text" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="6-digit code" maxLength={6} className={inputClasses + " text-center text-xl tracking-[0.5em]"} />
+                    <input type="text" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} placeholder="6-digit code" maxLength={6} className={inputClasses + " text-center text-xl tracking-[0.5em]"} />
                   </div>
                   <button onClick={handleVerifyOTP} className={buttonClasses}>Verify & Continue</button>
                 </div>
@@ -133,7 +158,7 @@ export default function LoginPage() {
                   </div>
                   <div>
                     <label className={labelClasses}>4-Digit PIN</label>
-                    <input type="password" value={pin} onChange={(e) => setPin(e.target.value)} placeholder="****" maxLength={4} className={inputClasses + " text-center text-xl tracking-[0.5em]"} />
+                    <input type="password" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))} placeholder="****" maxLength={4} className={inputClasses + " text-center text-xl tracking-[0.5em]"} />
                   </div>
                   <button onClick={handleLogin} className={buttonClasses}>Login</button>
                 </div>
@@ -159,6 +184,13 @@ export default function LoginPage() {
               )}
             </div>
           </div>
+          
+          {/* Error Display */}
+          {error && (
+            <div className="mt-4 text-center text-xs font-bold uppercase tracking-wide text-red-500 bg-red-500/10 border border-red-500/20 py-2 rounded-lg">
+              {error}
+            </div>
+          )}
         </div>
 
         <p className="mt-8 text-center text-xs font-light text-zinc-500">

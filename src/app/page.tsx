@@ -1,6 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
-import { Sparkles, Gauge, ShieldCheck } from "lucide-react";
+import { Sparkles, Gauge, ShieldCheck, Car } from "lucide-react";
 
 export default function Home() {
   return (
@@ -9,7 +8,7 @@ export default function Home() {
       <div className="absolute top-0 left-0 right-0 flex justify-between items-center p-6 z-10">
         <div className="flex items-center gap-3">
           <div className="bg-yellow-400 p-1.5 rounded-lg">
-            <Image src="/logo.svg" alt="Estate Car Spa" width={24} height={24} className="object-contain" />
+            <Car size={24} className="text-black" />
           </div>
           <div className="text-left">
             <h1 className="text-lg font-bold tracking-tight text-white leading-none">ESTATE CAR SPA</h1>
