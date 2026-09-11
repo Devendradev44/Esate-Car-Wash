@@ -30,7 +30,7 @@ export default function ProfilePage() {
   const handleLogout = () => {
     document.cookie = 'mock_session=; path=/; max-age=0'; // Clear cookie
     logoutMockUser();
-    router.push("/login");
+    window.location.href="/login";
   };
 
   const handleSave = () => {

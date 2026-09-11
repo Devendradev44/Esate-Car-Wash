@@ -1,18 +1,20 @@
 "use client";
-// Add this import at the very top of the file
+import { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { useState } from "react";
-import { ArrowRight, User, Phone, Shield, Lock } from "lucide-react";
 
 enum Role { CUSTOMER = "CUSTOMER", STAFF = "STAFF", ADMIN = "ADMIN" }
 enum Step { LOGIN, OTP, SIGNUP }
 
 export default function LoginPage() {
+  const router = useRouter();
+  const setMockUser = useStore((state) => state.setMockUser);
+
   const [role, setRole] = useState<Role>(Role.CUSTOMER);
   const [step, setStep] = useState<Step>(Step.LOGIN);
 
-  // Form States
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [pin, setPin] = useState("");
@@ -21,156 +23,148 @@ export default function LoginPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
 
-  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-m-blue-dark focus:outline-none transition-colors appearance-none";
-  const labelClasses = "block text-xs font-bold uppercase tracking-machined text-muted mb-3";
+  const inputClasses = "w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-3 text-sm font-normal focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400/50 transition-all rounded-lg appearance-none";
+  const labelClasses = "block text-[10px] font-bold uppercase tracking-wide text-zinc-500 mb-2";
+  const buttonClasses = "w-full bg-yellow-400 py-3 text-xs font-bold uppercase tracking-wide text-black hover:bg-yellow-300 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20";
 
-  // Inside the export default function LoginPage() { ... add this:
-const router = useRouter();
+  const handleLogin = () => {
+    document.cookie = `mock_session=${role}; path=/; max-age=86400`;
+    setMockUser({
+      id: "mock_123",
+      role,
+      name: role === "ADMIN" ? "Admin User" : role === "STAFF" ? "Staff User" : "Customer User",
+      email: role === "ADMIN" ? email : "",
+      phone: role !== "ADMIN" ? phone : "",
+    });
 
-    // Inside LoginPage component:
-    const setMockUser = useStore((state) => state.setMockUser);
-
-    const handleLogin = () => {
-      // Set a mock cookie for the middleware to read
-      document.cookie = `mock_session=${role}; path=/; max-age=86400`; // Expires in 1 day
-      
-      // Save mock user before redirecting
-      setMockUser({
-        id: "mock_123",
-        role: role,
-        name: role === "ADMIN" ? "Admin User" : role === "STAFF" ? "Staff User" : "Customer User",
-        email: role === "ADMIN" ? email : "",
-        phone: role !== "ADMIN" ? phone : "",
-      });
-
-      if (role === Role.ADMIN) router.push("/dashboard");
-      else if (role === Role.STAFF) router.push("/staff/staff-dashboard");
-      else router.push("/customer/my-dashboard");
-    };
-
-    // Make sure to call handleLogin() at the end of handleVerifyOTP for existing users!
-    const handleVerifyOTP = () => {
-      const isNewUser = true; 
-      if (isNewUser) {
-        setStep(Step.SIGNUP);
-      } else {
-        handleLogin(); // <-- This will save the user and redirect
-      }
-    }
-
-  const handleRequestOTP = () => {
-    // Backend will send OTP via MSG91/Twilio
-    alert(`OTP Sent to ${phone}! (Mocked)`);
-    setStep(Step.OTP);
+    if (role === "ADMIN") router.push("/dashboard");
+    else if (role === "STAFF") router.push("/staff/staff-dashboard");
+    else router.push("/customer/my-dashboard");
   };
 
+  const handleVerifyOTP = () => setStep(Step.SIGNUP);
+  const handleRequestOTP = () => setStep(Step.OTP);
 
   return (
-    <div className="w-full max-w-sm">
-      {/* Logo */}
-      <div className="mb-10 text-center">
-        <h1 className="text-2xl font-bold tracking-machined text-ink">ESTATE</h1>
-        <p className="text-sm font-bold tracking-machined text-body">CAR WASH</p>
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 font-sans">
+      <div className="w-full max-w-md">
+        {/* Logo Beside Text */}
+        <div className="mb-8 flex flex-row items-center justify-center gap-3">
+          <div className="bg-yellow-400 p-1.5 rounded-lg">
+            <Image src="/logo.svg" alt="Estate Car Spa" width={24} height={24} className="object-contain" />
+          </div>
+          <div className="text-left">
+            <h1 className="text-lg font-bold tracking-tight text-white leading-none">ESTATE CAR SPA</h1>
+            <p className="text-[9px] font-medium uppercase tracking-widest text-zinc-500 mt-1">Premium Car Care</p>
+          </div>
+        </div>
+
+        {/* Card Container */}
+        <div className="bg-zinc-900 border border-zinc-800 p-8 min-h-[460px] flex flex-col rounded-xl shadow-2xl shadow-black/50">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-white mb-1 tracking-tight">Sign in</h2>
+            <p className="text-xs font-light text-zinc-400">Welcome back. Access your car spa portal.</p>
+          </div>
+
+          {/* Role Tabs */}
+          <div className="mb-6 flex border-b border-zinc-800">
+            {[
+              { role: Role.CUSTOMER, label: "Customer" },
+              { role: Role.STAFF, label: "Staff" },
+              { role: Role.ADMIN, label: "Admin" }
+            ].map(tab => (
+              <button 
+                key={tab.role}
+                onClick={() => { setRole(tab.role); setStep(Step.LOGIN); }}
+                className={`flex-1 pb-3 text-[10px] font-bold uppercase tracking-wide transition-colors ${
+                  role === tab.role ? "text-yellow-400 border-b-2 border-yellow-400" : "text-zinc-500 hover:text-zinc-300"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* FORM AREA */}
+          <div className="flex-1 flex flex-col justify-center">
+            <div key={`${role}-${step}`} className="animate-fade-in-up">
+              {role === Role.CUSTOMER && step === Step.LOGIN && (
+                <div className="space-y-4">
+                  <div>
+                    <label className={labelClasses}>Phone Number</label>
+                    <input type="tel" maxLength={10} value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} placeholder="98765 43210" className={inputClasses} />
+                  </div>
+                  <button onClick={handleRequestOTP} className={buttonClasses}>Get OTP</button>
+                </div>
+              )}
+
+              {role === Role.CUSTOMER && step === Step.OTP && (
+                <div className="space-y-4">
+                  <div>
+                    <label className={labelClasses}>Enter OTP</label>
+                    <input type="text" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="6-digit code" maxLength={6} className={inputClasses + " text-center text-xl tracking-[0.5em]"} />
+                  </div>
+                  <button onClick={handleVerifyOTP} className={buttonClasses}>Verify & Continue</button>
+                </div>
+              )}
+
+              {role === Role.CUSTOMER && step === Step.SIGNUP && (
+                <div className="space-y-4">
+                  <p className="text-xs font-bold uppercase tracking-wide text-yellow-400 text-center">Complete Your Profile</p>
+                  <div>
+                    <label className={labelClasses}>First Name</label>
+                    <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Rahul" className={inputClasses} />
+                  </div>
+                  <div>
+                    <label className={labelClasses}>Last Name</label>
+                    <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Sharma" className={inputClasses} />
+                  </div>
+                  <button onClick={handleLogin} className="w-full bg-green-500 py-3 text-xs font-bold uppercase tracking-wide text-black hover:bg-green-400 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-green-500/20">
+                    Start Booking
+                  </button>
+                </div>
+              )}
+
+              {role === Role.STAFF && (
+                <div className="space-y-4">
+                  <div>
+                    <label className={labelClasses}>Phone Number</label>
+                    <input type="tel" maxLength={10} value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} placeholder="98765 43210" className={inputClasses} />
+                  </div>
+                  <div>
+                    <label className={labelClasses}>4-Digit PIN</label>
+                    <input type="password" value={pin} onChange={(e) => setPin(e.target.value)} placeholder="****" maxLength={4} className={inputClasses + " text-center text-xl tracking-[0.5em]"} />
+                  </div>
+                  <button onClick={handleLogin} className={buttonClasses}>Login</button>
+                </div>
+              )}
+
+              {role === Role.ADMIN && (
+                <div className="space-y-4">
+                  <div>
+                    <label className={labelClasses}>Email Address</label>
+                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@estatecarspa.com" className={inputClasses} />
+                  </div>
+                  <div>
+                    <label className={labelClasses}>Password</label>
+                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className={inputClasses} />
+                  </div>
+                  <div className="text-right mt-1 mb-1">
+                    <button className="text-[10px] font-bold uppercase tracking-wide text-zinc-500 hover:text-yellow-400 transition-colors">
+                      Forgot Password?
+                    </button>
+                  </div>
+                  <button onClick={handleLogin} className={buttonClasses}>Sign in</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <p className="mt-8 text-center text-xs font-light text-zinc-500">
+          No account? <Link href="/signup" className="text-yellow-400 font-bold hover:underline">Create one</Link>
+        </p>
       </div>
-
-      {/* Role Tabs (Industrial BMW style) */}
-      <div className="mb-8 flex border-b border-hairline">
-        {[
-          { role: Role.CUSTOMER, icon: Phone, label: "Customer" },
-          { role: Role.STAFF, icon: User, label: "Staff" },
-          { role: Role.ADMIN, icon: Shield, label: "Admin" }
-        ].map(tab => (
-          <button 
-            key={tab.role}
-            onClick={() => { setRole(tab.role); setStep(Step.LOGIN); }}
-            className={`flex-1 flex items-center justify-center gap-2 pb-3 text-xs font-bold uppercase tracking-machined transition-colors ${
-              role === tab.role ? "text-ink border-b-2 border-m-blue-dark" : "text-muted hover:text-body"
-            }`}
-          >
-            <tab.icon size={14} /> {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* FORM AREA - Conditionally renders based on Role and Step */}
-      
-      {/* CUSTOMER: Phone -> OTP -> Signup (if new) */}
-      {role === Role.CUSTOMER && step === Step.LOGIN && (
-        <div>
-          <label className={labelClasses}>Phone Number</label>
-          <input type="tel" maxLength={10}value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} placeholder="+91 98765 43210" className={inputClasses} />
-          <button onClick={handleRequestOTP} className="mt-6 flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light">
-            Get OTP <ArrowRight size={14} />
-          </button>
-
-          {/* ADD SIGNUP NOTE HERE */}
-          <p className="mt-4 text-center text-xs font-light text-muted">
-            New here? Just enter your phone number to automatically sign up.
-          </p>
-        </div>
-      )}
-
-      {role === Role.CUSTOMER && step === Step.OTP && (
-        <div>
-          <label className={labelClasses}>Enter OTP</label>
-          <input type="text" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="6-digit code" maxLength={6} className={inputClasses + " text-center text-xl tracking-[0.5em]"} />
-          <button onClick={handleVerifyOTP} className="mt-6 flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light">
-            Verify & Continue <ArrowRight size={14} />
-          </button>
-        </div>
-      )}
-
-      {/* Customer Profile Creation (Schema requires firstName & lastName!) */}
-      {role === Role.CUSTOMER && step === Step.SIGNUP && (
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-machined text-m-blue-dark mb-4">Complete Your Profile</label>
-          <div className="mb-4">
-            <label className={labelClasses}>First Name</label>
-            <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Rahul" className={inputClasses} />
-          </div>
-          <div className="mb-4">
-            <label className={labelClasses}>Last Name</label>
-            <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Sharma" className={inputClasses} />
-          </div>
-          <button onClick={handleLogin} className="mt-6 flex w-full items-center justify-center gap-2 bg-success py-4 text-xs font-bold uppercase tracking-machined text-ink">
-            Start Booking <ArrowRight size={14} />
-          </button>
-        </div>
-      )}
-
-      {/* STAFF: Phone + PIN */}
-      {role === Role.STAFF && (
-        <div>
-          <label className={labelClasses}>Phone Number</label>
-          <input type="tel" maxLength={10} value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))} placeholder="+91 98765 43210" className={inputClasses + " mb-4"} />
-          <label className={labelClasses}>4-Digit PIN</label>
-          <input type="password" value={pin} onChange={(e) => setPin(e.target.value)} placeholder="****" maxLength={4} className={inputClasses + " text-center text-xl tracking-[0.5em]"} />
-          <button onClick={handleLogin} className="mt-6 flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light">
-            Login <Lock size={14} />
-          </button>
-        </div>
-      )}
-
-      {/* ADMIN: Email + Password */}
-      {role === Role.ADMIN && (
-        <div>
-          <label className={labelClasses}>Email Address</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@estatecarwash.com" className={inputClasses + " mb-4"} />
-          <label className={labelClasses}>Password</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className={inputClasses} />
-          <div className="text-right mt-3 mb-6">
-            <button 
-              onClick={() => alert("Forgot Password flow: Admin enters email -> receives reset link -> sets new password.")}
-              className="text-xs font-bold uppercase tracking-machined text-muted hover:text-m-blue-dark transition-colors"
-            >
-              Forgot Password?
-            </button>
-          </div>
-          <button onClick={handleLogin} className="mt-6 flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light">
-            Login <Lock size={14} />
-          </button>
-        </div>
-      )}
     </div>
   );
 }

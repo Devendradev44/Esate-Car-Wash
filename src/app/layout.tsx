@@ -10,12 +10,12 @@ const inter = Inter({
 
 
 export const metadata: Metadata = {
-  title: "Estate Car Wash | Premium Car Wash & Detailing SaaS",
-  description: "Estate Car Wash is a premium, gated-community car wash management platform. Book washes, manage staff, and track revenue.",
+  title: "Estate Car Spa | Premium Car Wash & Detailing SaaS",
+  description: "Estate Car Spa is a premium, gated-community car wash management platform. Book washes, manage staff, and track revenue.",
   keywords: ["car wash", "car wash saas", "gated community car wash", "auto detailing", "car wash booking"],
-  authors: [{ name: "Estate Car Wash" }],
+  authors: [{ name: "Estate Car Spa" }],
   openGraph: {
-    title: "Estate Car Wash | Premium Car Wash & Detailing",
+    title: "Estate Car Spa | Premium Car Wash & Detailing",
     description: "Book premium car wash services for your gated community.",
     type: "website",
   },

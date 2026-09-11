@@ -17,6 +17,7 @@ type BookingItem = {
   customer: string; flat: string; community: string; vehicle: string; regNumber: string; 
   service: string; amount: number; bookingStatus: "BOOKED" | "COMPLETED" | "CANCELLED"; paymentStatus: "PENDING" | "PAID" | "REFUNDED";
   cancelledBy?: "CUSTOMER" | "ADMIN" | "STAFF";
+  paymentMethod?: "CASH" | "UPI" | "ONLINE";
 };
 type ExpenseItem = { id: string; date: string; name: string; category: string; amount: number; paymentType: string; notes: string };
 type StaffItem = { id: string; name: string; phone: string; community: string; pin: string; status: "ACTIVE" | "DISABLED"; role: "STAFF" | "ADMIN" };
@@ -124,7 +125,7 @@ type AppStore = {
 
   // Booking Actions
   addBooking: (booking: BookingItem) => void;
-  completeBooking: (id: string) => void;
+  completeBooking: (id: string, method: "CASH" | "UPI" | "ONLINE") => void;
 
   // Expense Actions
   addExpense: (expense: ExpenseItem) => void;
@@ -261,8 +262,10 @@ export const useStore = create<AppStore>()(
 
       // Bookings
       addBooking: (newBooking) => set((state) => ({ bookings: [newBooking, ...state.bookings] })),
-      completeBooking: (id) => set((state) => ({
-        bookings: state.bookings.map(b => b.id === id ? { ...b, bookingStatus: "COMPLETED" as const, paymentStatus: "PAID" as const } : b)
+      completeBooking: (id, method) => set((state) => ({
+        bookings: state.bookings.map(b => 
+          b.id === id ? { ...b, bookingStatus: "COMPLETED" as const, paymentStatus: "PAID" as const, paymentMethod: method } : b
+        )
       })),
 
       // Expenses

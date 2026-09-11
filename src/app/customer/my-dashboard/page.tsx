@@ -11,6 +11,8 @@ export default function CustomerDashboard() {
   const bookings = useStore((state) => state.bookings);
   const cancelBooking = useStore((state) => state.cancelBooking);
 
+   const mockUser = useStore((state) => state.mockUser);
+
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
     const [year, month, day] = dateString.split("-");
@@ -19,7 +21,7 @@ export default function CustomerDashboard() {
 
   if (!mounted) return null;
 
-  const myBookings = bookings.filter(b => b.customer === "Rahul Sharma");
+  const myBookings = bookings.filter(b => b.customer === (mockUser?.name || "Guest"));
   const upcomingBookings = myBookings.filter(b => b.bookingStatus === "BOOKED");
   const pastBookings = myBookings.filter(b => b.bookingStatus !== "BOOKED");
   
@@ -29,7 +31,7 @@ export default function CustomerDashboard() {
     <div className="flex min-h-screen flex-col bg-canvas pb-24">
       <div className="border-b border-hairline bg-surface-soft p-6">
         <h1 className="text-2xl font-bold uppercase text-ink">My Dashboard</h1>
-        <p className="mt-1 text-sm font-light text-body">Welcome back, Rahul.</p>
+        <p className="mt-1 text-sm font-light text-body">Welcome back, {mockUser?.name || "Guest"}.</p>
       </div>
 
       <div className="flex-1 p-6 space-y-8">

@@ -29,7 +29,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-ink">
             {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
-          <h1 className="ml-4 text-sm font-bold uppercase tracking-machined text-ink">Estate Car Wash</h1>
+          <h1 className="ml-4 text-sm font-bold uppercase tracking-machined text-ink">Estate Car Spa</h1>
         </div>
 
         {/* Desktop Header (Hidden on mobile) */}

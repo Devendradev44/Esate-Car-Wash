@@ -12,6 +12,11 @@ export default function BookingsPage() {
 
   const bookings = useStore((state) => state.bookings);
   const cancelBooking = useStore((state) => state.cancelBooking);
+  const completeBooking = useStore((state) => state.completeBooking);
+  
+  // Modal State
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [activeBookingId, setActiveBookingId] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<BookingStatusType>("ALL");
@@ -105,16 +110,33 @@ export default function BookingsPage() {
               </div>
 
               {b.bookingStatus === "BOOKED" && (
-                <button 
-                  onClick={() => cancelBooking(b.id, "ADMIN")} 
-                  className="w-full border border-m-red/50 text-m-red py-2 text-xs font-bold uppercase tracking-machined hover:bg-m-red hover:text-ink transition-colors"
-                >
-                  Cancel Booking
-                </button>
+                <div className="flex flex-col gap-2">
+                  {/* ADDED MARK COMPLETE BUTTON FOR MOBILE */}
+                  <button 
+                    onClick={() => {
+                      setActiveBookingId(b.id);
+                      setShowCompleteModal(true);
+                    }} 
+                    className="w-full bg-success/10 text-success border border-success/30 py-2 text-xs font-bold uppercase tracking-machined hover:bg-success hover:text-ink transition-colors"
+                  >
+                    Mark Complete
+                  </button>
+                  <button 
+                    onClick={() => cancelBooking(b.id, "ADMIN")} 
+                    className="w-full border border-m-red/50 text-m-red py-2 text-xs font-bold uppercase tracking-machined hover:bg-m-red hover:text-ink transition-colors"
+                  >
+                    Cancel Booking
+                  </button>
+                </div>
               )}
               {b.bookingStatus === "CANCELLED" && (
-                <div className="text-right">
+                <div className="text-right mt-2">
                   <span className="text-[10px] font-light text-muted">By: {b.cancelledBy || "N/A"}</span>
+                </div>
+              )}
+              {b.bookingStatus === "COMPLETED" && (
+                <div className="text-right mt-2">
+                  <span className="text-[10px] font-light text-muted">Via: {b.paymentMethod || "N/A"}</span>
                 </div>
               )}
             </div>
@@ -180,31 +202,76 @@ export default function BookingsPage() {
                   </span>
                 </td>
                 <td className="py-4 px-4 text-right">
-                  {b.bookingStatus === "BOOKED" && (
+                {b.bookingStatus === "BOOKED" && (
+                  <div className="flex flex-col items-end gap-2">
+                    {/* ADDED MARK COMPLETE BUTTON */}
+                    <button 
+                      onClick={() => {
+                        setActiveBookingId(b.id);
+                        setShowCompleteModal(true);
+                      }} 
+                      className="text-xs font-bold uppercase tracking-machined text-success hover:underline"
+                    >
+                      Mark Complete
+                    </button>
                     <button 
                       onClick={() => cancelBooking(b.id, "ADMIN")} 
                       className="text-xs font-bold uppercase tracking-machined text-muted hover:text-m-red transition-colors"
                     >
                       Cancel
                     </button>
-                  )}
-                  {b.bookingStatus === "CANCELLED" && (
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="text-xs font-bold uppercase tracking-machined text-m-red">Cancelled</span>
-                      {b.cancelledBy && (
-                        <span className="text-[10px] font-light text-muted">By: {b.cancelledBy}</span>
-                      )}
-                    </div>
-                  )}
-                  {b.bookingStatus === "COMPLETED" && (
-                    <span className="text-xs font-light text-muted">—</span>
-                  )}
-                </td>
+                  </div>
+                )}
+                {b.bookingStatus === "CANCELLED" && (
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-xs font-bold uppercase tracking-machined text-m-red">Cancelled</span>
+                    {b.cancelledBy && <span className="text-[10px] font-light text-muted">By: {b.cancelledBy}</span>}
+                  </div>
+                )}
+                {b.bookingStatus === "COMPLETED" && (
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-xs font-bold uppercase tracking-machined text-success">Completed</span>
+                    {b.paymentMethod && <span className="text-[10px] font-light text-muted">Via: {b.paymentMethod}</span>}
+                  </div>
+                )}
+              </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      {/* Complete Booking Modal */}
+      {showCompleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="w-full max-w-sm border border-hairline bg-surface-soft p-8 text-center">
+            <h3 className="text-xl font-bold uppercase text-ink mb-2">Collect Payment</h3>
+            <p className="text-xs font-light text-muted mb-8">Select payment method to complete this booking.</p>
+            <div className="grid grid-cols-2 gap-4">
+              <button 
+                onClick={() => {
+                  completeBooking(activeBookingId, "CASH");
+                  setShowCompleteModal(false);
+                }}
+                className="bg-success py-4 text-xs font-bold uppercase tracking-machined text-ink hover:brightness-110"
+              >
+                Cash
+              </button>
+              <button 
+                onClick={() => {
+                  completeBooking(activeBookingId, "UPI");
+                  setShowCompleteModal(false);
+                }}
+                className="bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light"
+              >
+                UPI
+              </button>
+            </div>
+            <button onClick={() => setShowCompleteModal(false)} className="mt-6 text-xs font-bold uppercase tracking-machined text-muted hover:text-ink">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -10,6 +10,7 @@ export default function BookService() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const router = useRouter();
+  const mockUser = useStore((state) => state.mockUser);
 
   // Read global data from Zustand Store
   const allCommunities = useStore((state) => state.communities);
@@ -133,7 +134,7 @@ export default function BookService() {
       bookingCode: `ECW-${1000 + useStore.getState().bookings.length + 1}`,
       date: selectedDate,
       time: selectedTime,
-      customer: "Rahul Sharma",
+       customer: mockUser?.name || "Guest", // CHANGED FROM "Rahul Sharma(Mock data)" 
       flat: addressObj.flat || "Unknown",
       community: addressObj.community || "Unknown",
       vehicle: `${vehicleObj.brand} ${vehicleObj.model} (${vehicleObj.category})`,
