@@ -22,16 +22,15 @@ export function Sidebar() {
   const logoutMockUser = useStore((state) => state.logoutMockUser);
 
   const handleLogout = () => {
-    document.cookie = 'mock_session=; path=/; max-age=0'; // Clear cookie
     logoutMockUser();
-    window.location.href="/login";
+    router.replace("/login");
   };
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-hairline bg-surface-card">
       <div className="flex h-1 w-full">
-        <div className="flex-1 bg-m-blue-light" />
-        <div className="flex-1 bg-m-blue-dark" />
+        <div className="flex-1 bg-yellow-light" />
+        <div className="flex-1 bg-yellow-dark" />
         <div className="flex-1 bg-m-red" />
       </div>
 
@@ -50,7 +49,7 @@ export function Sidebar() {
               href={item.href}
               className={`flex items-center gap-4 px-4 py-3 text-xs font-bold uppercase tracking-machined transition-all duration-200 ${
                 isActive 
-                  ? "bg-surface-elevated text-ink border-l-2 border-m-blue-dark" 
+                  ? "bg-surface-elevated text-ink border-l-2 border-yellow-dark" 
                   : "text-body hover:bg-surface-soft hover:text-ink border-l-2 border-transparent"
               }`}
             >

@@ -1,27 +1,22 @@
 "use client";
-import { useState, useEffect } from "react";
 import { User, LogOut, Phone, MapPin } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
 
 export default function StaffProfilePage() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
   const router = useRouter();
   
   const mockUser = useStore((state) => state.mockUser);
   const logoutMockUser = useStore((state) => state.logoutMockUser);
   const staff = useStore((state) => state.staff);
 
-  if (!mounted) return null;
 
   // Find this staff member's details
   const myStaffDetails = staff.find(s => s.name === mockUser?.name) || staff[0];
 
   const handleLogout = () => {
-    document.cookie = 'mock_session=; path=/; max-age=0'; // Clear cookie
     logoutMockUser();
-    window.location.href="/login";
+    router.replace("/login");
   };
 
   return (
@@ -32,8 +27,8 @@ export default function StaffProfilePage() {
 
       <div className="flex-1 p-6 space-y-6">
         <div className="flex flex-col items-center justify-center border border-hairline bg-surface-card p-8">
-          <div className="w-20 h-20 rounded-full bg-m-blue-dark/20 flex items-center justify-center mb-4">
-            <User size={32} className="text-m-blue-dark" />
+          <div className="w-20 h-20 rounded-full bg-yellow-dark/20 flex items-center justify-center mb-4">
+            <User size={32} className="text-yellow-dark" />
           </div>
           <h2 className="text-xl font-bold text-ink">{myStaffDetails?.name || "Staff Member"}</h2>
           <p className="text-sm font-light text-muted mt-1">Staff</p>

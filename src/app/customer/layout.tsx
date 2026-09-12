@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Wrench, Car, MapPin, User } from "lucide-react";
+import { AuthGate } from "@/components/AuthGate";
 import { BottomNav } from "@/components/customer/BottomNav";
 
 export default function CustomerLayout({ children }: { children: React.ReactNode }) {
@@ -16,7 +17,8 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   ];
 
   return (
-    <div className="min-h-screen bg-canvas flex flex-col">
+    <AuthGate role="CUSTOMER">
+      <div className="min-h-screen bg-canvas flex flex-col">
       {/* Desktop Top Nav */}
       <div className="hidden md:flex sticky top-0 z-40 border-b border-hairline bg-surface-soft py-4 px-8 justify-between items-center">
         <Link href="/customer/my-dashboard" className="cursor-pointer">
@@ -29,7 +31,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
               key={item.href} 
               href={item.href}
               className={`flex items-center gap-2 text-xs font-bold uppercase tracking-machined ${
-                pathname === item.href ? "text-m-blue-dark" : "text-muted hover:text-ink"
+                pathname === item.href ? "text-yellow-dark" : "text-muted hover:text-ink"
               }`}
             >
               <item.icon size={16} />
@@ -49,5 +51,6 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
         <BottomNav />
       </div>
     </div>
+    </AuthGate>
   );
 }

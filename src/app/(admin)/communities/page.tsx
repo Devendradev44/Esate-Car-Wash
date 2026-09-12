@@ -1,11 +1,9 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Plus, Search, Edit, Trash2, EyeOff, Eye, X, MapPin, Building2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 export default function CommunitiesPage() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
 
   const communities = useStore((state) => state.communities);
   const addCommunity = useStore((state) => state.addCommunity);
@@ -21,7 +19,6 @@ export default function CommunitiesPage() {
   const [newAddress, setNewAddress] = useState("");
   const [slotCapacity, setSlotCapacity] = useState("1");
 
-  if (!mounted) return null;
 
   const filteredCommunities = communities.filter(c => 
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -58,7 +55,7 @@ export default function CommunitiesPage() {
     setShowModal(false);
   };
 
-  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-m-blue-dark focus:outline-none transition-colors appearance-none";
+  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
   const labelClasses = "block text-xs font-bold uppercase tracking-machined text-muted mb-3";
 
   return (
@@ -86,7 +83,7 @@ export default function CommunitiesPage() {
                 max="10" 
                 value={slotCapacity} 
                 onChange={(e) => {
-                  let val = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                  const val = e.target.value.replace(/\D/g, ''); // Remove non-digits
                   if (val === '') {
                     setSlotCapacity('');
                   } else if (Number(val) > 10) {
@@ -99,7 +96,7 @@ export default function CommunitiesPage() {
                 className={inputClasses} 
               />
             </div>
-            <button onClick={handleSaveCommunity} className="flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light">
+            <button onClick={handleSaveCommunity} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">
               {isEditing ? "Save Changes" : "Save Community"}
             </button>
           </div>
@@ -111,7 +108,7 @@ export default function CommunitiesPage() {
           <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-normal text-ink">Communities</h2>
           <p className="mt-2 text-sm font-light text-body">Manage gated communities and their visibility.</p>
         </div>
-        <button onClick={openAddModal} className="flex items-center justify-center gap-2 bg-m-blue-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light transition-colors">
+        <button onClick={openAddModal} className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
           <Plus size={14} /> Add Community
         </button>
       </div>
@@ -127,7 +124,7 @@ export default function CommunitiesPage() {
           <div key={c.id} className="border border-hairline bg-surface-card p-4">
             <div className="flex justify-between items-start mb-3">
               <div className="flex items-center gap-2">
-                <Building2 size={16} className="text-m-blue-dark" />
+                <Building2 size={16} className="text-yellow-dark" />
                 <p className="text-lg font-bold text-ink">{c.name}</p>
               </div>
               <span className={`text-[10px] font-bold uppercase tracking-machined px-2 py-1 ${c.status === "ACTIVE" ? "bg-success/20 text-success" : "bg-surface-elevated text-muted"}`}>
@@ -135,7 +132,7 @@ export default function CommunitiesPage() {
               </span>
             </div>
             <p className="text-xs font-light text-muted mb-2 flex items-center gap-2"><MapPin size={12} /> {c.address}</p>
-            <p className="text-xs font-bold text-m-blue-dark mb-4">Capacity: {c.slotCapacity} cars/slot</p>
+            <p className="text-xs font-bold text-yellow-dark mb-4">Capacity: {c.slotCapacity} cars/slot</p>
             <div className="flex items-center justify-end gap-4 border-t border-hairline pt-3">
               <button onClick={() => openEditModal(c.id, c.name, c.address, c.slotCapacity)} className="text-muted hover:text-ink transition-colors"><Edit size={16} /></button>
               <button onClick={() => toggleStatus(c.id)} className="text-muted hover:text-warning transition-colors">
@@ -164,7 +161,7 @@ export default function CommunitiesPage() {
               <tr key={c.id} className="border-b border-hairline last:border-none hover:bg-surface-elevated transition-colors">
                 <td className="py-4 px-6 text-sm font-bold text-ink">{c.name}</td>
                 <td className="py-4 px-6 text-sm font-light text-body">{c.address}</td>
-                <td className="py-4 px-6 text-sm font-bold text-m-blue-dark">{c.slotCapacity} cars/slot</td>
+                <td className="py-4 px-6 text-sm font-bold text-yellow-dark">{c.slotCapacity} cars/slot</td>
                 <td className="py-4 px-6">
                   <span className={`text-xs font-bold uppercase tracking-machined px-2 py-1 ${c.status === "ACTIVE" ? "text-success" : "text-muted"}`}>
                     {c.status}

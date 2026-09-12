@@ -1,14 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Check, MapPin, Car, Wrench, Calendar } from "lucide-react";
 import { useStore } from "@/lib/store"; 
 
 export default function BookService() {
-  // --- HYDRATION FIX ---
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
   const router = useRouter();
   const mockUser = useStore((state) => state.mockUser);
 
@@ -92,13 +89,14 @@ export default function BookService() {
   // Helper to convert 12-hour to 24-hour for comparison
   const convertTo24Hour = (time12h: string) => {
     const [time, modifier] = time12h.split(" ");
-    let [hours, minutes] = time.split(":");
-    if (hours === "12") hours = "00";
-    if (modifier === "PM") hours = String(parseInt(hours, 10) + 12);
-    return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+    const [hours, minutes] = time.split(":");
+    let h = hours;
+    if (h === "12") h = "00";
+    if (modifier === "PM") h = String(parseInt(h, 10) + 12);
+    return `${h.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
   };
 
-  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-m-blue-dark focus:outline-none transition-colors appearance-none";
+  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
   const labelClasses = "flex items-center gap-2 text-xs font-bold uppercase tracking-machined text-muted mb-4 mt-8";
   const cardClasses = "w-full border p-4 text-left transition-colors";
 
@@ -130,7 +128,7 @@ export default function BookService() {
     };
 
     addBooking({
-      id: `b${Date.now()}`,
+      id: `b${crypto.randomUUID()}`,
       bookingCode: `ECW-${1000 + useStore.getState().bookings.length + 1}`,
       date: selectedDate,
       time: selectedTime,
@@ -148,9 +146,6 @@ export default function BookService() {
     router.push("/customer/my-dashboard");
   };
 
-  // Prevent render until mounted on client to avoid hydration mismatch
-  if (!mounted) return null;
-
   return (
     <div className="flex min-h-screen flex-col bg-canvas pb-44 md:pb-32">
       <div className="border-b border-hairline bg-surface-soft p-6">
@@ -166,7 +161,7 @@ export default function BookService() {
         <div className="space-y-3 mb-4">
           {savedAddresses.map(a => (
             <button key={a.id} onClick={() => { setSelectedAddressId(a.id); setShowAddAddress(false); }}
-              className={`${cardClasses} ${selectedAddressId === a.id ? "border-m-blue-dark bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body"}`}>
+              className={`${cardClasses} ${selectedAddressId === a.id ? "border-yellow-dark bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body"}`}>
               <p className="text-sm font-bold text-ink">{a.flat}</p>
               <p className="text-xs font-light text-muted mt-1">{a.community}</p>
             </button>
@@ -174,7 +169,7 @@ export default function BookService() {
         </div>
 
         {!showAddAddress ? (
-          <button onClick={() => setShowAddAddress(true)} className="flex items-center gap-2 text-xs font-bold uppercase tracking-machined text-m-blue-dark hover:text-m-blue-light mb-8">
+          <button onClick={() => setShowAddAddress(true)} className="flex items-center gap-2 text-xs font-bold uppercase tracking-machined text-yellow-dark hover:text-yellow-light mb-8">
             <Plus size={14} /> Add new address
           </button>
         ) : (
@@ -190,7 +185,7 @@ export default function BookService() {
               addAddress(newAddr);
               setSelectedAddressId(newAddr.id); 
               setShowAddAddress(false); 
-            }} className="bg-m-blue-dark w-full py-3 text-xs font-bold uppercase tracking-machined text-ink">Save Address</button>
+            }} className="bg-yellow-dark w-full py-3 text-xs font-bold uppercase tracking-machined text-ink">Save Address</button>
           </div>
         )}
 
@@ -200,7 +195,7 @@ export default function BookService() {
         <div className="space-y-3 mb-4">
           {savedVehicles.map(v => (
             <button key={v.id} onClick={() => { setSelectedVehicleId(v.id); setShowAddVehicle(false); }}
-              className={`${cardClasses} ${selectedVehicleId === v.id ? "border-m-blue-dark bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body"}`}>
+              className={`${cardClasses} ${selectedVehicleId === v.id ? "border-yellow-dark bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body"}`}>
               <p className="text-sm font-bold text-ink">{v.brand} {v.model}</p>
               <p className="text-xs font-light text-muted mt-1">{v.reg} · {v.category}</p>
             </button>
@@ -208,7 +203,7 @@ export default function BookService() {
         </div>
 
         {!showAddVehicle ? (
-          <button onClick={() => setShowAddVehicle(true)} className="flex items-center gap-2 text-xs font-bold uppercase tracking-machined text-m-blue-dark hover:text-m-blue-light mb-8">
+          <button onClick={() => setShowAddVehicle(true)} className="flex items-center gap-2 text-xs font-bold uppercase tracking-machined text-yellow-dark hover:text-yellow-light mb-8">
             <Plus size={14} /> Add new vehicle
           </button>
         ) : (
@@ -267,7 +262,7 @@ export default function BookService() {
                 addCustomerVehicle(newVeh);
                 setSelectedVehicleId(newVeh.id); 
                 setShowAddVehicle(false); 
-              }} className="bg-m-blue-dark w-full py-3 text-xs font-bold uppercase tracking-machined text-ink">Save Vehicle</button>
+              }} className="bg-yellow-dark w-full py-3 text-xs font-bold uppercase tracking-machined text-ink">Save Vehicle</button>
             )}      
           </div>
         )}
@@ -280,10 +275,10 @@ export default function BookService() {
             <p className="text-xs font-light text-muted">Prices for: <span className="text-ink font-bold">{currentCategory || "New Vehicle"}</span></p>
             {services.map(s => (
               <button key={s.id} onClick={() => setSelectedService(s.name)}
-                className={`${cardClasses} ${selectedService === s.name ? "border-m-blue-dark bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body"}`}>
+                className={`${cardClasses} ${selectedService === s.name ? "border-yellow-dark bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body"}`}>
                 <div className="flex justify-between items-center">
                   <p className="text-sm font-bold text-ink">{s.name}</p>
-                  <p className="text-xs font-bold text-m-blue-dark">₹{getPrice(s)}</p>
+                  <p className="text-xs font-bold text-yellow-dark">₹{getPrice(s)}</p>
                 </div>
               </button>
             ))}
@@ -318,7 +313,7 @@ export default function BookService() {
                   onClick={() => setSelectedTime(t.label)}
                   disabled={isFull} 
                   className={`border p-3 text-center transition-colors ${
-                    selectedTime === t.label ? "border-m-blue-dark bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body"
+                    selectedTime === t.label ? "border-yellow-dark bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body"
                   } ${isFull ? "opacity-30 cursor-not-allowed hover:border-hairline" : ""}`}
                 >
                   <p className="text-xs font-bold text-ink">{t.label}</p>

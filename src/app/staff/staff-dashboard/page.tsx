@@ -1,11 +1,8 @@
 "use client";
-import { useState, useEffect } from "react";
 import { CheckCircle2, MapPin, Car, XCircle } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 export default function StaffDashboard() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
 
   const bookings = useStore((state) => state.bookings);
   const completeBooking = useStore((state) => state.completeBooking);
@@ -18,7 +15,6 @@ export default function StaffDashboard() {
     return `${day}-${month}-${year}`;
   };
 
-  if (!mounted) return null;
 
   // Show all bookings so you can see the updates instantly
   const todaysBookings = bookings;
@@ -26,7 +22,7 @@ export default function StaffDashboard() {
   return (
     <div className="flex min-h-screen flex-col bg-canvas pb-24">
       <div className="border-b border-hairline bg-surface-soft p-6">
-        <h1 className="text-2xl font-bold uppercase text-ink">Today's Schedule</h1>
+        <h1 className="text-2xl font-bold uppercase text-ink">Today&apos;s Schedule</h1>
         <p className="mt-1 text-sm font-light text-body">All Community Assignments</p>
       </div>
 
@@ -39,7 +35,7 @@ export default function StaffDashboard() {
           <div key={b.id} className={`border ${b.bookingStatus === "COMPLETED" ? "border-success/30 bg-success/5" : "border-hairline bg-surface-card"} p-5`}>
             <div className="flex justify-between items-start mb-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-machined text-m-blue-dark mb-1">{b.time} | {formatDate(b.date)}</p>
+                <p className="text-xs font-bold uppercase tracking-machined text-yellow-dark mb-1">{b.time} | {formatDate(b.date)}</p>
                 <h3 className="text-lg font-bold text-ink">{b.customer}</h3>
                 <p className="text-xs font-light text-muted mt-1 flex items-center gap-1"><MapPin size={12}/> {b.flat}, {b.community}</p>
               </div>
@@ -68,7 +64,7 @@ export default function StaffDashboard() {
                   </button>
                   <button 
                     onClick={() => completeBooking(b.id, "UPI")}
-                    className="flex items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light transition-colors"
+                    className="flex items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors"
                   >
                     <CheckCircle2 size={14} /> UPI ₹{b.amount}
                   </button>

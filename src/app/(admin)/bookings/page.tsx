@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Search, CalendarDays, XCircle, CheckCircle2, Banknote, User, Car, Wrench } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 type BookingStatusType = "ALL" | "BOOKED" | "COMPLETED" | "CANCELLED";
 
 export default function BookingsPage() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
 
   const bookings = useStore((state) => state.bookings);
   const cancelBooking = useStore((state) => state.cancelBooking);
@@ -27,7 +25,6 @@ export default function BookingsPage() {
     return `${day}-${month}-${year}`;
   };
 
-  if (!mounted) return null;
 
   const filteredBookings = bookings.filter(b => {
     const matchesSearch = 
@@ -40,7 +37,7 @@ export default function BookingsPage() {
     return matchesSearch && matchesFilter;
   });
 
-  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-3 text-sm font-light focus:border-m-blue-dark focus:outline-none transition-colors appearance-none";
+  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-3 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
 
   return (
     <div className="p-6 md:p-12">
@@ -63,7 +60,7 @@ export default function BookingsPage() {
               key={filter}
               onClick={() => setActiveFilter(filter)}
               className={`flex-1 px-4 py-3 text-xs font-bold uppercase tracking-machined transition-colors ${
-                activeFilter === filter ? "bg-m-blue-dark text-ink" : "text-muted hover:text-ink"
+                activeFilter === filter ? "bg-yellow-dark text-ink" : "text-muted hover:text-ink"
               }`}
             >
               {filter}
@@ -84,7 +81,7 @@ export default function BookingsPage() {
             <div key={b.id} className="border border-hairline bg-surface-card p-4">
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <p className="text-sm font-bold text-m-blue-dark">{b.bookingCode}</p>
+                  <p className="text-sm font-bold text-yellow-dark">{b.bookingCode}</p>
                   <p className="text-lg font-bold text-ink mt-1 flex items-center gap-2"><User size={14} className="text-muted"/> {b.customer}</p>
                   <p className="text-xs font-light text-muted">{b.flat}, {b.community}</p>
                 </div>
@@ -167,7 +164,7 @@ export default function BookingsPage() {
           <tbody>
             {filteredBookings.map(b => (
               <tr key={b.id} className="border-b border-hairline hover:bg-surface-card transition-colors">
-                <td className="py-4 px-4 text-sm font-bold text-m-blue-dark">{b.bookingCode}</td>
+                <td className="py-4 px-4 text-sm font-bold text-yellow-dark">{b.bookingCode}</td>
                 <td className="py-4 px-4">
                   <p className="text-sm font-bold text-ink">{formatDate(b.date)}</p>
                   <p className="text-xs font-light text-body">{b.time}</p>
@@ -261,7 +258,7 @@ export default function BookingsPage() {
                   completeBooking(activeBookingId, "UPI");
                   setShowCompleteModal(false);
                 }}
-                className="bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light"
+                className="bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light"
               >
                 UPI
               </button>

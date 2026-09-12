@@ -1,13 +1,11 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Plus, Search, Edit, Trash2, X, Wrench } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 const vehicleCategories = ["Hatchback", "Sedan", "SUV", "Luxury"];
 
 export default function ServicesPage() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
 
   const services = useStore((state) => state.services);
   const addService = useStore((state) => state.addService);
@@ -25,7 +23,6 @@ export default function ServicesPage() {
     Hatchback: "", Sedan: "", SUV: "", Luxury: ""
   });
 
-  if (!mounted) return null;
 
   const filteredServices = services.filter(s => 
     s.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -69,7 +66,7 @@ export default function ServicesPage() {
     setShowModal(false);
   };
 
-  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-m-blue-dark focus:outline-none transition-colors appearance-none";
+  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
   const labelClasses = "block text-xs font-bold uppercase tracking-machined text-muted mb-3";
 
   return (
@@ -101,7 +98,7 @@ export default function ServicesPage() {
               ))}
             </div>
 
-            <button onClick={handleSaveService} className="flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light">
+            <button onClick={handleSaveService} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">
               {isEditing ? "Save Changes" : "Save Service"}
             </button>
           </div>
@@ -113,7 +110,7 @@ export default function ServicesPage() {
           <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-normal text-ink">Services & Pricing</h2>
           <p className="mt-2 text-sm font-light text-body">Define services and their category-specific prices.</p>
         </div>
-        <button onClick={openAddModal} className="flex items-center justify-center gap-2 bg-m-blue-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light transition-colors">
+        <button onClick={openAddModal} className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
           <Plus size={14} /> Add Service
         </button>
       </div>
@@ -141,7 +138,7 @@ export default function ServicesPage() {
               {vehicleCategories.map(cat => (
                 <div key={cat} className="flex justify-between items-center">
                   <span className="text-[10px] font-bold uppercase tracking-machined text-muted">{cat}</span>
-                  <span className="text-xs font-bold text-m-blue-dark">₹{s.pricing[cat] || 0}</span>
+                  <span className="text-xs font-bold text-yellow-dark">₹{s.pricing[cat] || 0}</span>
                 </div>
               ))}
             </div>
@@ -168,7 +165,7 @@ export default function ServicesPage() {
                 <td className="py-4 px-6 text-sm font-bold text-ink">{s.name}</td>
                 <td className="py-4 px-6 text-sm font-light text-body">{s.description}</td>
                 {vehicleCategories.map(cat => (
-                  <td key={cat} className="py-4 px-6 text-sm font-bold text-m-blue-dark text-center">₹{s.pricing[cat] || 0}</td>
+                  <td key={cat} className="py-4 px-6 text-sm font-bold text-yellow-dark text-center">₹{s.pricing[cat] || 0}</td>
                 ))}
                 <td className="py-4 px-6 text-right">
                   <div className="flex items-center justify-end gap-3">

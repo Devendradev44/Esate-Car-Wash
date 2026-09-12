@@ -1,19 +1,14 @@
 "use client";
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { CalendarDays, IndianRupee, Building2, Users, ArrowRight } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 export default function AdminDashboard() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
 
   const bookings = useStore((state) => state.bookings);
   const communities = useStore((state) => state.communities);
-  const expenses = useStore((state) => state.expenses);
   const staff = useStore((state) => state.staff);
 
-  if (!mounted) return null;
 
   // Calculate Live KPIs
   const totalRevenue = bookings.filter(b => b.paymentStatus === "PAID").reduce((sum, b) => sum + b.amount, 0);
@@ -24,7 +19,7 @@ export default function AdminDashboard() {
 
   const kpiCards = [
     { title: "Total Revenue", value: `₹${totalRevenue.toLocaleString('en-IN')}`, icon: IndianRupee, color: "text-success", link: "/revenue" },
-    { title: "Active Bookings", value: activeBookings, icon: CalendarDays, color: "text-m-blue-dark", link: "/bookings" },
+    { title: "Active Bookings", value: activeBookings, icon: CalendarDays, color: "text-yellow-dark", link: "/bookings" },
     { title: "Communities", value: activeCommunities, icon: Building2, color: "text-ink", link: "/communities" },
     { title: "Staff Members", value: staff.length, icon: Users, color: "text-ink", link: "/staff" },
   ];
@@ -53,7 +48,7 @@ export default function AdminDashboard() {
       <div className="border border-hairline bg-surface-card p-6">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-sm font-bold uppercase tracking-machined text-muted">Recent Bookings</h3>
-          <Link href="/bookings" className="flex items-center gap-1 text-xs font-bold uppercase tracking-machined text-m-blue-dark hover:text-m-blue-light">
+          <Link href="/bookings" className="flex items-center gap-1 text-xs font-bold uppercase tracking-machined text-yellow-dark hover:text-yellow-light">
             View All <ArrowRight size={12} />
           </Link>
         </div>

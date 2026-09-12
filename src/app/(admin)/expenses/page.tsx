@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Plus, Search, Trash2, X, Edit, Receipt } from "lucide-react";
 import { useStore } from "@/lib/store";
 
@@ -7,8 +7,6 @@ const expenseCategories = ["SALARY", "RENT", "WATER", "ELECTRICITY", "MAINTENANC
 const expensePaymentMethods = ["CASH", "UPI", "CHEQUE", "ACCOUNT_TRANSFER"];
 
 export default function ExpensesPage() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
 
   const expenses = useStore((state) => state.expenses);
   const addExpense = useStore((state) => state.addExpense);
@@ -27,7 +25,6 @@ export default function ExpensesPage() {
   const [paymentType, setPaymentType] = useState(expensePaymentMethods[0]);
   const [notes, setNotes] = useState("");
 
-  if (!mounted) return null;
 
   const filteredExpenses = expenses.filter(e => 
     e.name.toLowerCase().includes(searchQuery.toLowerCase()) || e.category.toLowerCase().includes(searchQuery.toLowerCase())
@@ -40,7 +37,7 @@ export default function ExpensesPage() {
     setShowModal(true);
   };
 
-  const openEditModal = (e: any) => {
+  const openEditModal = (e: { id: string; date: string; name: string; category: string; amount: number; paymentType: string; notes: string }) => {
     setIsEditing(true);
     setCurrentId(e.id);
     setDate(e.date); setName(e.name); setAmount(e.amount.toString());
@@ -60,7 +57,7 @@ export default function ExpensesPage() {
     setShowModal(false);
   };
 
-  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-m-blue-dark focus:outline-none transition-colors appearance-none";
+  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
   const labelClasses = "block text-xs font-bold uppercase tracking-machined text-muted mb-3";
 
   return (
@@ -80,7 +77,7 @@ export default function ExpensesPage() {
               <div><label className={labelClasses}>Payment Type</label><select value={paymentType} onChange={(e) => setPaymentType(e.target.value)} className={inputClasses}>{expensePaymentMethods.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
               <div><label className={labelClasses}>Notes (Optional)</label><input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any details..." className={inputClasses} /></div>
             </div>
-            <button onClick={handleSaveExpense} className="mt-6 flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light">
+            <button onClick={handleSaveExpense} className="mt-6 flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">
               {isEditing ? "Save Changes" : "Save Expense"}
             </button>
           </div>
@@ -92,7 +89,7 @@ export default function ExpensesPage() {
           <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-normal text-ink">Expenses</h2>
           <p className="mt-2 text-sm font-light text-body">Track operational costs: salaries, rent, materials, etc.</p>
         </div>
-        <button onClick={openAddModal} className="flex items-center justify-center gap-2 bg-m-blue-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light transition-colors">
+        <button onClick={openAddModal} className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
           <Plus size={14} /> Add Expense
         </button>
       </div>

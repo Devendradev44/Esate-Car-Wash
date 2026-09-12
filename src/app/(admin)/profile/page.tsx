@@ -1,14 +1,10 @@
 "use client";
-import { useState, useEffect } from "react";
 import { User, Mail, Shield } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 export default function AdminProfile() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
   const mockUser = useStore((state) => state.mockUser);
 
-  if (!mounted) return null;
 
   return (
     <div className="p-12">
@@ -19,8 +15,8 @@ export default function AdminProfile() {
 
       <div className="max-w-md border border-hairline bg-surface-card p-8">
         <div className="flex flex-col items-center justify-center mb-8">
-          <div className="w-20 h-20 rounded-full bg-m-blue-dark/20 flex items-center justify-center mb-4">
-            <User size={32} className="text-m-blue-dark" />
+          <div className="w-20 h-20 rounded-full bg-yellow-dark/20 flex items-center justify-center mb-4">
+            <User size={32} className="text-yellow-dark" />
           </div>
           <h2 className="text-xl font-bold text-ink">{mockUser?.name || "Admin User"}</h2>
           <p className="text-sm font-light text-muted mt-1 flex items-center gap-1"><Shield size={12} /> Administrator</p>

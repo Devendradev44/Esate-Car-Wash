@@ -1,13 +1,11 @@
 import { AdminShell } from "@/components/admin/AdminShell";
-import Hydration from "@/components/Hydration"; // Import blocker
+import { AuthGate } from "@/components/AuthGate";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <AdminShell>
-      {/* WRAP CHILDREN SO ADMIN WAIT FOR LOCALSTORAGE */}
-      <Hydration>
-        {children}
-      </Hydration>
-    </AdminShell>
+    <AuthGate role="ADMIN">
+      <AdminShell>{children}</AdminShell>
+    </AuthGate>
   );
 }
+

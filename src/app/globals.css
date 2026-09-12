@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
-/* BMW M Design System Configuration for Tailwind v4 */
+/* Black / Grey / Yellow Design System Configuration for Tailwind v4 */
 @theme {
-  /* Brand Colors */
+  /* Brand Colors - Black, Grey, Yellow palette */
   --color-canvas: #000000;
   --color-surface-soft: #0d0d0d;
   --color-surface-card: #1a1a1a;
@@ -12,13 +12,14 @@
   --color-body: #bbbbbb;
   --color-body-strong: #e6e6e6;
   --color-muted: #7e7e7e;
-  --color-m-blue-light: #0066b1;
-  --color-m-blue-dark: #1c69d4;
+  --color-yellow-light: #ffdd44;
+  --color-yellow: #ffcc00;
+  --color-yellow-dark: #e6b800;
   --color-m-red: #e22718;
   --color-warning: #f4b400;
   --color-success: #0fa336;
 
-  /* Border Radius (0px is default for BMW) */
+  /* Border Radius */
   --radius-none: 0px;
   --radius-xs: 2px;
   --radius-sm: 4px;

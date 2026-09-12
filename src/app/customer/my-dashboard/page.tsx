@@ -1,12 +1,9 @@
 "use client";
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { CalendarDays, Car, Wrench, ArrowRight, XCircle } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 export default function CustomerDashboard() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
   
   const bookings = useStore((state) => state.bookings);
   const cancelBooking = useStore((state) => state.cancelBooking);
@@ -19,7 +16,6 @@ export default function CustomerDashboard() {
     return `${day}-${month}-${year}`;
   };
 
-  if (!mounted) return null;
 
   const myBookings = bookings.filter(b => b.customer === (mockUser?.name || "Guest"));
   const upcomingBookings = myBookings.filter(b => b.bookingStatus === "BOOKED");
@@ -37,9 +33,9 @@ export default function CustomerDashboard() {
       <div className="flex-1 p-6 space-y-8">
         
         {/* Quick Action Button */}
-        <Link href="/customer/book" className="flex items-center justify-between border border-m-blue-dark bg-surface-card p-6 hover:bg-surface-elevated transition-colors">
+        <Link href="/customer/book" className="flex items-center justify-between border border-yellow-dark bg-surface-card p-6 hover:bg-surface-elevated transition-colors">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-m-blue-dark/20 text-m-blue-dark"><Wrench size={20} /></div>
+            <div className="p-3 bg-yellow-dark/20 text-yellow-dark"><Wrench size={20} /></div>
             <div>
               <p className="text-lg font-bold text-ink">Book a Service</p>
               <p className="text-xs font-light text-muted">Schedule your next car wash</p>

@@ -1,36 +1,25 @@
 "use client";
-import { useState, useEffect } from "react";
-import { User, Phone, Mail, LogOut, Edit, Check, Save } from "lucide-react";
+import { useState } from "react";
+import { User, Phone, Mail, LogOut, Edit, Save } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
   const router = useRouter();
   
   const mockUser = useStore((state) => state.mockUser);
   const logoutMockUser = useStore((state) => state.logoutMockUser);
   const updateMockUser = useStore((state) => state.updateMockUser);
 
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState(mockUser?.phone || "");
+  const [email, setEmail] = useState(mockUser?.email || "");
   const [isEditing, setIsEditing] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
 
-  useEffect(() => {
-    if (mockUser) {
-      setPhone(mockUser.phone || "");
-      setEmail(mockUser.email || "");
-    }
-  }, [mockUser]);
-
-  if (!mounted) return null;
 
   const handleLogout = () => {
-    document.cookie = 'mock_session=; path=/; max-age=0'; // Clear cookie
     logoutMockUser();
-    window.location.href="/login";
+    router.replace("/login");
   };
 
   const handleSave = () => {
@@ -55,7 +44,7 @@ export default function ProfilePage() {
         <h1 className="text-2xl font-bold uppercase text-ink">My Profile</h1>
         <button 
           onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-          className="flex items-center gap-1 text-xs font-bold uppercase tracking-machined text-m-blue-dark border border-m-blue-dark px-3 py-2 hover:bg-m-blue-dark hover:text-ink transition-colors"
+          className="flex items-center gap-1 text-xs font-bold uppercase tracking-machined text-yellow-dark border border-yellow-dark px-3 py-2 hover:bg-yellow-dark hover:text-ink transition-colors"
         >
           {isEditing ? <Save size={14} /> : <Edit size={14} />}
           {isEditing ? "Save Changes" : "Edit Profile"}
@@ -64,8 +53,8 @@ export default function ProfilePage() {
 
       <div className="flex-1 p-6 space-y-6">
         <div className="flex flex-col items-center justify-center border border-hairline bg-surface-card p-8">
-          <div className="w-20 h-20 rounded-full bg-m-blue-dark/20 flex items-center justify-center mb-4">
-            <User size={32} className="text-m-blue-dark" />
+          <div className="w-20 h-20 rounded-full bg-yellow-dark/20 flex items-center justify-center mb-4">
+            <User size={32} className="text-yellow-dark" />
           </div>
           <h2 className="text-xl font-bold text-ink">{mockUser?.name || "Customer"}</h2>
           <p className="text-sm font-light text-muted mt-1">Customer</p>

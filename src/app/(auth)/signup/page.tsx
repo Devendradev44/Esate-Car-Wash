@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Car } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
+import { AuthGate } from "@/components/AuthGate";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -24,20 +25,20 @@ export default function SignupPage() {
     if (!email.includes("@") || !email.includes(".")) { setError("Please enter a valid email address."); return; }
     if (password.length < 4) { setError("Password must be at least 4 characters."); return; }
 
-    document.cookie = `mock_session=${role}; path=/; max-age=86400`;
     setMockUser({ id: `mock_${Date.now()}`, role, name, phone, email });
 
-    if (role === "ADMIN") router.push("/dashboard");
-    else if (role === "STAFF") router.push("/staff/staff-dashboard");
-    else router.push("/customer/my-dashboard");
+    if (role === "ADMIN") router.replace("/dashboard");
+    else if (role === "STAFF") router.replace("/staff/staff-dashboard");
+    else router.replace("/customer/my-dashboard");
   };
 
   const inputClasses = "w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-3 text-sm font-normal focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400/50 transition-all rounded-lg appearance-none";
   const labelClasses = "block text-[10px] font-bold text-zinc-500 mb-2";
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 font-sans">
-      <div className="w-full max-w-md">
+    <AuthGate>
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 font-sans">
+        <div className="w-full max-w-md">
         {/* Logo */}
         <div className="mb-8 flex flex-row items-center justify-center gap-3">
           <div className="bg-yellow-400 p-2 rounded-lg">
@@ -110,7 +111,8 @@ export default function SignupPage() {
         <p className="mt-8 text-center text-xs text-zinc-500">
           Already have an account? <Link href="/login" className="text-yellow-400 font-bold hover:underline">Sign in</Link>
         </p>
+        </div>
       </div>
-    </div>
+    </AuthGate>
   );
 }

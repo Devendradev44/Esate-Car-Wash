@@ -1,31 +1,34 @@
 "use client";
-import { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { useStore } from "@/lib/store";
 
+interface CardProps {
+  title: string;
+  value: number;
+  icon: React.ReactNode;
+  color: string;
+}
+
+const Card = ({ title, value, icon, color }: CardProps) => (
+  <div className="border border-hairline bg-surface-card p-6">
+    <div className="flex items-center gap-2 text-muted mb-4">
+      {icon}
+      <p className="text-xs font-bold uppercase tracking-machined">{title}</p>
+    </div>
+    <p className={`text-3xl font-bold ${color}`}>₹{value.toLocaleString('en-IN')}</p>
+  </div>
+);
+
 export default function RevenuePage() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
 
   const bookings = useStore((state) => state.bookings);
   const expenses = useStore((state) => state.expenses);
 
-  if (!mounted) return null;
 
   // Calculate Mock P&L
   const revenue = bookings.filter(b => b.paymentStatus === "PAID").reduce((acc, b) => acc + b.amount, 0);
   const totalExpenses = expenses.reduce((acc, e) => acc + e.amount, 0);
   const netProfit = revenue - totalExpenses;
-
-  const Card = ({ title, value, icon, color }: any) => (
-    <div className="border border-hairline bg-surface-card p-6">
-      <div className="flex items-center gap-2 text-muted mb-4">
-        {icon}
-        <p className="text-xs font-bold uppercase tracking-machined">{title}</p>
-      </div>
-      <p className={`text-3xl font-bold ${color}`}>₹{value.toLocaleString('en-IN')}</p>
-    </div>
-  );
 
   return (
     <div className="p-12">

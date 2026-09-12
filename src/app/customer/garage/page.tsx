@@ -1,11 +1,9 @@
 "use client";
-import { useState, useEffect } from "react";
-import { Plus, Car, Trash2, X, Edit } from "lucide-react";
+import { useState } from "react";
+import { Plus, Trash2, X, Edit } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 export default function GaragePage() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
 
   const formatRegNumber = (value: string) => {
     return value.toUpperCase().replace(/[^A-Z0-9 ]/g, '');
@@ -30,7 +28,6 @@ export default function GaragePage() {
   const [editId, setEditId] = useState("");
   const [editReg, setEditReg] = useState("");
 
-  if (!mounted) return null;
 
   const brandsForNewCat = vehicleHierarchy.find(c => c.id === newCat)?.brands || [];
   const modelsForNewBrand = brandsForNewCat.find(b => b.id === newBrand)?.models || [];
@@ -43,7 +40,7 @@ export default function GaragePage() {
     const modelName = modelsForNewBrand.find(m => m.id === newModel)?.name || "";
 
     addCustomerVehicle({
-      id: `v${Date.now()}`,
+      id: `v${crypto.randomUUID()}`,
       category: catName,
       brand: brandName,
       model: modelName,
@@ -71,7 +68,7 @@ export default function GaragePage() {
   setShowEditModal(false);
 };
 
-  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-m-blue-dark focus:outline-none transition-colors appearance-none";
+  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas pb-24">
@@ -80,7 +77,7 @@ export default function GaragePage() {
           <h1 className="text-2xl font-bold uppercase text-ink">My Garage</h1>
           <p className="mt-1 text-sm font-light text-body">Manage your saved vehicles.</p>
         </div>
-        <button onClick={() => setShowAddModal(true)} className="p-3 border border-m-blue-dark text-m-blue-dark hover:bg-m-blue-dark hover:text-ink transition-colors">
+        <button onClick={() => setShowAddModal(true)} className="p-3 border border-yellow-dark text-yellow-dark hover:bg-yellow-dark hover:text-ink transition-colors">
           <Plus size={20} />
         </button>
       </div>
@@ -158,7 +155,7 @@ export default function GaragePage() {
                 handleSaveVehicle();
               }} 
               disabled={!newModel || !newReg} 
-              className="flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light disabled:opacity-50"
             >
               Save Vehicle
             </button>
@@ -184,7 +181,7 @@ export default function GaragePage() {
                 className={inputClasses} 
               />   
            </div>
-            <button onClick={handleEditSave} className="flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light">
+            <button onClick={handleEditSave} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">
               Save Changes
             </button>
           </div>

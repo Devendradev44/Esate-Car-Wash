@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { vehicleFixtures, type VehicleCategory, type VehicleBrand, type VehicleModel } from './vehicleFixtures';
 
 // --- TYPES ---
 type MockUser = { id: string; role: "CUSTOMER" | "STAFF" | "ADMIN"; name: string; phone?: string; email?: string };
@@ -8,9 +9,6 @@ type CustomerVehicle = { id: string; category: string; brand: string; model: str
 type CustomerAddress = { id: string; community: string; flat: string };
 type Community = { id: string; name: string; address: string; status: "ACTIVE" | "HIDDEN"; slotCapacity: number };
 type TimeSlot = { id: string; label: string; startTime: string };
-type VehicleCategory = { id: string; name: string; brands: VehicleBrand[] };
-type VehicleBrand = { id: string; name: string; models: VehicleModel[] };
-type VehicleModel = { id: string; name: string };
 type ServiceItem = { id: string; name: string; description: string; pricing: Record<string, number> };
 type BookingItem = { 
   id: string; bookingCode: string; date: string; time: string; 
@@ -37,19 +35,6 @@ const initialTimeSlots: TimeSlot[] = [
   { id: "ts5", label: "04:00 - 06:00 PM", startTime: "16:00" },
 ];
 
-const initialVehicles: VehicleCategory[] = [
-  { id: "cat_suv", name: "SUV", brands: [
-      { id: "brand_toyota", name: "Toyota", models: [{ id: "model_fortuner", name: "Fortuner" }] },
-      { id: "brand_hyundai", name: "Hyundai", models: [{ id: "model_creta", name: "Creta" }] },
-  ]},
-  { id: "cat_hatchback", name: "Hatchback", brands: [
-      { id: "brand_maruti", name: "Maruti Suzuki", models: [{ id: "model_swift", name: "Swift" }, { id: "model_baleno", name: "Baleno" }] },
-  ]},
-  { id: "cat_luxury", name: "Luxury", brands: [
-      { id: "brand_bmw", name: "BMW", models: [{ id: "model_3series", name: "3 Series" }] },
-  ]},
-];
-
 const initialServices: ServiceItem[] = [
   { id: "s1", name: "Basic Wash", description: "Essential exterior cleaning for everyday maintenance.", pricing: { Hatchback: 400, Sedan: 500, SUV: 600, Luxury: 600 } },
   { id: "s2", name: "Deluxe Wash", description: "A more complete wash with interior vacuuming.", pricing: { Hatchback: 600, Sedan: 800, SUV: 1000, Luxury: 1000 } },
@@ -58,7 +43,7 @@ const initialServices: ServiceItem[] = [
 ];
 
 const initialBookings: BookingItem[] = [
-  
+   
 ];
 
 const initialExpenses: ExpenseItem[] = [
@@ -146,7 +131,7 @@ export const useStore = create<AppStore>()(
       logoutMockUser: () => set({ mockUser: null }),
 
       communities: initialCommunities,
-      vehicles: initialVehicles,
+      vehicles: vehicleFixtures,
       services: initialServices,
       bookings: initialBookings,
       expenses: initialExpenses,
@@ -283,15 +268,12 @@ export const useStore = create<AppStore>()(
       deleteStaff: (id) => set((state) => ({ staff: state.staff.filter(s => s.id !== id) })),
     }),
     {
-      name: 'estate-car-wash-v9', // Bumped to v7 to ensure clean state and apply type fixes
+      name: 'estate-car-wash-v10',
     }
   )
 );
 
 export const useHydrated = () => {
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => {
-    setHydrated(true);
-  }, []);
+  const [hydrated] = useState(true);
   return hydrated;
 };

@@ -23,7 +23,7 @@ export function BottomNav() {
             key={item.href} 
             href={item.href}
             className={`flex flex-col items-center gap-1 text-[10px] font-bold uppercase tracking-machined ${
-              isActive ? "text-m-blue-dark" : "text-muted"
+              isActive ? "text-yellow-dark" : "text-muted"
             }`}
           >
             <item.icon size={20} />

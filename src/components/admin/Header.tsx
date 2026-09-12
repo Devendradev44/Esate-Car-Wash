@@ -18,7 +18,7 @@ export function Header() {
     <div className="sticky top-0 z-40 border-b border-hairline bg-canvas p-6 flex justify-end items-center relative">
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 text-xs font-bold uppercase tracking-machined text-ink hover:text-m-blue-dark transition-colors"
+        className="flex items-center gap-2 text-xs font-bold uppercase tracking-machined text-ink hover:text-yellow-dark transition-colors"
       >
         Admin User
         <ChevronDown size={14} />

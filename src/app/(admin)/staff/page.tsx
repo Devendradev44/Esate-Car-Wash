@@ -1,11 +1,9 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Plus, Trash2, X, User, Phone, KeyRound, Edit } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 export default function StaffPage() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
 
   const staff = useStore((state) => state.staff);
   const communities = useStore((state) => state.communities);
@@ -20,7 +18,6 @@ export default function StaffPage() {
   const [phone, setPhone] = useState("");
   const [community, setCommunity] = useState("");
 
-  if (!mounted) return null;
 
   const openAddModal = () => {
     setIsEditing(false);
@@ -47,7 +44,7 @@ export default function StaffPage() {
     setShowModal(false);
   };
 
-  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-m-blue-dark focus:outline-none transition-colors appearance-none";
+  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
   const labelClasses = "block text-xs font-bold uppercase tracking-machined text-muted mb-3";
 
   return (
@@ -74,7 +71,7 @@ export default function StaffPage() {
                 {communities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
               </select>
             </div>
-            <button onClick={handleSaveStaff} className="flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light">
+            <button onClick={handleSaveStaff} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">
               {isEditing ? "Save Changes" : "Generate PIN & Save"}
             </button>
           </div>
@@ -86,7 +83,7 @@ export default function StaffPage() {
           <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-normal text-ink">Staff Management</h2>
           <p className="mt-2 text-sm font-light text-body">Create staff accounts and assign communities.</p>
         </div>
-        <button onClick={openAddModal} className="flex items-center justify-center gap-2 bg-m-blue-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light transition-colors">
+        <button onClick={openAddModal} className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
           <Plus size={14} /> Add Staff
         </button>
       </div>
@@ -100,7 +97,7 @@ export default function StaffPage() {
                 <p className="text-lg font-bold text-ink flex items-center gap-2"><User size={14} className="text-muted" /> {s.name}</p>
                 <p className="text-xs font-light text-muted mt-1 flex items-center gap-2"><Phone size={12} /> {s.phone}</p>
               </div>
-              <span className="text-xs font-bold text-m-blue-dark flex items-center gap-1"><KeyRound size={12} /> {s.pin}</span>
+              <span className="text-xs font-bold text-yellow-dark flex items-center gap-1"><KeyRound size={12} /> {s.pin}</span>
             </div>
             <p className="text-xs font-light text-body mb-4">Community: {s.community}</p>
             <div className="flex items-center justify-end gap-4 border-t border-hairline pt-3">
@@ -129,7 +126,7 @@ export default function StaffPage() {
                 <td className="py-4 px-6 text-sm font-bold text-ink"><div className="flex items-center gap-2"><User size={14} className="text-muted"/> {s.name}</div></td>
                 <td className="py-4 px-6 text-sm font-light text-body"><div className="flex items-center gap-2"><Phone size={14} className="text-muted"/> {s.phone}</div></td>
                 <td className="py-4 px-6 text-sm font-light text-body">{s.community}</td>
-                <td className="py-4 px-6 text-sm font-bold text-m-blue-dark text-center"><div className="flex items-center justify-center gap-1"><KeyRound size={12} /> {s.pin}</div></td>
+                <td className="py-4 px-6 text-sm font-bold text-yellow-dark text-center"><div className="flex items-center justify-center gap-1"><KeyRound size={12} /> {s.pin}</div></td>
                 <td className="py-4 px-6 text-right">
                   <div className="flex items-center justify-end gap-3">
                     <button onClick={() => openEditModal(s.id, s.name, s.phone, s.community)} className="text-muted hover:text-ink transition-colors"><Edit size={16} /></button>

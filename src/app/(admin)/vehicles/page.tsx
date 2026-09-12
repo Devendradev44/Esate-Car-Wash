@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Plus, ChevronDown, ChevronRight, Trash2, Edit, X } from "lucide-react";
 import { useStore } from "@/lib/store";
 
@@ -9,8 +9,6 @@ const POPULAR_BRANDS = [
 ];
 
 export default function VehiclesPage() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
 
   const hierarchy = useStore((state) => state.vehicles);
   const addVehicleCategory = useStore((state) => state.addVehicleCategory);
@@ -38,7 +36,6 @@ export default function VehiclesPage() {
   const [editName, setEditName] = useState("");
   const [editIds, setEditIds] = useState<{ catId?: string, brandId?: string, modelId?: string }>({});
 
-  if (!mounted) return null;
 
   const handleAddItem = () => {
     if (!newName.trim()) return;
@@ -71,7 +68,7 @@ export default function VehiclesPage() {
     setShowEditModal(false);
   };
 
-  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-m-blue-dark focus:outline-none transition-colors appearance-none";
+  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
   const labelClasses = "block text-xs font-bold uppercase tracking-machined text-muted mb-3";
 
   return (
@@ -130,7 +127,7 @@ export default function VehiclesPage() {
               <label className={labelClasses}>Name</label>
               <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Fortuner" className={inputClasses} />
             </div>
-            <button onClick={handleAddItem} className="flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light">Save Item</button>
+            <button onClick={handleAddItem} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">Save Item</button>
           </div>
         </div>
       )}
@@ -147,7 +144,7 @@ export default function VehiclesPage() {
               <label className={labelClasses}>Name</label>
               <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className={inputClasses} />
             </div>
-            <button onClick={handleEditSave} className="flex w-full items-center justify-center gap-2 bg-m-blue-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light">Save Changes</button>
+            <button onClick={handleEditSave} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">Save Changes</button>
           </div>
         </div>
       )}
@@ -157,7 +154,7 @@ export default function VehiclesPage() {
           <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-normal text-ink">Vehicle Master</h2>
           <p className="mt-2 text-sm font-light text-body">Manage the 3-tier Category → Brand → Model hierarchy.</p>
         </div>
-        <button onClick={() => setShowAddModal(true)} className="flex items-center justify-center gap-2 bg-m-blue-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-m-blue-light transition-colors">
+        <button onClick={() => setShowAddModal(true)} className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
           <Plus size={14} /> Add Item
         </button>
       </div>
