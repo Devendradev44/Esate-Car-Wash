@@ -30,7 +30,7 @@ export default function LoginPage() {
   const [lastName, setLastName] = useState("");
 
   const inputClasses = "w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-3 text-sm font-normal focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400/50 transition-all rounded-lg appearance-none";
-  const labelClasses = "block text-[10px] font-bold text-zinc-500 mb-2";
+  const labelClasses = "block text-[10px] font-bold text-muted mb-2";
   const buttonClasses = "w-full bg-yellow-400 py-3 text-sm font-bold text-black hover:bg-yellow-300 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20";
 
   const handleAdminLogin = () => {
@@ -147,20 +147,20 @@ export default function LoginPage() {
             <Car size={24} className="text-black" />
           </div>
           <div className="text-left">
-            <h1 className="text-lg font-bold text-white leading-none">Estate Car Spa</h1>
-            <p className="text-[10px] font-medium text-zinc-500 mt-1">Premium Car Care</p>
+            <h1 className="text-lg font-bold text-ink leading-none">Estate Car Spa</h1>
+            <p className="text-[10px] font-medium text-muted mt-1">Premium Car Care</p>
           </div>
         </div>
 
         {/* Card Container */}
         <div className="bg-zinc-900 border border-zinc-800 p-8 min-h-[480px] flex flex-col rounded-xl shadow-2xl shadow-black/50">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-white mb-1">Sign in</h2>
-            <p className="text-xs text-zinc-400">Welcome back. Access your car spa portal.</p>
+            <h2 className="text-2xl font-bold text-ink mb-1">Sign in</h2>
+            <p className="text-xs text-body">Welcome back. Access your car spa portal.</p>
           </div>
 
           {/* Role Tabs */}
-          <div className="mb-6 flex border-b border-zinc-800">
+          <div className="mb-6 flex border-b border-hairline">
             {[
               { role: Role.CUSTOMER, label: "Customer" },
               { role: Role.STAFF, label: "Staff" },
@@ -170,7 +170,7 @@ export default function LoginPage() {
                 key={tab.role}
                 onClick={() => { setRole(tab.role); setStep(Step.LOGIN); setError(""); setUsePasswordLogin(false); }}
                 className={`flex-1 pb-3 text-xs font-semibold transition-colors ${
-                  role === tab.role ? "text-yellow-400 border-b-2 border-yellow-400" : "text-zinc-500 hover:text-zinc-300"
+                  role === tab.role ? "text-yellow-400 border-b-2 border-yellow-400" : "text-muted hover:text-ink"
                 }`}
               >
                 {tab.label}
@@ -200,7 +200,7 @@ export default function LoginPage() {
                   
                   <button 
                     onClick={handleSwitchToPassword}
-                    className="w-full text-center text-xs font-semibold text-zinc-500 hover:text-yellow-400 transition-colors py-2"
+                    className="w-full text-center text-xs font-semibold text-muted hover:text-yellow-400 transition-colors py-2"
                   >
                     Or sign in with email & password
                   </button>
@@ -229,7 +229,7 @@ export default function LoginPage() {
                     autoComplete="current-password"
                   />
                   <div className="flex items-center justify-between mt-1 mb-2">
-                    <label className="flex items-center gap-2 text-[10px] font-medium text-zinc-400 cursor-pointer">
+                    <label className="flex items-center gap-2 text-[10px] font-medium text-muted cursor-pointer">
                       <input 
                         type="checkbox" 
                         checked={rememberMe} 
@@ -238,7 +238,7 @@ export default function LoginPage() {
                       />
                       Remember me
                     </label>
-                    <button className="text-[10px] font-semibold text-zinc-500 hover:text-yellow-400 transition-colors">
+                    <button className="text-[10px] font-semibold text-muted hover:text-yellow-400 transition-colors">
                       Forgot Password?
                     </button>
                   </div>
@@ -246,7 +246,7 @@ export default function LoginPage() {
                   
                   <button 
                     onClick={handleSwitchToOTP}
-                    className="w-full text-center text-xs font-semibold text-zinc-500 hover:text-yellow-400 transition-colors py-2"
+                    className="w-full text-center text-xs font-semibold text-muted hover:text-yellow-400 transition-colors py-2"
                   >
                     Or sign in with OTP
                   </button>
@@ -319,7 +319,7 @@ export default function LoginPage() {
                     autoComplete="current-password"
                   />
                   <div className="flex items-center justify-between mt-1 mb-2">
-                    <label className="flex items-center gap-2 text-[10px] font-medium text-zinc-400 cursor-pointer">
+                    <label className="flex items-center gap-2 text-[10px] font-medium text-muted cursor-pointer">
                       <input 
                         type="checkbox" 
                         checked={rememberMe} 
@@ -328,7 +328,7 @@ export default function LoginPage() {
                       />
                       Remember me
                     </label>
-                    <button className="text-[10px] font-semibold text-zinc-500 hover:text-yellow-400 transition-colors">
+                    <button className="text-[10px] font-semibold text-muted hover:text-yellow-400 transition-colors">
                       Forgot Password?
                     </button>
                   </div>
@@ -346,7 +346,7 @@ export default function LoginPage() {
           )}
         </div>
 
-        <p className="mt-8 text-center text-xs text-zinc-500">
+        <p className="mt-8 text-center text-xs text-muted">
           No account? <Link href="/signup" className="text-yellow-400 font-bold hover:underline">Create one</Link>
         </p>
         </div>

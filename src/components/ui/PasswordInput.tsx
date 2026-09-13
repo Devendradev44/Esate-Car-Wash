@@ -1,5 +1,5 @@
 "use client";
-import { useState, forwardRef, useImperativeHandle } from "react";
+import { useState, forwardRef, useImperativeHandle, useRef } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -14,15 +14,18 @@ interface PasswordInputProps {
   className?: string;
 }
 
-export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
+interface PasswordInputRef {
+  focus: () => void;
+}
+
+export const PasswordInput = forwardRef<PasswordInputRef, PasswordInputProps>(
   ({ value, onChange, placeholder = "••••••••", label, error, disabled, autoComplete = "current-password", className = "" }, ref) => {
     const [showPassword, setShowPassword] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     useImperativeHandle(ref, () => ({
       focus: () => inputRef.current?.focus(),
-    }));
-
-    const inputRef = useState<HTMLInputElement>(null)[0];
+    }), []);
 
     const inputClasses = "w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-3 text-sm font-normal focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400/50 transition-all rounded-lg appearance-none";
     const labelClasses = "block text-[10px] font-bold text-zinc-500 mb-2";

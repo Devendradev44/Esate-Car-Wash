@@ -6,13 +6,14 @@ interface CardProps {
   title: string;
   value: number;
   icon: React.ReactNode;
+  iconColor: string;
   color: string;
 }
 
-const Card = ({ title, value, icon, color }: CardProps) => (
+const Card = ({ title, value, icon, iconColor, color }: CardProps) => (
   <div className="border border-hairline bg-surface-card p-6">
-    <div className="flex items-center gap-2 text-muted mb-4">
-      {icon}
+    <div className="flex items-center gap-2 mb-4">
+      <span className={iconColor}>{icon}</span>
       <p className="text-xs font-bold uppercase tracking-machined">{title}</p>
     </div>
     <p className={`text-3xl font-bold ${color}`}>₹{value.toLocaleString('en-IN')}</p>
@@ -38,9 +39,9 @@ export default function RevenuePage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <Card title="Total Revenue" value={revenue} icon={<TrendingUp size={16} />} color="text-success" />
-        <Card title="Total Expenses" value={totalExpenses} icon={<TrendingDown size={16} />} color="text-m-red" />
-        <Card title="Net Profit" value={netProfit} icon={<Wallet size={16} />} color={netProfit >= 0 ? "text-success" : "text-m-red"} />
+        <Card title="Total Revenue" value={revenue} icon={<TrendingUp size={16} />} iconColor="text-success" color="text-success" />
+        <Card title="Total Expenses" value={totalExpenses} icon={<TrendingDown size={16} />} iconColor="text-m-red" color="text-m-red" />
+        <Card title="Net Profit" value={netProfit} icon={<Wallet size={16} />} iconColor={netProfit >= 0 ? "text-success" : "text-m-red"} color={netProfit >= 0 ? "text-success" : "text-m-red"} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

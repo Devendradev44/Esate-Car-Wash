@@ -27,9 +27,10 @@ interface StaggerContainerProps {
   children: ReactNode;
   className?: string;
   delay?: number;
+  stagger?: number;
 }
 
-export function StaggerContainer({ children, className = "", delay = 0 }: StaggerContainerProps) {
+export function StaggerContainer({ children, className = "", delay = 0, stagger = 0.08 }: StaggerContainerProps) {
   return (
     <motion.div
       className={className}
@@ -40,7 +41,7 @@ export function StaggerContainer({ children, className = "", delay = 0 }: Stagge
         show: {
           opacity: 1,
           transition: {
-            staggerChildren: 0.08,
+            staggerChildren: stagger,
             delayChildren: delay,
           },
         },

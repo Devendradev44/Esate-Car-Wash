@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { User, Phone, Mail, LogOut, Edit, Save } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
@@ -11,10 +11,20 @@ export default function ProfilePage() {
   const logoutMockUser = useStore((state) => state.logoutMockUser);
   const updateMockUser = useStore((state) => state.updateMockUser);
 
-  const [phone, setPhone] = useState(mockUser?.phone || "");
-  const [email, setEmail] = useState(mockUser?.email || "");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
+
+  // Sync local state with mockUser whenever it changes
+  useEffect(() => {
+    if (mockUser) {
+      setName(mockUser.name || "");
+      setPhone(mockUser.phone || "");
+      setEmail(mockUser.email || "");
+    }
+  }, [mockUser]);
 
 
   const handleLogout = () => {
@@ -28,9 +38,13 @@ export default function ProfilePage() {
       setSavedMessage("Phone number must be exactly 10 digits.");
       return;
     }
+    if (!name.trim()) {
+      setSavedMessage("Name cannot be empty.");
+      return;
+    }
     
     // Save to global Zustand store
-    updateMockUser({ phone, email });
+    updateMockUser({ name, phone, email });
     setIsEditing(false);
     setSavedMessage("Profile updated successfully!");
     
@@ -68,6 +82,17 @@ export default function ProfilePage() {
         )}
 
         <div className="border border-hairline bg-surface-card divide-y divide-hairline">
+          <div className="flex items-center p-4">
+            <User size={16} className="text-muted mr-4" />
+            <input 
+              type="text" 
+              value={name} 
+              onChange={(e) => setName(e.target.value)} 
+              disabled={!isEditing}
+              placeholder="Your name"
+              className="bg-transparent text-sm font-light text-ink focus:outline-none w-full disabled:text-muted" 
+            />
+          </div>
           <div className="flex items-center p-4">
             <Phone size={16} className="text-muted mr-4" />
             <input 

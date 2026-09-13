@@ -1,7 +1,6 @@
 "use client";
 import Link from "next/link";
-import Image from "next/image";
-import { Sparkles, Gauge, ShieldCheck } from "lucide-react";
+import { Car, Sparkles, Gauge, ShieldCheck } from "lucide-react";
 import { PageTransition, StaggerContainer, StaggerItem, SlideIn, FadeIn } from "@/components/animations/PageTransition";
 
 export default function Home() {
@@ -12,15 +11,13 @@ export default function Home() {
       <header className="w-full">
         <SlideIn direction="down" className="max-w-7xl mx-auto px-6 md:px-8 py-5 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <Image 
-              src="/logo.svg" 
-              alt="Estate Car Spa" 
-              width={40} 
-              height={40} 
-              className="bg-yellow-400 p-2 rounded-lg"
-            />
+            <div className="bg-yellow-400 p-2 rounded-lg">
+              <Car size={24} className="text-black" />
+            </div>
             <div className="text-left">
-              <h1 className="text-base font-bold text-white leading-none">Estate Car Spa</h1>
+              <h1 className="text-base font-bold leading-none">
+                <span className="text-yellow-400">Estate</span> Car Spa
+              </h1>
               <p className="text-[10px] font-medium text-zinc-500 mt-1">Premium Car Care</p>
             </div>
           </div>
@@ -42,7 +39,7 @@ export default function Home() {
           {/* Left Side */}
           <SlideIn direction="left" className="text-left">
             <h2 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight tracking-tight">
-              The wash your estate deserves.
+              The wash your <span className="text-yellow-400">estate</span> deserves.
             </h2>
             <p className="text-sm md:text-base text-zinc-400 mb-10 max-w-md">
               Estate Car Spa brings premium car care directly to your gated community. Book in seconds, track in real-time, and pay seamlessly.

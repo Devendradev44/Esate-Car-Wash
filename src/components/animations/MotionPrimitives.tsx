@@ -184,7 +184,7 @@ export function FadeIn({
   className?: string; 
   delay?: number;
   duration?: number;
-}) {
+}): React.ReactElement {
   return (
     <motion.div
       className={className}
@@ -200,7 +200,7 @@ export function FadeIn({
 export function SlideIn({ 
   children, 
   className = "", 
-  direction: "left" | "right" | "up" | "down" = "up",
+  direction = "up", 
   delay = 0, 
   distance = 30,
   duration = 0.4 
@@ -211,7 +211,8 @@ export function SlideIn({
   delay?: number;
   distance?: number;
   duration?: number;
-}) {
+}): React.ReactElement {
+  const dir = direction || "up";
   const variants = {
     left: { hidden: { x: -distance, opacity: 0 }, show: { x: 0, opacity: 1 } },
     right: { hidden: { x: distance, opacity: 0 }, show: { x: 0, opacity: 1 } },
@@ -224,7 +225,7 @@ export function SlideIn({
       className={className}
       initial="hidden"
       animate="show"
-      variants={variants[direction]}
+      variants={variants[dir]}
       transition={{ duration, ease: [0.25, 0.1, 0.25, 1], delay }}
     >
       {children}
@@ -244,7 +245,7 @@ export function ScaleIn({
   delay?: number;
   duration?: number;
   fromScale?: number;
-}) {
+}): React.ReactElement {
   return (
     <motion.div
       className={className}
@@ -267,7 +268,7 @@ export function RotateIn({
   className?: string; 
   delay?: number;
   duration?: number;
-}) {
+}): React.ReactElement {
   return (
     <motion.div
       className={className}
@@ -294,7 +295,7 @@ export function ModalBackdrop({
   onClose: () => void;
   children: ReactNode;
   className?: string;
-}) {
+}): React.ReactElement {
   return (
     <motion.div
       className={`fixed inset-0 z-50 flex items-center justify-center ${className}`}
@@ -325,7 +326,7 @@ export function Drawer({
   isOpen, 
   onClose, 
   children, 
-  side: "left" | "right" | "bottom" = "right",
+  side = "right",
   className = "" 
 }: { 
   isOpen: boolean; 
@@ -333,7 +334,7 @@ export function Drawer({
   children: ReactNode;
   side?: "left" | "right" | "bottom";
   className?: string;
-}) {
+}): React.ReactElement {
   const sideVariants = {
     left: { hidden: { x: "-100%" }, show: { x: 0 } },
     right: { hidden: { x: "100%" }, show: { x: 0 } },
@@ -360,7 +361,7 @@ export function Drawer({
         initial="hidden"
         animate={isOpen ? "show" : "hidden"}
         exit="hidden"
-        variants={sideVariants[side]}
+        variants={sideVariants[side] || sideVariants.right}
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
       >
         {children}
@@ -383,7 +384,7 @@ export function Toast({
   onClose: () => void;
   children: ReactNode;
   className?: string;
-}) {
+}): React.ReactElement {
   return (
     <motion.div
       className={`fixed bottom-6 right-6 z-50 ${className}`}
@@ -415,14 +416,16 @@ export function AnimatedList({
   renderItem, 
   className = "",
   stagger = 0.05,
-  direction: "vertical" | "horizontal" = "vertical"
+  direction = "vertical"
 }: { 
   items: any[];
   renderItem: (item: any, index: number) => ReactNode;
   className?: string;
   stagger?: number;
   direction?: "vertical" | "horizontal";
-}) {
+}): React.ReactElement {
+  const dir = direction || "vertical";
+  
   return (
     <motion.div
       className={className}
@@ -442,7 +445,7 @@ export function AnimatedList({
         <motion.div
           key={item.id || index}
           variants={{
-            hidden: direction === "vertical" ? { opacity: 0, y: 20 } : { opacity: 0, x: 20 },
+            hidden: dir === "vertical" ? { opacity: 0, y: 20 } : { opacity: 0, x: 20 },
             show: { opacity: 1, y: 0, x: 0 },
           }}
           transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
@@ -470,7 +473,7 @@ export function ProgressRing({
   strokeWidth?: number;
   className?: string;
   color?: string;
-}) {
+}): React.ReactElement {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (progress / 100) * circumference;
@@ -518,7 +521,7 @@ export function Spinner({
   size?: number;
   className?: string;
   color?: string;
-}) {
+}): React.ReactElement {
   return (
     <motion.svg
       className={`${color} ${className}`}
@@ -556,7 +559,7 @@ export function Typewriter({
   speed?: number;
   className?: string;
   cursor?: boolean;
-}) {
+}): React.ReactElement {
   return (
     <motion.span
       className={className}
@@ -592,7 +595,7 @@ export function TextReveal({
   className?: string;
   delay?: number;
   stagger?: number;
-}) {
+}): React.ReactElement {
   const text = Array.isArray(children) ? children[0] : children;
   const words = typeof text === "string" ? text.split(" ") : [text];
 
@@ -660,7 +663,7 @@ export function AnimatedTabs({
   onChange: (id: string) => void;
   className?: string;
   indicatorColor?: string;
-}) {
+}): React.ReactElement {
   const activeIndex = tabs.findIndex(t => t.id === activeTab);
 
   return (

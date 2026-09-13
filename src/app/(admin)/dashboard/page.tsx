@@ -18,10 +18,10 @@ export default function AdminDashboard() {
   const recentBookings = bookings.slice(0, 5);
 
   const kpiCards = [
-    { title: "Total Revenue", value: `₹${totalRevenue.toLocaleString('en-IN')}`, icon: IndianRupee, color: "text-success", link: "/revenue" },
-    { title: "Active Bookings", value: activeBookings, icon: CalendarDays, color: "text-yellow-dark", link: "/bookings" },
-    { title: "Communities", value: activeCommunities, icon: Building2, color: "text-ink", link: "/communities" },
-    { title: "Staff Members", value: staff.length, icon: Users, color: "text-ink", link: "/staff" },
+    { title: "Total Revenue", value: `₹${totalRevenue.toLocaleString('en-IN')}`, icon: IndianRupee, iconColor: "text-success", color: "text-success", link: "/revenue" },
+    { title: "Active Bookings", value: activeBookings, icon: CalendarDays, iconColor: "text-yellow-dark", color: "text-yellow-dark", link: "/bookings" },
+    { title: "Communities", value: activeCommunities, icon: Building2, iconColor: "text-ink", color: "text-ink", link: "/communities" },
+    { title: "Staff Members", value: staff.length, icon: Users, iconColor: "text-ink", color: "text-ink", link: "/staff" },
   ];
 
   return (
@@ -35,8 +35,8 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {kpiCards.map((kpi) => (
           <Link href={kpi.link} key={kpi.title} className="border border-hairline bg-surface-card p-6 hover:bg-surface-elevated transition-colors block">
-            <div className="flex items-center gap-2 text-muted mb-4">
-              <kpi.icon size={16} />
+            <div className="flex items-center gap-2 mb-4">
+              <kpi.icon size={16} className={kpi.iconColor} />
               <p className="text-xs font-bold uppercase tracking-machined">{kpi.title}</p>
             </div>
             <p className={`text-3xl font-bold ${kpi.color}`}>{kpi.value}</p>
@@ -49,7 +49,7 @@ export default function AdminDashboard() {
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-sm font-bold uppercase tracking-machined text-muted">Recent Bookings</h3>
           <Link href="/bookings" className="flex items-center gap-1 text-xs font-bold uppercase tracking-machined text-yellow-dark hover:text-yellow-light">
-            View All <ArrowRight size={12} />
+            View All <ArrowRight size={12} className="text-yellow-dark" />
           </Link>
         </div>
         

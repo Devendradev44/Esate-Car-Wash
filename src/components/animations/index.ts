@@ -32,4 +32,15 @@ export {
   AnimatedCard,
   AnimatedTabs,
 } from "./MotionPrimitives";
+export { 
+  ParticleBackground 
+} from "./ParticleBackground";
+export { 
+  MagneticButton,
+  SpotlightCard,
+  Reveal,
+  ShimmerText,
+  FloatingActionButton,
+  NumberCounter,
+} from "./PremiumComponents";
 export { useReducedMotion, useMotionSafeTransition, useMotionSafeSpring } from "@/hooks/useReducedMotion";

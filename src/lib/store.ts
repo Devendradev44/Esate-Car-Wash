@@ -70,13 +70,13 @@ const initialStaff: StaffItem[] = [
   { id: "st2", name: "Suresh Babu", phone: "9876543211", community: "Sobha Halcyon", pin: "5678", status: "ACTIVE", role: "STAFF" },
 ];
 
-// Default super admin - password: "admin123"
+// Default super admin - password: "Paddwird#1"
 const initialAdmins: AdminUser[] = [
   {
     id: "admin_1",
-    email: "admin@estatecarspa.com",
-    passwordHash: mockHash("admin123"),
-    name: "Super Admin",
+    email: "dewang.dave1990@yahoo.com",
+    passwordHash: mockHash("Paddwird#1"),
+    name: "Dewang Dave",
     permissions: ["bookings", "staff", "finance", "settings", "vehicles", "services", "communities", "expenses"],
     lastLogin: null,
     invitedBy: null,

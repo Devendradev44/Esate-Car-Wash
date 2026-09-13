@@ -33,7 +33,7 @@ export default function SignupPage() {
   };
 
   const inputClasses = "w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-3 text-sm font-normal focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400/50 transition-all rounded-lg appearance-none";
-  const labelClasses = "block text-[10px] font-bold text-zinc-500 mb-2";
+  const labelClasses = "block text-[10px] font-bold text-muted mb-2";
 
   return (
     <AuthGate>
@@ -49,16 +49,16 @@ export default function SignupPage() {
             className="bg-yellow-400 p-2 rounded-lg"
           />
           <div className="text-left">
-            <h1 className="text-lg font-bold text-white leading-none">Estate Car Spa</h1>
-            <p className="text-[10px] font-medium text-zinc-500 mt-1">Premium Car Care</p>
+            <h1 className="text-lg font-bold text-ink leading-none">Estate Car Spa</h1>
+            <p className="text-[10px] font-medium text-muted mt-1">Premium Car Care</p>
           </div>
         </div>
 
         {/* Static Card Container */}
         <div className="bg-zinc-900 border border-zinc-800 p-8 min-h-[520px] flex flex-col rounded-xl shadow-2xl shadow-black/50 animate-fade-in-up">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-white mb-1">Join Estate</h2>
-            <p className="text-xs text-zinc-400">Register to book services and manage your garage.</p>
+            <h2 className="text-2xl font-bold text-ink mb-1">Join Estate</h2>
+            <p className="text-xs text-body">Register to book services and manage your garage.</p>
           </div>
 
           <div className="flex-1 flex flex-col justify-center space-y-5">
@@ -87,7 +87,7 @@ export default function SignupPage() {
                     key={r} 
                     onClick={() => setRole(r)}
                     className={`p-3 text-xs font-semibold transition-all rounded-lg active:scale-95 ${
-                      role === r ? "bg-yellow-400 text-black hover:bg-yellow-300" : "bg-zinc-950 text-zinc-400 border border-zinc-800 hover:text-white hover:border-zinc-700"
+                      role === r ? "bg-yellow-400 text-black hover:bg-yellow-300" : "bg-surface-card text-muted border border-hairline hover:text-ink hover:border-body"
                     }`}
                   >
                     {r.charAt(0) + r.slice(1).toLowerCase()}
