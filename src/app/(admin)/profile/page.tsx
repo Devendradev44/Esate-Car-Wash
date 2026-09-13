@@ -18,7 +18,7 @@ export default function AdminProfile() {
           <div className="w-20 h-20 rounded-full bg-yellow-dark/20 flex items-center justify-center mb-4">
             <User size={32} className="text-yellow-dark" />
           </div>
-          <h2 className="text-xl font-bold text-ink">{mockUser?.name || "Admin User"}</h2>
+          <h2 className="text-xl font-bold text-ink">{mockUser?.name || "Admin"}</h2>
           <p className="text-sm font-light text-muted mt-1 flex items-center gap-1"><Shield size={12} /> Administrator</p>
         </div>
 

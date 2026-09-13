@@ -3,19 +3,23 @@ import { useState } from "react";
 import Link from "next/link";
 import { Car } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useStore } from "@/lib/store";
+import { useStore, verifyMockHash } from "@/lib/store";
 import { AuthGate } from "@/components/AuthGate";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 enum Role { CUSTOMER = "CUSTOMER", STAFF = "STAFF", ADMIN = "ADMIN" }
-enum Step { LOGIN, OTP, SIGNUP }
+enum Step { LOGIN, OTP, SIGNUP, PASSWORD }
 
 export default function LoginPage() {
   const router = useRouter();
   const setMockUser = useStore((state) => state.setMockUser);
+  const updateAdminLastLogin = useStore((state) => state.updateAdminLastLogin);
 
   const [role, setRole] = useState<Role>(Role.CUSTOMER);
   const [step, setStep] = useState<Step>(Step.LOGIN);
   const [error, setError] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
+  const [usePasswordLogin, setUsePasswordLogin] = useState(false);
 
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
@@ -29,6 +33,51 @@ export default function LoginPage() {
   const labelClasses = "block text-[10px] font-bold text-zinc-500 mb-2";
   const buttonClasses = "w-full bg-yellow-400 py-3 text-sm font-bold text-black hover:bg-yellow-300 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20";
 
+  const handleAdminLogin = () => {
+    setError("");
+    
+    if (!email.includes("@") || !email.includes(".")) { setError("Please enter a valid email address."); return; }
+    if (password.length < 4) { setError("Password must be at least 4 characters."); return; }
+
+    const state = useStore.getState();
+    const admin = state.admins.find(
+      (a) => a.email === email && verifyMockHash(password, a.passwordHash) && a.status === "ACTIVE"
+    );
+
+    if (!admin) {
+      setError("Invalid email or password. Default: admin@estatecarspa.com / admin123");
+      return;
+    }
+
+    updateAdminLastLogin(admin.id);
+
+    setMockUser({
+      id: admin.id,
+      role: "ADMIN",
+      name: admin.name,
+      email: admin.email,
+    });
+
+    router.replace("/dashboard");
+  };
+
+  const handleCustomerPasswordLogin = () => {
+    setError("");
+    
+    if (!email.includes("@") || !email.includes(".")) { setError("Please enter a valid email address."); return; }
+    if (password.length < 4) { setError("Password must be at least 4 characters."); return; }
+
+    setMockUser({
+      id: `mock_${Date.now()}`,
+      role: "CUSTOMER",
+      name: "Customer User",
+      email: email,
+      phone: "",
+    });
+
+    router.replace("/customer/my-dashboard");
+  };
+
   const handleLogin = () => {
     setError("");
 
@@ -36,24 +85,27 @@ export default function LoginPage() {
       if (step === Step.SIGNUP && (!firstName.trim() || !lastName.trim())) {
         setError("Please enter your first and last name."); return;
       }
+      if (step === Step.PASSWORD) {
+        handleCustomerPasswordLogin();
+        return;
+      }
     } else if (role === Role.STAFF) {
       if (phone.length !== 10) { setError("Please enter a valid 10-digit phone number."); return; }
       if (pin.length !== 4) { setError("Please enter a valid 4-digit PIN."); return; }
     } else if (role === Role.ADMIN) {
-      if (!email.includes("@") || !email.includes(".")) { setError("Please enter a valid email address."); return; }
-      if (password.length < 4) { setError("Password must be at least 4 characters."); return; }
+      handleAdminLogin();
+      return;
     }
 
     setMockUser({
       id: "mock_123",
       role,
-      name: role === "ADMIN" ? "Admin User" : role === "STAFF" ? "Staff User" : (firstName || "Customer User"),
-      email: role === "ADMIN" ? email : "",
-      phone: role !== "ADMIN" ? phone : "",
+      name: role === Role.STAFF ? "Staff User" : (firstName || "Customer User"),
+      email: "",
+      phone,
     });
 
-    if (role === "ADMIN") router.replace("/dashboard");
-    else if (role === "STAFF") router.replace("/staff/staff-dashboard");
+    if (role === Role.STAFF) router.replace("/staff/staff-dashboard");
     else router.replace("/customer/my-dashboard");
   };
 
@@ -67,6 +119,22 @@ export default function LoginPage() {
     setError("");
     if (otp.length !== 6) { setError("Please enter the 6-digit OTP."); return; }
     setStep(Step.SIGNUP);
+  };
+
+  const handleSwitchToPassword = () => {
+    setError("");
+    setUsePasswordLogin(true);
+    setStep(Step.PASSWORD);
+    setPhone("");
+    setOtp("");
+  };
+
+  const handleSwitchToOTP = () => {
+    setError("");
+    setUsePasswordLogin(false);
+    setStep(Step.LOGIN);
+    setEmail("");
+    setPassword("");
   };
 
   return (
@@ -100,7 +168,7 @@ export default function LoginPage() {
             ].map(tab => (
               <button 
                 key={tab.role}
-                onClick={() => { setRole(tab.role); setStep(Step.LOGIN); setError(""); }}
+                onClick={() => { setRole(tab.role); setStep(Step.LOGIN); setError(""); setUsePasswordLogin(false); }}
                 className={`flex-1 pb-3 text-xs font-semibold transition-colors ${
                   role === tab.role ? "text-yellow-400 border-b-2 border-yellow-400" : "text-zinc-500 hover:text-zinc-300"
                 }`}
@@ -112,27 +180,98 @@ export default function LoginPage() {
 
           {/* FORM AREA */}
           <div className="flex-1 flex flex-col justify-center">
-            <div key={`${role}-${step}`} className="animate-fade-in-up">
-              {role === Role.CUSTOMER && step === Step.LOGIN && (
+            <div key={`${role}-${step}`} className="animate-fade-in-up space-y-4">
+              
+              {/* CUSTOMER - OTP Flow */}
+              {role === Role.CUSTOMER && step === Step.LOGIN && !usePasswordLogin && (
                 <div className="space-y-4">
                   <div>
                     <label className={labelClasses}>Phone Number</label>
-                    <input type="tel" maxLength={10} value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} placeholder="98765 43210" className={inputClasses} />
+                    <input 
+                      type="tel" 
+                      maxLength={10} 
+                      value={phone} 
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} 
+                      placeholder="98765 43210" 
+                      className={inputClasses} 
+                    />
                   </div>
                   <button onClick={handleRequestOTP} className={buttonClasses}>Get OTP</button>
+                  
+                  <button 
+                    onClick={handleSwitchToPassword}
+                    className="w-full text-center text-xs font-semibold text-zinc-500 hover:text-yellow-400 transition-colors py-2"
+                  >
+                    Or sign in with email & password
+                  </button>
                 </div>
               )}
 
+              {/* CUSTOMER - Password Flow */}
+              {role === Role.CUSTOMER && step === Step.PASSWORD && (
+                <div className="space-y-4">
+                  <div>
+                    <label className={labelClasses}>Email Address</label>
+                    <input 
+                      type="email" 
+                      value={email} 
+                      onChange={(e) => setEmail(e.target.value)} 
+                      placeholder="you@example.com" 
+                      className={inputClasses} 
+                      autoComplete="email"
+                    />
+                  </div>
+                  <PasswordInput
+                    value={password}
+                    onChange={setPassword}
+                    placeholder="••••••••"
+                    label="Password"
+                    autoComplete="current-password"
+                  />
+                  <div className="flex items-center justify-between mt-1 mb-2">
+                    <label className="flex items-center gap-2 text-[10px] font-medium text-zinc-400 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={rememberMe} 
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="w-4 h-4 accent-yellow-400 border-zinc-700 rounded focus:ring-yellow-400"
+                      />
+                      Remember me
+                    </label>
+                    <button className="text-[10px] font-semibold text-zinc-500 hover:text-yellow-400 transition-colors">
+                      Forgot Password?
+                    </button>
+                  </div>
+                  <button onClick={handleLogin} className={buttonClasses}>Sign in</button>
+                  
+                  <button 
+                    onClick={handleSwitchToOTP}
+                    className="w-full text-center text-xs font-semibold text-zinc-500 hover:text-yellow-400 transition-colors py-2"
+                  >
+                    Or sign in with OTP
+                  </button>
+                </div>
+              )}
+
+              {/* CUSTOMER - OTP Verification */}
               {role === Role.CUSTOMER && step === Step.OTP && (
                 <div className="space-y-4">
                   <div>
                     <label className={labelClasses}>Enter OTP</label>
-                    <input type="text" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} placeholder="6-digit code" maxLength={6} className={inputClasses + " text-center text-xl tracking-[0.5em]"} />
+                    <input 
+                      type="text" 
+                      value={otp} 
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} 
+                      placeholder="6-digit code" 
+                      maxLength={6} 
+                      className={inputClasses + " text-center text-xl tracking-[0.5em]"} 
+                    />
                   </div>
                   <button onClick={handleVerifyOTP} className={buttonClasses}>Verify & Continue</button>
                 </div>
               )}
 
+              {/* CUSTOMER - Signup */}
               {role === Role.CUSTOMER && step === Step.SIGNUP && (
                 <div className="space-y-4">
                   <p className="text-xs font-bold text-yellow-400 text-center">Complete Your Profile</p>
@@ -150,6 +289,7 @@ export default function LoginPage() {
                 </div>
               )}
 
+              {/* STAFF */}
               {role === Role.STAFF && (
                 <div className="space-y-4">
                   <div>
@@ -164,17 +304,30 @@ export default function LoginPage() {
                 </div>
               )}
 
+              {/* ADMIN */}
               {role === Role.ADMIN && (
                 <div className="space-y-4">
                   <div>
                     <label className={labelClasses}>Email Address</label>
-                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@estatecarspa.com" className={inputClasses} />
+                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@estatecarspa.com" className={inputClasses} autoComplete="email" />
                   </div>
-                  <div>
-                    <label className={labelClasses}>Password</label>
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className={inputClasses} />
-                  </div>
-                  <div className="text-right mt-1 mb-1">
+                  <PasswordInput
+                    value={password}
+                    onChange={setPassword}
+                    placeholder="••••••••"
+                    label="Password"
+                    autoComplete="current-password"
+                  />
+                  <div className="flex items-center justify-between mt-1 mb-2">
+                    <label className="flex items-center gap-2 text-[10px] font-medium text-zinc-400 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={rememberMe} 
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="w-4 h-4 accent-yellow-400 border-zinc-700 rounded focus:ring-yellow-400"
+                      />
+                      Remember me
+                    </label>
                     <button className="text-[10px] font-semibold text-zinc-500 hover:text-yellow-400 transition-colors">
                       Forgot Password?
                     </button>

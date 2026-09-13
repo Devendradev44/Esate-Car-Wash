@@ -18,6 +18,12 @@ export const metadata: Metadata = {
     title: "Estate Car Spa | Premium Car Wash & Detailing",
     description: "Book premium car wash services for your gated community.",
     type: "website",
+    images: ["/og-image.png"],
+  },
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
   },
 };
 

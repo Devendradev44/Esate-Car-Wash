@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { Car } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { AuthGate } from "@/components/AuthGate";
@@ -41,9 +41,13 @@ export default function SignupPage() {
         <div className="w-full max-w-md">
         {/* Logo */}
         <div className="mb-8 flex flex-row items-center justify-center gap-3">
-          <div className="bg-yellow-400 p-2 rounded-lg">
-            <Car size={24} className="text-black" />
-          </div>
+          <Image 
+            src="/logo.svg" 
+            alt="Estate Car Spa" 
+            width={40} 
+            height={40} 
+            className="bg-yellow-400 p-2 rounded-lg"
+          />
           <div className="text-left">
             <h1 className="text-lg font-bold text-white leading-none">Estate Car Spa</h1>
             <p className="text-[10px] font-medium text-zinc-500 mt-1">Premium Car Care</p>

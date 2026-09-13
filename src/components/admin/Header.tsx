@@ -20,7 +20,7 @@ export function Header() {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 text-xs font-bold uppercase tracking-machined text-ink hover:text-yellow-dark transition-colors"
       >
-        Admin User
+        Admin
         <ChevronDown size={14} />
       </button>
 

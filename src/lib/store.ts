@@ -5,6 +5,21 @@ import { vehicleFixtures, type VehicleCategory, type VehicleBrand, type VehicleM
 
 // --- TYPES ---
 type MockUser = { id: string; role: "CUSTOMER" | "STAFF" | "ADMIN"; name: string; phone?: string; email?: string };
+
+// Admin credentials & management
+type AdminPermission = "bookings" | "staff" | "finance" | "settings" | "vehicles" | "services" | "communities" | "expenses";
+type AdminUser = {
+  id: string;
+  email: string;
+  passwordHash: string; // mock hash for demo
+  name: string;
+  permissions: AdminPermission[];
+  lastLogin: string | null;
+  invitedBy: string | null;
+  createdAt: string;
+  status: "ACTIVE" | "DISABLED";
+};
+
 type CustomerVehicle = { id: string; category: string; brand: string; model: string; reg: string; isDefault: boolean };
 type CustomerAddress = { id: string; community: string; flat: string };
 type Community = { id: string; name: string; address: string; status: "ACTIVE" | "HIDDEN"; slotCapacity: number };
@@ -19,6 +34,10 @@ type BookingItem = {
 };
 type ExpenseItem = { id: string; date: string; name: string; category: string; amount: number; paymentType: string; notes: string };
 type StaffItem = { id: string; name: string; phone: string; community: string; pin: string; status: "ACTIVE" | "DISABLED"; role: "STAFF" | "ADMIN" };
+
+// Simple mock hash function for demo (not secure, just for UI validation)
+export const mockHash = (password: string) => `hash_${btoa(password).slice(0, 16)}`;
+export const verifyMockHash = (password: string, hash: string) => mockHash(password) === hash;
 
 // --- INITIAL MOCK DATA ---
 const initialCommunities: Community[] = [
@@ -42,17 +61,28 @@ const initialServices: ServiceItem[] = [
   { id: "s4", name: "Deep Cleaning", description: "Complete interior and exterior deep cleaning.", pricing: { Hatchback: 3000, Sedan: 3500, SUV: 4000, Luxury: 4000 } }
 ];
 
-const initialBookings: BookingItem[] = [
-   
-];
+const initialBookings: BookingItem[] = [];
 
-const initialExpenses: ExpenseItem[] = [
-
-];
+const initialExpenses: ExpenseItem[] = [];
 
 const initialStaff: StaffItem[] = [
   { id: "st1", name: "Ramesh Kumar", phone: "9876543210", community: "Prestige Shantiniketan", pin: "1234", status: "ACTIVE", role: "STAFF" },
   { id: "st2", name: "Suresh Babu", phone: "9876543211", community: "Sobha Halcyon", pin: "5678", status: "ACTIVE", role: "STAFF" },
+];
+
+// Default super admin - password: "admin123"
+const initialAdmins: AdminUser[] = [
+  {
+    id: "admin_1",
+    email: "admin@estatecarspa.com",
+    passwordHash: mockHash("admin123"),
+    name: "Super Admin",
+    permissions: ["bookings", "staff", "finance", "settings", "vehicles", "services", "communities", "expenses"],
+    lastLogin: null,
+    invitedBy: null,
+    createdAt: new Date().toISOString(),
+    status: "ACTIVE",
+  },
 ];
 
 // --- THE STORE ---
@@ -69,6 +99,13 @@ type AppStore = {
   staff: StaffItem[];
   addresses: CustomerAddress[];
   customerGarage: CustomerVehicle[];
+
+  // Admin management
+  admins: AdminUser[];
+  addAdmin: (admin: Omit<AdminUser, "id" | "createdAt" | "lastLogin">) => void;
+  updateAdmin: (id: string, data: Partial<Omit<AdminUser, "id" | "createdAt">>) => void;
+  deleteAdmin: (id: string) => void;
+  updateAdminLastLogin: (id: string) => void;
 
   updateMockUser: (data: { name?: string; phone?: string; email?: string }) => void;
   cancelBooking: (id: string, cancelledBy: "CUSTOMER" | "ADMIN" | "STAFF") => void;
@@ -137,6 +174,26 @@ export const useStore = create<AppStore>()(
       expenses: initialExpenses,
       staff: initialStaff,
       
+      // Admin management
+      admins: initialAdmins,
+      addAdmin: (newAdmin) => set((state) => ({
+        admins: [...state.admins, { 
+          ...newAdmin, 
+          id: `admin_${Date.now()}`, 
+          createdAt: new Date().toISOString(),
+          lastLogin: null,
+        }]
+      })),
+      updateAdmin: (id, data) => set((state) => ({
+        admins: state.admins.map(a => a.id === id ? { ...a, ...data } : a)
+      })),
+      deleteAdmin: (id) => set((state) => ({
+        admins: state.admins.filter(a => a.id !== id)
+      })),
+      updateAdminLastLogin: (id) => set((state) => ({
+        admins: state.admins.map(a => a.id === id ? { ...a, lastLogin: new Date().toISOString() } : a)
+      })),
+
       updateMockUser: (data) => set((state) => ({
         mockUser: state.mockUser ? { ...state.mockUser, ...data } : null
       })),
@@ -268,7 +325,7 @@ export const useStore = create<AppStore>()(
       deleteStaff: (id) => set((state) => ({ staff: state.staff.filter(s => s.id !== id) })),
     }),
     {
-      name: 'estate-car-wash-v10',
+      name: 'estate-car-wash-v11',
     }
   )
 );
