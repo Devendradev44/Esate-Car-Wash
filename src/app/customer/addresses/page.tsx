@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Plus, MapPin, Trash2, X, Edit } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { AnimatedSelect } from "@/components/ui/AnimatedSelect";
 
 export default function AddressesPage() {
 
@@ -102,10 +103,14 @@ export default function AddressesPage() {
             
             <div className="mb-4">
               <label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Community</label>
-              <select value={community} onChange={(e) => setCommunity(e.target.value)} className={inputClasses}>
-                <option value="" disabled>Select community</option>
-                {communities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-              </select>
+              <AnimatedSelect
+              value={community}
+              onChange={(e) => setCommunity(e.target.value)}
+              label="Community"
+              placeholder="Select community"
+              options={communities.map(c => ({ value: c.name, label: c.name }))}
+              className={inputClasses}
+            />
             </div>
             <div className="mb-8">
               <label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Flat Number</label>

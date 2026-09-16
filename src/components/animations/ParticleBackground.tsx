@@ -1,6 +1,7 @@
 "use client";
 import { motion, useMotionValue, useTransform, useSpring } from "motion/react";
 import { useEffect, useRef } from "react";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 interface Particle {
   x: number;
@@ -144,23 +145,3 @@ export function ParticleBackground({
     />
   );
 }
-
-function useReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(mediaQuery.matches);
-
-    const handler = (event: MediaQueryListEvent) => {
-      setReduced(event.matches);
-    };
-
-    mediaQuery.addEventListener("change", handler);
-    return () => mediaQuery.removeEventListener("change", handler);
-  }, []);
-
-  return reduced;
-}
-
-import { useState } from "react";

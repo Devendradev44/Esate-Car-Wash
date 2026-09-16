@@ -6,6 +6,15 @@ import { vehicleFixtures, type VehicleCategory, type VehicleBrand, type VehicleM
 // --- TYPES ---
 type MockUser = { id: string; role: "CUSTOMER" | "STAFF" | "ADMIN"; name: string; phone?: string; email?: string };
 
+type Customer = {
+  id: string;
+  name: string;
+  phone?: string;
+  email: string;
+  passwordHash: string;
+  createdAt: string;
+};
+
 // Admin credentials & management
 type AdminPermission = "bookings" | "staff" | "finance" | "settings" | "vehicles" | "services" | "communities" | "expenses";
 type AdminUser = {
@@ -23,8 +32,8 @@ type AdminUser = {
 type CustomerVehicle = { id: string; category: string; brand: string; model: string; reg: string; isDefault: boolean };
 type CustomerAddress = { id: string; community: string; flat: string };
 type Community = { id: string; name: string; address: string; status: "ACTIVE" | "HIDDEN"; slotCapacity: number };
-type TimeSlot = { id: string; label: string; startTime: string };
-type ServiceItem = { id: string; name: string; description: string; pricing: Record<string, number> };
+type TimeSlot = { id: string; label: string; startTime: string; endTime: string };
+type ServiceItem = { id: string; name: string; description: string; duration: number; pricing: Record<string, number> };
 type BookingItem = { 
   id: string; bookingCode: string; date: string; time: string; 
   customer: string; flat: string; community: string; vehicle: string; regNumber: string; 
@@ -41,34 +50,44 @@ export const verifyMockHash = (password: string, hash: string) => mockHash(passw
 
 // --- INITIAL MOCK DATA ---
 const initialCommunities: Community[] = [
-  { id: "c1", name: "Prestige Shantiniketan", address: "Whitefield Main Rd, Bangalore", status: "ACTIVE", slotCapacity: 2 },
-  { id: "c2", name: "Sobha Halcyon", address: "Jalahalli, Bangalore", status: "ACTIVE", slotCapacity: 2 },
+  { id: "c1", name: "Prestige Shantiniketan", address: "Whitefield Main Rd, Bangalore", status: "ACTIVE", slotCapacity: 1 },
+  { id: "c2", name: "Sobha Halcyon", address: "Jalahalli, Bangalore", status: "ACTIVE", slotCapacity: 1 },
   { id: "c3", name: "Brigade Gateway", address: "Malleshwaram, Bangalore", status: "HIDDEN", slotCapacity: 1 },
 ];
 
-const initialTimeSlots: TimeSlot[] = [
-  { id: "ts1", label: "08:00 - 10:00 AM", startTime: "08:00" },
-  { id: "ts2", label: "10:00 - 12:00 PM", startTime: "10:00" },
-  { id: "ts3", label: "12:00 - 02:00 PM", startTime: "12:00" },
-  { id: "ts4", label: "02:00 - 04:00 PM", startTime: "14:00" },
-  { id: "ts5", label: "04:00 - 06:00 PM", startTime: "16:00" },
-];
+const formatTimeLabel = (minutes: number) => {
+  const hours24 = Math.floor(minutes / 60);
+  const minute = minutes % 60;
+  const modifier = hours24 >= 12 ? "PM" : "AM";
+  const hours12 = hours24 % 12 || 12;
+  return `${String(hours12).padStart(2, "0")}:${String(minute).padStart(2, "0")} ${modifier}`;
+};
+
+const formatClockTime = (minutes: number) => `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+
+const initialTimeSlots: TimeSlot[] = Array.from({ length: 19 }, (_, index) => {
+  const start = 9 * 60 + index * 30;
+  const end = start + 30;
+  return {
+    id: `ts${index + 1}`,
+    label: `${formatTimeLabel(start)} - ${formatTimeLabel(end)}`,
+    startTime: formatClockTime(start),
+    endTime: formatClockTime(end),
+  };
+});
 
 const initialServices: ServiceItem[] = [
-  { id: "s1", name: "Basic Wash", description: "Essential exterior cleaning for everyday maintenance.", pricing: { Hatchback: 400, Sedan: 500, SUV: 600, Luxury: 600 } },
-  { id: "s2", name: "Deluxe Wash", description: "A more complete wash with interior vacuuming.", pricing: { Hatchback: 600, Sedan: 800, SUV: 1000, Luxury: 1000 } },
-  { id: "s3", name: "Premium Wash", description: "Deep exterior and interior care.", pricing: { Hatchback: 1000, Sedan: 1200, SUV: 1500, Luxury: 1500 } },
-  { id: "s4", name: "Deep Cleaning", description: "Complete interior and exterior deep cleaning.", pricing: { Hatchback: 3000, Sedan: 3500, SUV: 4000, Luxury: 4000 } }
+  { id: "s1", name: "Basic Wash", description: "Essential exterior cleaning for everyday maintenance.", duration: 1, pricing: { Hatchback: 400, Sedan: 500, SUV: 600, Luxury: 600 } },
+  { id: "s2", name: "Deluxe Wash", description: "A more complete wash with interior vacuuming.", duration: 2, pricing: { Hatchback: 600, Sedan: 800, SUV: 1000, Luxury: 1000 } },
+  { id: "s3", name: "Premium Wash", description: "Deep exterior and interior care.", duration: 3, pricing: { Hatchback: 1000, Sedan: 1200, SUV: 1500, Luxury: 1500 } },
+  { id: "s4", name: "Deep Cleaning", description: "Complete interior and exterior deep cleaning.", duration: 5, pricing: { Hatchback: 3000, Sedan: 3500, SUV: 4000, Luxury: 4000 } }
 ];
 
 const initialBookings: BookingItem[] = [];
 
 const initialExpenses: ExpenseItem[] = [];
 
-const initialStaff: StaffItem[] = [
-  { id: "st1", name: "Ramesh Kumar", phone: "9876543210", community: "Prestige Shantiniketan", pin: "1234", status: "ACTIVE", role: "STAFF" },
-  { id: "st2", name: "Suresh Babu", phone: "9876543211", community: "Sobha Halcyon", pin: "5678", status: "ACTIVE", role: "STAFF" },
-];
+const initialStaff: StaffItem[] = [];
 
 // Default super admin - password: "Paddwird#1"
 const initialAdmins: AdminUser[] = [
@@ -100,6 +119,12 @@ type AppStore = {
   addresses: CustomerAddress[];
   customerGarage: CustomerVehicle[];
 
+  // Customers
+  customers: Customer[];
+  addCustomer: (customer: Partial<Customer> & Omit<Customer, "id" | "createdAt">) => void;
+  updateCustomer: (id: string, data: Partial<Customer>) => void;
+  deleteCustomer: (id: string) => void;
+
   // Admin management
   admins: AdminUser[];
   addAdmin: (admin: Omit<AdminUser, "id" | "createdAt" | "lastLogin">) => void;
@@ -109,9 +134,10 @@ type AppStore = {
 
   updateMockUser: (data: { name?: string; phone?: string; email?: string }) => void;
   cancelBooking: (id: string, cancelledBy: "CUSTOMER" | "ADMIN" | "STAFF") => void;
+  rescheduleBooking: (id: string, newDate: string, newTime: string) => void;
 
   timeSlots: TimeSlot[];
-  addTimeSlot: (label: string, startTime: string) => void;
+  addTimeSlot: (label: string, startTime: string, endTime?: string) => void;
   deleteTimeSlot: (id: string) => void;
 
   // Community Actions
@@ -128,8 +154,8 @@ type AppStore = {
   // Vehicle Actions
   addCustomerVehicle: (vehicle: CustomerVehicle) => void;
   updateCustomerVehicle: (id: string, reg: string) => void;
-  deleteCustomerVehicle: (id: string) => void;
-  
+deleteCustomerVehicle: (id: string) => void;
+   
   addVehicleCategory: (category: VehicleCategory) => void;
   addVehicleBrand: (categoryId: string, brand: VehicleBrand) => void;
   addVehicleModel: (categoryId: string, brandId: string, model: VehicleModel) => void;
@@ -156,7 +182,7 @@ type AppStore = {
 
   // Staff Actions
   addStaff: (staff: StaffItem) => void;
-  updateStaff: (id: string, name: string, phone: string, community: string) => void;
+  updateStaff: (id: string, data: { name?: string; phone?: string; community?: string; pin?: string; status?: "ACTIVE" | "DISABLED" }) => void;
   deleteStaff: (id: string) => void;
 };
 
@@ -194,18 +220,34 @@ export const useStore = create<AppStore>()(
         admins: state.admins.map(a => a.id === id ? { ...a, lastLogin: new Date().toISOString() } : a)
       })),
 
-      updateMockUser: (data) => set((state) => ({
-        mockUser: state.mockUser ? { ...state.mockUser, ...data } : null
-      })),
+updateMockUser: (data) => set((state) => {
+          const updatedMockUser = state.mockUser ? { ...state.mockUser, ...data } : {
+            id: `user_${Date.now()}`,
+            role: "CUSTOMER" as const,
+            name: data.name ?? "Customer User",
+            phone: data.phone,
+            email: data.email,
+          };
+          // If the updated mockUser is a customer, update the customer record
+          const updatedCustomers = state.customers.map(c => 
+            c.id === updatedMockUser.id ? { ...c, ...data } : c
+          );
+          return { mockUser: updatedMockUser, customers: updatedCustomers };
+        }),
       
       cancelBooking: (id, cancelledBy) => set((state) => ({
         bookings: state.bookings.map(b => 
           b.id === id ? { ...b, bookingStatus: "CANCELLED" as const, paymentStatus: "REFUNDED" as const, cancelledBy } : b
         )
       })),
+      rescheduleBooking: (id, newDate, newTime) => set((state) => ({
+        bookings: state.bookings.map(b => 
+          b.id === id ? { ...b, date: newDate, time: newTime } : b
+        )
+      })),
 
       timeSlots: initialTimeSlots,
-      addTimeSlot: (label, startTime) => set((state) => ({ timeSlots: [...state.timeSlots, { id: `ts${Date.now()}`, label, startTime }] })),
+      addTimeSlot: (label: string, startTime: string, endTime?: string) => set((state) => ({ timeSlots: [...state.timeSlots, { id: `ts${Date.now()}`, label, startTime, endTime: endTime || startTime }] })),
       deleteTimeSlot: (id) => set((state) => ({ timeSlots: state.timeSlots.filter(t => t.id !== id) })),
 
       addresses: [
@@ -216,6 +258,7 @@ export const useStore = create<AppStore>()(
         { id: "v1", category: "SUV", brand: "Toyota", model: "Fortuner", reg: "TG 09 AB 1234", isDefault: true },
         { id: "v2", category: "Hatchback", brand: "Maruti Suzuki", model: "Swift", reg: "TG 11 CX 5678", isDefault: false },
       ],
+      customers: [],
 
       // --- MUTATIONS ---
       // Community
@@ -241,6 +284,19 @@ export const useStore = create<AppStore>()(
         customerGarage: state.customerGarage.map(v => v.id === id ? { ...v, reg } : v)
       })),
       deleteCustomerVehicle: (id) => set((state) => ({ customerGarage: state.customerGarage.filter(v => v.id !== id) })),
+
+      // Customer Actions
+      addCustomer: (newCustomer) => set((state) => ({ 
+        customers: [...state.customers, { 
+          ...newCustomer, 
+          id: newCustomer.id || `cust_${Date.now()}`, 
+          createdAt: newCustomer.createdAt || new Date().toISOString() 
+        }] 
+      })),
+      updateCustomer: (id, data) => set((state) => ({
+        customers: state.customers.map(c => c.id === id ? { ...c, ...data } : c)
+      })),
+      deleteCustomer: (id) => set((state) => ({ customers: state.customers.filter(c => c.id !== id) })),
 
       // Vehicle Master
       addVehicleCategory: (newCategory) => set((state) => ({ vehicles: [...state.vehicles, newCategory] })),
@@ -319,13 +375,46 @@ export const useStore = create<AppStore>()(
 
       // Staff
       addStaff: (newStaff) => set((state) => ({ staff: [...state.staff, newStaff] })),
-      updateStaff: (id, name, phone, community) => set((state) => ({
-        staff: state.staff.map(s => s.id === id ? { ...s, name, phone, community } : s)
+      updateStaff: (id: string, data: { name?: string; phone?: string; community?: string; pin?: string; status?: "ACTIVE" | "DISABLED" }) => set((state) => ({
+        staff: state.staff.map(s => s.id === id ? { ...s, ...data } : s)
       })),
       deleteStaff: (id) => set((state) => ({ staff: state.staff.filter(s => s.id !== id) })),
     }),
     {
-      name: 'estate-car-wash-v11',
+      name: "estate-car-wash-v12",
+      version: 12,
+      migrate: (persistedState) => {
+        const state = persistedState && typeof persistedState === "object"
+          ? persistedState as Partial<AppStore>
+          : {};
+        const legacyRanges = new Set([
+          "08:00|10:00",
+          "10:00|12:00",
+          "12:00|14:00",
+          "14:00|16:00",
+          "16:00|18:00",
+        ]);
+        const legacyLabels = new Set([
+          "08:00–10:00 AM",
+          "10:00–12:00 PM",
+          "12:00–02:00 PM",
+          "02:00–04:00 PM",
+          "04:00–06:00 PM",
+          "08:00 - 10:00 AM",
+          "10:00 - 12:00 PM",
+          "12:00 - 02:00 PM",
+          "02:00 - 04:00 PM",
+          "04:00 - 06:00 PM",
+        ]);
+        const hasLegacyTimeSlots = Array.isArray(state.timeSlots) && state.timeSlots.length === 5 && state.timeSlots.every((slot) => {
+          const timeSlot = slot as Partial<TimeSlot>;
+          return legacyRanges.has(`${timeSlot.startTime}|${timeSlot.endTime}`) || legacyLabels.has(timeSlot.label || "");
+        });
+        return {
+          ...state,
+          timeSlots: hasLegacyTimeSlots ? initialTimeSlots : (Array.isArray(state.timeSlots) ? state.timeSlots : initialTimeSlots),
+        } as AppStore;
+      },
     }
   )
 );

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Check, MapPin, Car, Wrench, Calendar } from "lucide-react";
 import { useStore } from "@/lib/store"; 
+import { AnimatedSelect } from "@/components/ui/AnimatedSelect"; 
 
 export default function BookService() {
   const router = useRouter();
@@ -28,6 +29,8 @@ export default function BookService() {
   const [showAddAddress, setShowAddAddress] = useState(false);
   const [newCommunity, setNewCommunity] = useState("");
   const [newFlat, setNewFlat] = useState("");
+  const [selectedCommunity, setSelectedCommunity] = useState("");
+  const [selectedFlat, setSelectedFlat] = useState("");
 
   const [selectedVehicleId, setSelectedVehicleId] = useState("");
   const [showAddVehicle, setShowAddVehicle] = useState(false);
@@ -155,29 +158,52 @@ export default function BookService() {
 
       <div className="flex-1 p-6 overflow-y-auto">
 
-        {/* ================= SECTION 1: LOCATION ================= */}
-        <label className={labelClasses}><MapPin size={14} /> Location</label>
+        {/* ================= SECTION 1: COMMUNITY & FLAT ================= */}
+        <label className={labelClasses}><MapPin size={14} /> Community & Flat</label>
         
-        <div className="space-y-3 mb-4">
-          {savedAddresses.map(a => (
-            <button key={a.id} onClick={() => { setSelectedAddressId(a.id); setShowAddAddress(false); }}
-              className={`${cardClasses} ${selectedAddressId === a.id ? "border-yellow-dark bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body"}`}>
-              <p className="text-sm font-bold text-ink">{a.flat}</p>
-              <p className="text-xs font-light text-muted mt-1">{a.community}</p>
-            </button>
-          ))}
-        </div>
+        {/* Community Dropdown */}
+        <AnimatedSelect
+          value={selectedCommunity}
+          onChange={(e) => { setSelectedCommunity(e.target.value); setSelectedFlat(""); setSelectedAddressId(""); }}
+          label="Community"
+          placeholder="Select Community"
+          options={activeCommunities.map(c => ({ value: c.name, label: c.name }))}
+          className={inputClasses}
+        />
 
+        {/* Flat Dropdown - shows flats for selected community */}
+        {selectedCommunity && (
+          <>
+            <AnimatedSelect
+              value={selectedFlat}
+              onChange={(e) => { setSelectedFlat(e.target.value); setSelectedAddressId(""); }}
+              label="Flat Number"
+              placeholder="Select Flat"
+              options={savedAddresses.filter(a => a.community === selectedCommunity).map(a => ({ value: a.flat, label: a.flat }))}
+              className={inputClasses}
+            />
+            {/* If customer has only one flat in this community, show hint */}
+            {savedAddresses.filter(a => a.community === selectedCommunity).length === 1 && (
+              <p className="text-xs font-light text-muted ml-2 mt-1">Only one flat in this community</p>
+            )}
+          </>
+        )}
+
+        {/* Add new address */}
         {!showAddAddress ? (
           <button onClick={() => setShowAddAddress(true)} className="flex items-center gap-2 text-xs font-bold uppercase tracking-machined text-yellow-dark hover:text-yellow-light mb-8">
             <Plus size={14} /> Add new address
           </button>
         ) : (
           <div className="border border-hairline bg-surface-soft p-4 mb-8 space-y-3">
-            <select value={newCommunity} onChange={(e) => setNewCommunity(e.target.value)} className={inputClasses}>
-              <option value="" disabled>Choose community</option>
-              {activeCommunities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-            </select>
+            <AnimatedSelect
+              value={newCommunity}
+              onChange={(e) => setNewCommunity(e.target.value)}
+              label="Community"
+              placeholder="Choose community"
+              options={activeCommunities.map(c => ({ value: c.name, label: c.name }))}
+              className={inputClasses}
+            />
             <input type="text" value={newFlat} onChange={(e) => setNewFlat(e.target.value)} placeholder="Flat Number (e.g. C-503)" className={inputClasses} />
             <button onClick={() => { 
               if (!newCommunity || !newFlat) return;
@@ -208,26 +234,31 @@ export default function BookService() {
           </button>
         ) : (
           <div className="border border-hairline bg-surface-soft p-4 mb-8 space-y-3">
-            <select value={newCat} onChange={(e) => { setNewCat(e.target.value); setNewBrand(""); setNewModel(""); }} className={inputClasses}>
-              <option value="" disabled>Category</option>
-              {vehicleHierarchy.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            
-            {newCat && (
-              <select value={newBrand} onChange={(e) => { setNewBrand(e.target.value); setNewModel(""); }} className={inputClasses}>
-                <option value="" disabled>Brand</option>
-                {brandsForNewCat.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-              </select>
-            )}
-
-            {newBrand && (
-              <select value={newModel} onChange={(e) => setNewModel(e.target.value)} className={inputClasses}>
-                <option value="" disabled>Model</option>
-                {modelsForNewBrand.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
-            )}
-
-            {newModel && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <AnimatedSelect
+                value={newCat}
+                onChange={(e) => setNewCat(e.target.value)}
+                label="Category"
+                placeholder="Category"
+                options={vehicleHierarchy.map(c => ({ value: c.name, label: c.name }))}
+                className={inputClasses}
+              />
+              <AnimatedSelect
+                value={newBrand}
+                onChange={(e) => setNewBrand(e.target.value)}
+                label="Brand"
+                placeholder="Brand"
+                options={vehicleHierarchy.flatMap(c => c.brands.map(b => ({ value: b.name, label: b.name }))).filter((v, i, a) => a.findIndex(x => x.value === v.value) === i)}
+                className={inputClasses}
+              />
+              <AnimatedSelect
+                value={newModel}
+                onChange={(e) => setNewModel(e.target.value)}
+                label="Model"
+                placeholder="Model"
+                options={vehicleHierarchy.flatMap(c => c.brands.flatMap(b => b.models.map(m => ({ value: m.name, label: m.name })))).filter((v, i, a) => a.findIndex(x => x.value === v.value) === i)}
+                className={inputClasses}
+              />
               <input 
                 type="text" 
                 value={newReg} 
@@ -236,34 +267,27 @@ export default function BookService() {
                 maxLength={14}
                 className={inputClasses} 
               />
-            )}
-
-            {newModel && newReg && (
-              <button onClick={() => { 
-                const regRegex = /^[A-Z]{2}\s?\d{1,2}\s?[A-Z]{1,3}\s?\d{1,4}$/;
-                if (!regRegex.test(newReg)) {
-                  setError("Invalid reg format. Use: AP 12 SM 1234");
-                  return;
-                }
-                setError(""); // Clear error
-                
-                const catName = vehicleHierarchy.find(c => c.id === newCat)?.name || "";
-                const brandName = brandsForNewCat.find(b => b.id === newBrand)?.name || "";
-                const modelName = modelsForNewBrand.find(m => m.id === newModel)?.name || "";
-                
-                const newVeh = { 
-                  id: `v${Date.now()}`, 
-                  category: catName, 
-                  brand: brandName, 
-                  model: modelName, 
-                  reg: newReg, 
-                  isDefault: false 
-                };
-                addCustomerVehicle(newVeh);
-                setSelectedVehicleId(newVeh.id); 
-                setShowAddVehicle(false); 
-              }} className="bg-yellow-dark w-full py-3 text-xs font-bold uppercase tracking-machined text-ink">Save Vehicle</button>
-            )}      
+            </div>
+            <button onClick={() => { 
+              const regRegex = /^[A-Z]{2}\s?\d{1,2}\s?[A-Z]{1,3}\s?\d{1,4}$/;
+              if (!regRegex.test(newReg)) {
+                setError("Invalid reg format. Use: AP 12 SM 1234");
+                return;
+              }
+              setError(""); // Clear error
+              
+              const newVeh = { 
+                id: `v${Date.now()}`, 
+                category: newCat, 
+                brand: newBrand, 
+                model: newModel, 
+                reg: newReg, 
+                isDefault: false 
+              };
+              addCustomerVehicle(newVeh);
+              setSelectedVehicleId(newVeh.id); 
+              setShowAddVehicle(false); 
+            }} className="bg-yellow-dark w-full py-3 text-xs font-bold uppercase tracking-machined text-ink">Save Vehicle</button>
           </div>
         )}
 

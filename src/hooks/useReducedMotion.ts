@@ -6,12 +6,12 @@ import { useEffect, useState } from "react";
  * Returns true if user has "prefers-reduced-motion: reduce" set
  */
 export function useReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
+  const [reduced, setReduced] = useState(() => 
+    typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false
+  );
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(mediaQuery.matches);
-
     const handler = (event: MediaQueryListEvent) => {
       setReduced(event.matches);
     };
@@ -27,7 +27,7 @@ export function useReducedMotion(): boolean {
  * Hook to get motion-safe transition config
  * Returns zero-duration transitions when reduced motion is preferred
  */
-export function useMotionSafeTransition(config: { duration?: number; ease?: any } = {}) {
+export function useMotionSafeTransition(config: { duration?: number; ease?: string | number[] } = {}) {
   const reduced = useReducedMotion();
   
   return reduced 

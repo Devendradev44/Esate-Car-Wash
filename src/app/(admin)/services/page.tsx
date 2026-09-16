@@ -59,7 +59,7 @@ export default function ServicesPage() {
     if (isEditing) {
       updateService(currentId, name, desc, numericPricing);
     } else {
-      addService({ id: `s${Date.now()}`, name, description: desc, pricing: numericPricing });
+      addService({ id: `s${Date.now()}`, name, description: desc, duration: 1, pricing: numericPricing });
     }
     setName(""); setDesc("");
     setPricing({ Hatchback: "", Sedan: "", SUV: "", Luxury: "" });

@@ -60,24 +60,37 @@
     @apply border-border outline-ring/50;
   }
   body {
-    background-color: var(--color-canvas);
-    color: var(--color-ink) !important;
-    font-weight: 300;
-    @apply bg-background text-foreground;
-  }
+     background-color: var(--color-canvas);
+     color: var(--color-ink) !important;
+     font-weight: 400;
+     @apply bg-background text-foreground;
+   }
   h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
     color: var(--color-ink) !important;
     text-transform: none !important;
   }
-.text-muted {
+  .text-muted {
      color: var(--color-ink) !important;
    }
-.text-muted-foreground {
+  .text-muted-foreground {
      color: var(--color-ink) !important;
    }
   .text-body {
-    color: var(--color-body) !important;
+     color: var(--color-ink) !important;
+   }
+  /* Ensure placeholder and disabled text are white */
+  ::placeholder {
+    color: var(--color-ink) !important;
+    opacity: 0.7;
+  }
+  input:disabled, textarea:disabled, select:disabled {
+    color: var(--color-ink) !important;
+    opacity: 0.7;
+  }
+  input:disabled::placeholder, textarea:disabled::placeholder, select:disabled::placeholder {
+    color: var(--color-ink) !important;
+    opacity: 0.5;
   }
   html {
     @apply font-sans;

@@ -1,14 +1,19 @@
 "use client";
 import Link from "next/link";
 import { CalendarDays, Car, Wrench, ArrowRight, XCircle } from "lucide-react";
+import { useState } from "react";
 import { useStore } from "@/lib/store";
 
 export default function CustomerDashboard() {
-  
+  const mockUser = useStore((state) => state.mockUser);
   const bookings = useStore((state) => state.bookings);
   const cancelBooking = useStore((state) => state.cancelBooking);
+  const rescheduleBooking = useStore((state) => state.rescheduleBooking);
+  const allTimeSlots = useStore((state) => state.timeSlots);
 
-   const mockUser = useStore((state) => state.mockUser);
+  const [cancelModal, setCancelModal] = useState<{ booking: typeof bookings[0] | null; mode: 'confirm' | 'reschedule' }>({ booking: null, mode: 'confirm' });
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("");
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
@@ -16,14 +21,50 @@ export default function CustomerDashboard() {
     return `${day}-${month}-${year}`;
   };
 
+  const getTodayDate = () => {
+    const today = new Date();
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  };
 
   const myBookings = bookings.filter(b => b.customer === (mockUser?.name || "Guest"));
   const upcomingBookings = myBookings.filter(b => b.bookingStatus === "BOOKED");
   const pastBookings = myBookings.filter(b => b.bookingStatus !== "BOOKED");
-  
+  const allTimeSlotsStore = useStore.getState().timeSlots;
+
+  const openCancelModal = (booking: typeof bookings[0]) => {
+    setCancelModal({ booking, mode: 'confirm' });
+  };
+
+  const handleConfirmCancel = () => {
+    if (cancelModal.booking) {
+      cancelBooking(cancelModal.booking.id, "CUSTOMER");
+    }
+    setCancelModal({ booking: null, mode: 'confirm' });
+  };
+
+  const handleShowReschedule = () => {
+    setCancelModal(prev => ({ ...prev, mode: 'reschedule' }));
+  };
+
+  const handleReschedule = () => {
+    if (cancelModal.booking && rescheduleDate && rescheduleTime) {
+      rescheduleBooking(cancelModal.booking.id, rescheduleDate, rescheduleTime);
+      setCancelModal({ booking: null, mode: 'confirm' });
+    }
+  };
+
+  const availableSlotsForDate = (date: string) => {
+    if (!date) return [];
+    return allTimeSlots.filter(slot => {
+      if (date === getTodayDate()) {
+        const slotEndTime = new Date(`${date}T${slot.endTime}`);
+        if (slotEndTime < new Date()) return false;
+      }
+      return true;
+    });
+  };
 
   return (
-
     <div className="flex min-h-screen flex-col bg-canvas pb-24">
       <div className="border-b border-hairline bg-surface-soft p-6">
         <h1 className="text-2xl font-bold uppercase text-ink">My Dashboard</h1>
@@ -66,9 +107,9 @@ export default function CustomerDashboard() {
                     <Car size={12} /> {b.vehicle}
                   </div>
                   
-                  {/* CANCEL BUTTON */}
+                  {/* CANCEL BUTTON WITH CONFIRMATION MODAL */}
                   <button 
-                    onClick={() => cancelBooking(b.id, "CUSTOMER")}
+                    onClick={() => setCancelModal({ booking: b, mode: 'confirm' })}
                     className="flex w-full items-center justify-center gap-2 border border-m-red/50 text-m-red py-3 text-xs font-bold uppercase tracking-machined hover:bg-m-red hover:text-ink transition-colors"
                   >
                     <XCircle size={14} /> Cancel Booking
@@ -89,11 +130,9 @@ export default function CustomerDashboard() {
           ) : (
             <div className="space-y-3">
               {pastBookings.map(b => (
-                // CHANGED: Removed red border, just using standard card with slight opacity
                 <div key={b.id} className="border border-hairline bg-surface-card p-5 opacity-80">
                   <div className="flex justify-between mb-2">
                     <p className="text-sm font-bold text-ink">{b.service}</p>
-                    {/* CHANGED: Only the badge is red, not the whole card */}
                     <span className={`text-xs font-bold uppercase ${b.bookingStatus === "COMPLETED" ? "text-success" : "text-m-red"}`}>
                       {b.bookingStatus}
                     </span>
@@ -110,6 +149,91 @@ export default function CustomerDashboard() {
             </div>
           )}
         </div>
+
+        {/* Cancel/Reschedule Modal */}
+        {cancelModal.booking && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+            <div className="w-full max-w-md border border-hairline bg-surface-soft p-6 rounded-lg">
+              {cancelModal.mode === 'confirm' ? (
+                <div className="space-y-4">
+                  <h3 className="text-xl font-bold text-ink">Cancel Booking?</h3>
+                  <p className="text-sm text-body">
+                    Are you sure you want to cancel your <strong className="text-ink">{cancelModal.booking.service}</strong> booking?
+                  </p>
+                  <p className="text-xs text-muted">
+                    {formatDate(cancelModal.booking.date)} · {cancelModal.booking.time} · {cancelModal.booking.vehicle}
+                  </p>
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => setCancelModal(prev => ({ ...prev, mode: 'reschedule' }))}
+                      className="flex-1 bg-yellow-dark py-3 text-sm font-bold text-black hover:bg-yellow-light transition-colors rounded-lg"
+                    >
+                      Reschedule
+                    </button>
+                    <button 
+                      onClick={handleConfirmCancel}
+                      className="flex-1 bg-m-red py-3 text-sm font-bold text-ink hover:bg-m-red/80 transition-colors rounded-lg"
+                    >
+                      Cancel Booking
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <h3 className="text-xl font-bold text-ink">Reschedule Booking</h3>
+                  <p className="text-sm text-body">Select new date and time</p>
+                  
+                  <div>
+                    <label className="block text-xs font-bold text-muted mb-2">Date</label>
+                    <input
+                      type="date"
+                      value={rescheduleDate}
+                      onChange={(e) => setRescheduleDate(e.target.value)}
+                      min={getTodayDate()}
+                      className="w-full bg-surface-card border border-hairline text-ink p-3 text-sm font-light focus:border-yellow-dark focus:outline-none rounded-lg"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs font-bold text-muted mb-2">Time Slot</label>
+                    <select
+                      value={rescheduleTime}
+                      onChange={(e) => setRescheduleTime(e.target.value)}
+                      className="w-full bg-surface-card border border-hairline text-ink p-3 text-sm font-light focus:border-yellow-dark focus:outline-none rounded-lg"
+                    >
+                      <option value="">Select time</option>
+                      {allTimeSlots.filter(slot => {
+                        if (rescheduleDate === getTodayDate()) {
+                          const slotEndTime = new Date(`${rescheduleDate}T${slot.endTime}`);
+                          if (slotEndTime < new Date()) return false;
+                        }
+                        return true;
+                      }).map(slot => (
+                        <option key={slot.id} value={slot.label}>{slot.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => setCancelModal(prev => ({ ...prev, mode: 'confirm' }))}
+                      className="flex-1 border border-hairline py-3 text-sm font-bold text-body hover:bg-surface-elevated transition-colors rounded-lg"
+                    >
+                      Back
+                    </button>
+                    <button 
+                      onClick={handleReschedule}
+                      disabled={!rescheduleDate || !rescheduleTime}
+                      className="flex-1 bg-yellow-dark py-3 text-sm font-bold text-black hover:bg-yellow-light transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Confirm Reschedule
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

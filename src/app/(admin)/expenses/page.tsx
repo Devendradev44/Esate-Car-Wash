@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Plus, Search, Trash2, X, Edit, Receipt } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { AnimatedSelect } from "@/components/ui/AnimatedSelect";
 
 const expenseCategories = ["SALARY", "RENT", "WATER", "ELECTRICITY", "MAINTENANCE", "TRAVEL", "FUEL", "EQUIPMENT", "REPAIR", "FOOD", "CLEANING_MATERIAL", "MARKETING", "MISCELLANEOUS"];
 const expensePaymentMethods = ["CASH", "UPI", "CHEQUE", "ACCOUNT_TRANSFER"];
@@ -72,9 +73,27 @@ export default function ExpensesPage() {
             <div className="space-y-4">
               <div><label className={labelClasses}>Date</label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClasses + " [color-scheme:dark]"} /></div>
               <div><label className={labelClasses}>Expense Name</label><input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Monthly Rent" className={inputClasses} /></div>
-              <div><label className={labelClasses}>Category</label><select value={category} onChange={(e) => setCategory(e.target.value)} className={inputClasses}>{expenseCategories.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+              <div><label className={labelClasses}>Category</label>
+                <AnimatedSelect
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  label="Category"
+                  placeholder="Select category"
+                  options={expenseCategories.map(c => ({ value: c, label: c }))}
+                  className={inputClasses}
+                />
+              </div>
               <div><label className={labelClasses}>Amount (₹)</label><input type="number" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" className={inputClasses} /></div>
-              <div><label className={labelClasses}>Payment Type</label><select value={paymentType} onChange={(e) => setPaymentType(e.target.value)} className={inputClasses}>{expensePaymentMethods.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
+              <div><label className={labelClasses}>Payment Type</label>
+                <AnimatedSelect
+                  value={paymentType}
+                  onChange={(e) => setPaymentType(e.target.value)}
+                  label="Payment Type"
+                  placeholder="Select payment type"
+                  options={expensePaymentMethods.map(p => ({ value: p, label: p }))}
+                  className={inputClasses}
+                />
+              </div>
               <div><label className={labelClasses}>Notes (Optional)</label><input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any details..." className={inputClasses} /></div>
             </div>
             <button onClick={handleSaveExpense} className="mt-6 flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">

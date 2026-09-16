@@ -1,8 +1,7 @@
 "use client";
 import { useState } from "react";
-import { Trash2, X, UserPlus, Shield, Mail, Settings, ChevronDown, ChevronUp, Check } from "lucide-react";
+import { Trash2, X, UserPlus, Shield, Mail, Settings, ChevronDown, ChevronUp, Check, Trash, Clock } from "lucide-react";
 import { useStore, mockHash } from "@/lib/store";
-import { PasswordInput } from "@/components/ui/PasswordInput";
 
 const ALL_PERMISSIONS = [
   { key: "bookings", label: "Bookings", icon: Shield },
@@ -22,6 +21,9 @@ export default function AdminManagement() {
   const addAdmin = useStore((state) => state.addAdmin);
   const updateAdmin = useStore((state) => state.updateAdmin);
   const deleteAdmin = useStore((state) => state.deleteAdmin);
+  const timeSlots = useStore((state) => state.timeSlots);
+  const addTimeSlot = useStore((state) => state.addTimeSlot);
+  const deleteTimeSlot = useStore((state) => state.deleteTimeSlot);
   const currentUser = useStore((state) => state.mockUser);
 
   const [showModal, setShowModal] = useState(false);
@@ -36,6 +38,11 @@ export default function AdminManagement() {
   const [formStatus, setFormStatus] = useState<"ACTIVE" | "DISABLED">("ACTIVE");
   const [error, setError] = useState("");
   const [expandedAdmin, setExpandedAdmin] = useState<string | null>(null);
+  const [showTimeSlotModal, setShowTimeSlotModal] = useState(false);
+  const [timeSlotLabel, setTimeSlotLabel] = useState("");
+  const [timeSlotStart, setTimeSlotStart] = useState("");
+  const [timeSlotEnd, setTimeSlotEnd] = useState("");
+  const [timeSlotError, setTimeSlotError] = useState("");
 
   const isSuperAdmin = (admin: typeof admins[0]) => admin.id === "admin_1";
   const currentUserId = currentUser?.id;
@@ -97,73 +104,136 @@ export default function AdminManagement() {
       setError("Select at least one permission.");
       return false;
     }
-    // Check duplicate email
-    const existing = admins.find(a => a.email === formEmail && a.id !== editingAdmin?.id);
-    if (existing) {
-      setError("An admin with this email already exists.");
-      return false;
-    }
     return true;
   };
 
   const handleSave = () => {
     if (!validateForm()) return;
 
-    const passwordHash = formPassword ? mockHash(formPassword) : editingAdmin?.passwordHash || "";
-
     if (editMode && editingAdmin) {
-      updateAdmin(editingAdmin.id, {
+      const updates: Partial<typeof admins[0]> = {
+        email: formEmail,
         name: formName,
         permissions: formPermissions,
         status: formStatus,
-        ...(formPassword ? { passwordHash } : {}),
-      });
+      };
+      if (formPassword) {
+        updates.passwordHash = mockHash(formPassword);
+      }
+      updateAdmin(editingAdmin.id, updates);
     } else {
+      const passwordHash = mockHash(formPassword);
       addAdmin({
         email: formEmail,
-        passwordHash,
         name: formName,
+        passwordHash,
         permissions: formPermissions,
         status: formStatus,
-        invitedBy: currentUser?.id || null,
+        invitedBy: currentUser?.id || "System",
       });
     }
-
     setShowModal(false);
-    resetForm();
   };
 
-  const handleDelete = (adminId: string) => {
-    if (!confirm("Delete this admin? This cannot be undone.")) return;
-    if (adminId === "admin_1") {
-      alert("Cannot delete the super admin.");
+  const handleDelete = (id: string) => {
+    if (id === "admin_1") {
+      setError("Cannot delete super admin.");
       return;
     }
-    deleteAdmin(adminId);
+    if (confirm("Are you sure you want to delete this admin?")) {
+      deleteAdmin(id);
+    }
   };
 
   const toggleExpand = (id: string) => {
     setExpandedAdmin(prev => prev === id ? null : id);
   };
 
-  const formatDate = (iso: string | null) => {
-    if (!iso) return "Never";
-    return new Date(iso).toLocaleDateString("en-IN", { 
-      day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" 
-    });
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "";
+    const [year, month, day] = dateString.split("-");
+    return `${day}-${month}-${year}`;
+  };
+
+  const timeToMinutes = (value: string) => {
+    const [hours, minutes] = value.split(":").map(Number);
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+    return hours * 60 + minutes;
+  };
+
+  const formatTimeLabel = (value: string) => {
+    const [hoursValue, minutesValue] = value.split(":");
+    const hours = Number(hoursValue);
+    const modifier = hours >= 12 ? "PM" : "AM";
+    const displayHours = hours % 12 || 12;
+    return `${String(displayHours).padStart(2, "0")}:${minutesValue} ${modifier}`;
+  };
+
+  // Time Slot Management Functions
+  const openAddTimeSlotModal = () => {
+    setTimeSlotLabel("");
+    setTimeSlotStart("");
+    setTimeSlotEnd("");
+    setTimeSlotError("");
+    setShowTimeSlotModal(true);
+  };
+
+  const validateTimeSlotForm = () => {
+    const startMinutes = timeToMinutes(timeSlotStart);
+    const endMinutes = timeToMinutes(timeSlotEnd);
+
+    if (startMinutes === null || endMinutes === null) {
+      setTimeSlotError("Please enter valid start and end times.");
+      return false;
+    }
+    if (startMinutes < 9 * 60 || startMinutes > 18 * 60) {
+      setTimeSlotError("Start time must be between 09:00 AM and 06:00 PM.");
+      return false;
+    }
+    if (endMinutes <= 9 * 60 || endMinutes > 18 * 60 + 30) {
+      setTimeSlotError("End time must be between 09:30 AM and 06:30 PM.");
+      return false;
+    }
+    if (endMinutes - startMinutes !== 30) {
+      setTimeSlotError("Each time slot must be exactly 30 minutes.");
+      return false;
+    }
+    if (timeSlots.some(slot => slot.startTime === timeSlotStart && slot.endTime === timeSlotEnd)) {
+      setTimeSlotError("This time slot already exists.");
+      return false;
+    }
+
+    setTimeSlotLabel(`${formatTimeLabel(timeSlotStart)} - ${formatTimeLabel(timeSlotEnd)}`);
+    return true;
+  };
+
+  const handleTimeSlotSave = () => {
+    if (!validateTimeSlotForm()) return;
+    addTimeSlot(timeSlotLabel, timeSlotStart, timeSlotEnd);
+    setTimeSlotLabel("");
+    setTimeSlotStart("");
+    setTimeSlotEnd("");
+    setTimeSlotError("");
+    setShowTimeSlotModal(false);
+  };
+
+  const handleTimeSlotDelete = (id: string) => {
+    if (confirm("Are you sure you want to delete this time slot?")) {
+      deleteTimeSlot(id);
+    }
   };
 
   const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
   const labelClasses = "block text-xs font-bold uppercase tracking-machined text-muted mb-3";
 
   return (
-    <div className="p-6 md:p-12 relative">
+    <div className="p-6 md:p-12">
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
           <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-bold uppercase text-ink">{editMode ? "Edit Admin" : "Invite New Admin"}</h3>
-              <button onClick={() => { setShowModal(false); resetForm(); }} className="text-muted hover:text-ink"><X size={20} /></button>
+              <button type="button" onClick={() => { setShowModal(false); resetForm(); }} className="text-muted hover:text-ink" aria-label="Close admin form"><X size={20} /></button>
             </div>
 
             {error && (
@@ -175,12 +245,12 @@ export default function AdminManagement() {
             <div className="space-y-4 mb-8">
               <div>
                 <label className={labelClasses}>Email Address</label>
-                <input 
-                  type="email" 
-                  value={formEmail} 
-                  onChange={(e) => setFormEmail(e.target.value)} 
-                  placeholder="admin@company.com" 
-                  className={inputClasses} 
+                <input
+                  type="email"
+                  value={formEmail}
+                  onChange={(e) => setFormEmail(e.target.value)}
+                  placeholder="admin@company.com"
+                  className={inputClasses}
                   disabled={editMode}
                 />
                 {editMode && <p className="mt-1 text-[10px] text-muted">Email cannot be changed</p>}
@@ -188,22 +258,23 @@ export default function AdminManagement() {
 
               <div>
                 <label className={labelClasses}>Full Name</label>
-                <input 
-                  type="text" 
-                  value={formName} 
-                  onChange={(e) => setFormName(e.target.value)} 
-                  placeholder="John Doe" 
-                  className={inputClasses} 
+                <input
+                  type="text"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  placeholder="Full name"
+                  className={inputClasses}
                 />
               </div>
 
               <div>
-                <PasswordInput
+                <label className={labelClasses}>{editMode ? "New Password" : "Password"}</label>
+                <input
+                  type="password"
                   value={formPassword}
-                  onChange={setFormPassword}
-                  placeholder={editMode ? "••••••••" : "min 4 characters"}
-                  label={editMode ? "New Password (leave blank to keep current)" : "Password"}
-                  className="w-full"
+                  onChange={(e) => setFormPassword(e.target.value)}
+                  placeholder={editMode ? "Leave blank to keep current" : "Minimum 4 characters"}
+                  className={inputClasses}
                 />
               </div>
 
@@ -224,7 +295,7 @@ export default function AdminManagement() {
                         type="checkbox"
                         checked={formPermissions.includes(key)}
                         onChange={() => handlePermissionToggle(key)}
-                        className="w-4 h-4 accent-yellow-400 border-zinc-700 rounded focus:ring-yellow-400"
+                        className="w-4 h-4 accent-yellow-400"
                       />
                       <Icon size={14} className="text-muted" />
                       <span className="text-sm font-medium text-ink">{label}</span>
@@ -234,8 +305,9 @@ export default function AdminManagement() {
               </div>
             </div>
 
-            <button 
-              onClick={handleSave} 
+            <button
+              type="button"
+              onClick={handleSave}
               className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors"
             >
               {editMode ? "Save Changes" : "Invite Admin"}
@@ -244,119 +316,249 @@ export default function AdminManagement() {
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-normal text-ink">Admin Management</h2>
-          <p className="mt-2 text-sm font-light text-body">Manage administrator accounts and permissions.</p>
+      {/* ADMIN MANAGEMENT SECTION */}
+      <div className="mb-16">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-normal text-ink">Admin Management</h2>
+            <p className="mt-2 text-sm font-light text-body">Manage administrator accounts and permissions.</p>
+          </div>
+          <button onClick={openAddModal} className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
+            <UserPlus size={14} /> Invite Admin
+          </button>
         </div>
-        <button onClick={openAddModal} className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
-          <UserPlus size={14} /> Invite Admin
-        </button>
-      </div>
 
-      {admins.length === 0 ? (
-        <div className="text-center text-muted text-sm font-light mt-20 py-12">
-          No administrators found.
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {admins.map(admin => (
-            <div 
-              key={admin.id} 
-              className={`border border-hairline bg-surface-card transition-all ${expandedAdmin === admin.id ? "bg-surface-elevated" : ""}`}
-            >
-              <div className="flex items-center justify-between p-6 cursor-pointer" onClick={() => toggleExpand(admin.id)}>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-yellow-400/20 flex items-center justify-center">
-                    <Mail size={20} className="text-yellow-400" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <p className="text-lg font-bold text-ink">{admin.name}</p>
-                      {isSuperAdmin(admin) && (
-                        <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-machined bg-yellow-400/20 text-yellow-400 rounded">
-                          Super Admin
-                        </span>
-                      )}
+        {admins.length === 0 ? (
+          <div className="text-center text-muted text-sm font-light mt-20 py-12">
+            No administrators found.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {admins.map(admin => (
+              <div 
+                key={admin.id} 
+                className={`border border-hairline bg-surface-card transition-all ${expandedAdmin === admin.id ? "bg-surface-elevated" : ""}`}
+              >
+                <div className="flex items-center justify-between p-6 cursor-pointer" onClick={() => toggleExpand(admin.id)}>
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-yellow-400/20 flex items-center justify-center">
+                      <Mail size={20} className="text-yellow-400" />
                     </div>
-                    <p className="text-sm font-light text-muted">{admin.email}</p>
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <p className="text-lg font-bold text-ink">{admin.name}</p>
+                        {isSuperAdmin(admin) && (
+                          <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-machined bg-yellow-400/20 text-yellow-400 rounded">
+                            Super Admin
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm font-light text-muted">{admin.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-machined rounded-full ${
+                      admin.status === "ACTIVE" 
+                        ? "bg-green-500/20 text-green-400" 
+                        : "bg-red-500/20 text-red-400"
+                    }`}>
+                      {admin.status}
+                    </span>
+                    <p className="text-xs font-light text-muted hidden sm:block">Last: {admin.lastLogin ? formatDate(admin.lastLogin) : "Never"}</p>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); openEditModal(admin); }} 
+                      className="text-muted hover:text-ink transition-colors p-1"
+                    >
+                      <Settings size={18} />
+                    </button>
+                    {admin.id !== "admin_1" && canModify(admin) && (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleDelete(admin.id); }} 
+                        className="text-muted hover:text-m-red transition-colors p-1"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
+                    <div className="w-8 flex justify-center">
+                      {expandedAdmin === admin.id ? <ChevronUp size={18} className="text-ink" /> : <ChevronDown size={18} className="text-muted" />}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-machined rounded-full ${
-                    admin.status === "ACTIVE" 
-                      ? "bg-green-500/20 text-green-400" 
-                      : "bg-red-500/20 text-red-400"
-                  }`}>
-                    {admin.status}
-                  </span>
-                  <p className="text-xs font-light text-muted hidden sm:block">Last: {formatDate(admin.lastLogin)}</p>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); openEditModal(admin); }} 
-                    className="text-muted hover:text-ink transition-colors p-1"
-                  >
-                    <Settings size={18} />
-                  </button>
-                  {admin.id !== "admin_1" && canModify(admin) && (
+
+                {expandedAdmin === admin.id && (
+                  <div className="border-t border-hairline bg-surface-soft p-6 space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                      <div className="p-3 bg-surface-card rounded-lg">
+                        <p className="text-xs font-bold uppercase tracking-machined text-muted mb-1">ID</p>
+                        <p className="font-mono text-ink">{admin.id}</p>
+                      </div>
+                      <div className="p-3 bg-surface-card rounded-lg">
+                        <p className="text-xs font-bold uppercase tracking-machined text-muted mb-1">Created</p>
+                        <p className="font-mono text-ink">{formatDate(admin.createdAt)}</p>
+                      </div>
+                      <div className="p-3 bg-surface-card rounded-lg">
+                        <p className="text-xs font-bold uppercase tracking-machined text-muted mb-1">Last Login</p>
+                        <p className="font-mono text-ink">{admin.lastLogin ? formatDate(admin.lastLogin) : "Never"}</p>
+                      </div>
+                      <div className="p-3 bg-surface-card rounded-lg">
+                        <p className="text-xs font-bold uppercase tracking-machined text-muted mb-1">Invited By</p>
+                        <p className="font-mono text-ink">{admin.invitedBy || "System"}</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-machined text-muted mb-3">Permissions</p>
+                      <div className="flex flex-wrap gap-2">
+                        {ALL_PERMISSIONS.map(({ key, label, icon: Icon }) => (
+                          <span 
+                            key={key} 
+                            className={`flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-full ${
+                              admin.permissions.includes(key)
+                                ? "bg-yellow-400/20 text-yellow-400 border border-yellow-400/30"
+                                : "bg-surface-card text-muted border border-hairline"
+                            }`}
+                          >
+                            <Icon size={10} />
+                            {label}
+                            {admin.permissions.includes(key) && <Check size={10} />}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* TIME SLOT MANAGEMENT SECTION */}
+      <div className="mt-16 pt-16 border-t border-hairline">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-normal text-ink">Time Slot Management</h2>
+            <p className="mt-2 text-sm font-light text-body">Manage 30-minute booking slots (9 AM - 6:30 PM).</p>
+          </div>
+          <button onClick={openAddTimeSlotModal} className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
+            <Clock size={14} /> Add Time Slot
+          </button>
+        </div>
+
+        {timeSlots.length === 0 ? (
+          <div className="text-center text-muted text-sm font-light mt-20 py-12">
+            No time slots configured.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {[...timeSlots].sort((a, b) => a.startTime.localeCompare(b.startTime)).map(slot => (
+              <div 
+                key={slot.id} 
+                className="border border-hairline bg-surface-card p-6 transition-colors"
+              >
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-yellow-400/20 flex items-center justify-center">
+                      <Clock size={20} className="text-yellow-400" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-ink">{slot.label}</p>
+                      <p className="text-sm font-light text-muted">{slot.startTime} - {slot.endTime}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
                     <button 
-                      onClick={(e) => { e.stopPropagation(); handleDelete(admin.id); }} 
+                      onClick={() => handleTimeSlotDelete(slot.id)} 
                       className="text-muted hover:text-m-red transition-colors p-1"
                     >
-                      <Trash2 size={18} />
+                      <Trash size={18} />
                     </button>
-                  )}
-                  <div className="w-8 flex justify-center">
-                    {expandedAdmin === admin.id ? <ChevronUp size={18} className="text-ink" /> : <ChevronDown size={18} className="text-muted" />}
                   </div>
                 </div>
               </div>
-
-              {expandedAdmin === admin.id && (
-                <div className="border-t border-hairline bg-surface-soft p-6 space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                    <div className="p-3 bg-surface-card rounded-lg">
-                      <p className="text-xs font-bold uppercase tracking-machined text-muted mb-1">ID</p>
-                      <p className="font-mono text-ink">{admin.id}</p>
-                    </div>
-                    <div className="p-3 bg-surface-card rounded-lg">
-                      <p className="text-xs font-bold uppercase tracking-machined text-muted mb-1">Created</p>
-                      <p className="font-mono text-ink">{formatDate(admin.createdAt)}</p>
-                    </div>
-                    <div className="p-3 bg-surface-card rounded-lg">
-                      <p className="text-xs font-bold uppercase tracking-machined text-muted mb-1">Last Login</p>
-                      <p className="font-mono text-ink">{formatDate(admin.lastLogin)}</p>
-                    </div>
-                    <div className="p-3 bg-surface-card rounded-lg">
-                      <p className="text-xs font-bold uppercase tracking-machined text-muted mb-1">Invited By</p>
-                      <p className="font-mono text-ink">{admin.invitedBy || "System"}</p>
-                    </div>
-                  </div>
-
+            ))}
+          </div>
+        )}
+        
+        {/* ADD TIME SLOT MODAL */}
+        {showTimeSlotModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+            <div className="w-full max-w-md border border-hairline bg-surface-soft p-8">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xl font-bold uppercase text-ink">Add Time Slot</h3>
+                <button onClick={() => setShowTimeSlotModal(false)} className="text-muted hover:text-ink"><X size={20} /></button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-machined text-muted mb-2">Label (e.g., 09:00 - 09:30 AM)</label>
+                  <input
+                    type="text"
+                    value={timeSlotLabel}
+                    onChange={(e) => setTimeSlotLabel(e.target.value)}
+                    placeholder="09:00 - 09:30 AM"
+                    className="w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none rounded-lg"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-machined text-muted mb-3">Permissions</p>
-                    <div className="flex flex-wrap gap-2">
-                      {ALL_PERMISSIONS.map(({ key, label, icon: Icon }) => (
-                        <span 
-                          key={key} 
-                          className={`flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-full ${
-                            admin.permissions.includes(key)
-                              ? "bg-yellow-400/20 text-yellow-400 border border-yellow-400/30"
-                              : "bg-surface-card text-muted border border-hairline"
-                          }`}
-                        >
-                          <Icon size={10} />
-                          {label}
-                          {admin.permissions.includes(key) && <Check size={10} />}
-                        </span>
-                      ))}
-                    </div>
+                    <label className="block text-xs font-bold uppercase tracking-machined text-muted mb-2">Start Time</label>
+                    <input
+                      type="time"
+                      min="09:00"
+                      max="18:00"
+                      step="1800"
+                      value={timeSlotStart}
+                      onChange={(e) => {
+                        setTimeSlotStart(e.target.value);
+                        if (e.target.value && timeSlotEnd) {
+                          setTimeSlotLabel(`${formatTimeLabel(e.target.value)} - ${formatTimeLabel(timeSlotEnd)}`);
+                        }
+                      }}
+                      className="w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-machined text-muted mb-2">End Time</label>
+                    <input
+                      type="time"
+                      min="09:30"
+                      max="18:30"
+                      step="1800"
+                      value={timeSlotEnd}
+                      onChange={(e) => {
+                        setTimeSlotEnd(e.target.value);
+                        if (timeSlotStart && e.target.value) {
+                          setTimeSlotLabel(`${formatTimeLabel(timeSlotStart)} - ${formatTimeLabel(e.target.value)}`);
+                        }
+                      }}
+                      className="w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none rounded-lg"
+                    />
                   </div>
                 </div>
-              )}
+                {timeSlotError && (
+                  <p className="text-xs font-semibold text-red-500 bg-red-500/10 border border-red-500/20 py-2 rounded-lg text-center">
+                    {timeSlotError}
+                  </p>
+                )}
+                <div className="flex gap-3 mt-4">
+                  <button 
+                    onClick={() => setShowTimeSlotModal(false)}
+                    className="flex-1 border border-hairline py-3 text-sm font-bold text-body hover:bg-surface-elevated transition-colors rounded-lg"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleTimeSlotSave}
+                    className="flex-1 bg-yellow-dark py-3 text-sm font-bold text-black hover:bg-yellow-light transition-colors rounded-lg"
+                  >
+                    Save Time Slot
+                  </button>
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

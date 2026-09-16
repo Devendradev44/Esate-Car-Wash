@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Plus, Trash2, X, User, Phone, KeyRound, Edit } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { AnimatedSelect } from "@/components/ui/AnimatedSelect";
 
 export default function StaffPage() {
 
@@ -35,7 +36,7 @@ export default function StaffPage() {
   const handleSaveStaff = () => {
     if (!name || !phone || !community) return;
     if (isEditing) {
-      updateStaff(currentId, name, phone, community);
+      updateStaff(currentId, { name, phone, community });
     } else {
       const pin = Math.floor(1000 + Math.random() * 9000).toString();
       addStaff({ id: `st_${Date.now()}`, name, phone, community, pin, status: "ACTIVE", role: "STAFF" });
@@ -66,10 +67,14 @@ export default function StaffPage() {
             </div>
             <div className="mb-8">
               <label className={labelClasses}>Assign Community</label>
-              <select value={community} onChange={(e) => setCommunity(e.target.value)} className={inputClasses}>
-                <option value="" disabled>Select community</option>
-                {communities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-              </select>
+              <AnimatedSelect
+              value={community}
+              onChange={(e) => setCommunity(e.target.value)}
+              label="Assign Community"
+              placeholder="Select community"
+              options={communities.map(c => ({ value: c.name, label: c.name }))}
+              className={inputClasses}
+            />
             </div>
             <button onClick={handleSaveStaff} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">
               {isEditing ? "Save Changes" : "Generate PIN & Save"}

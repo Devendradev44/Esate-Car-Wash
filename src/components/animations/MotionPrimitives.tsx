@@ -418,8 +418,54 @@ export function AnimatedList({
   stagger = 0.05,
   direction = "vertical"
 }: { 
-  items: any[];
-  renderItem: (item: any, index: number) => ReactNode;
+  items: Array<{ id?: string | number } & Record<string, unknown>>;
+  renderItem: (item: Record<string, unknown>, index: number) => React.ReactNode;
+  className?: string;
+  stagger?: number;
+  direction?: "vertical" | "horizontal";
+}): React.ReactElement {
+  const dir = direction || "vertical";
+  
+  return (
+    <motion.div
+      className={className}
+      initial="hidden"
+      animate="show"
+      variants={{
+        hidden: { opacity: 0 },
+        show: {
+          opacity: 1,
+          transition: {
+            staggerChildren: stagger,
+          },
+        },
+      }}
+    >
+      {items.map((item, index) => (
+        <motion.div
+          key={item.id || index}
+          variants={{
+            hidden: dir === "vertical" ? { opacity: 0, y: 20 } : { opacity: 0, x: 20 },
+            show: { opacity: 1, y: 0, x: 0 },
+          }}
+          transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+        >
+          {renderItem(item, index)}
+        </motion.div>
+      ))}
+    </motion.div>
+  );
+}
+
+export function StaggeredList({ 
+  items, 
+  renderItem, 
+  className = "",
+  stagger = 0.05,
+  direction = "vertical"
+}: { 
+  items: Array<{ id?: string | number } & Record<string, unknown>>;
+  renderItem: (item: Record<string, unknown>, index: number) => React.ReactNode;
   className?: string;
   stagger?: number;
   direction?: "vertical" | "horizontal";

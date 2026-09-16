@@ -1,30 +1,26 @@
 "use client";
-import { motion, useMotionValue, useSpring } from "motion/react";
+import { motion, useMotionValue } from "motion/react";
 import { ChevronDown } from "lucide-react";
-import { forwardRef, ReactNode, useState, useEffect } from "react";
+import { forwardRef, ReactNode, useState } from "react";
 
 interface DisclosureProps {
-  children: ReactNode;
+  trigger: ReactNode;
+  actions?: ReactNode;
+  content: ReactNode;
   className?: string;
   defaultOpen?: boolean;
   onChange?: (open: boolean) => void;
 }
 
 export const Disclosure = forwardRef<HTMLDivElement, DisclosureProps>(
-  ({ children, className = "", defaultOpen = false, onChange }, ref) => {
+  ({ trigger, actions, content, className = "", defaultOpen = false, onChange }, ref) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
     const height = useMotionValue(0);
-    const opacity = useMotionValue(0);
 
     const toggle = () => {
       const next = !isOpen;
       setIsOpen(next);
       onChange?.(next);
-    };
-
-    const handleHeightChange = (newHeight: number) => {
-      height.set(newHeight);
-      opacity.set(Math.min(1, newHeight / 200));
     };
 
     return (
@@ -35,24 +31,36 @@ export const Disclosure = forwardRef<HTMLDivElement, DisclosureProps>(
           overflow: "hidden",
         }}
       >
-        <button
-          type="button"
-          className="w-full flex items-center justify-between py-3 text-left"
+        <div
+          role="button"
+          tabIndex={0}
+          aria-expanded={isOpen}
+          aria-controls="disclosure-content"
+          className="w-full flex items-center gap-3 py-3 text-left cursor-pointer"
           onClick={toggle}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } }}
         >
-          <span className="flex-1 text-left">
-            {children}
-          </span>
+          <div className="flex min-w-0 flex-1 items-center justify-between">
+            {trigger}
+          </div>
+          {actions && (
+            <div className="flex shrink-0 items-center gap-2">
+              {actions}
+            </div>
+          )}
           <motion.div
-            className="flex-shrink-0 ml-4"
+            className="flex-shrink-0"
             animate={{ rotate: isOpen ? 180 : 0 }}
             transition={{ duration: 0.2, ease: "easeInOut" }}
           >
             <ChevronDown size={16} />
           </motion.div>
-        </button>
+        </div>
         
         <motion.div
+          id="disclosure-content"
+          role="region"
+          aria-hidden={!isOpen}
           initial={false}
           animate={{ 
             height: isOpen ? "auto" : 0,
@@ -70,7 +78,7 @@ export const Disclosure = forwardRef<HTMLDivElement, DisclosureProps>(
               height.set(el.scrollHeight);
             }
           }}>
-            {children}
+            {content}
           </div>
         </motion.div>
       </motion.div>
@@ -87,6 +95,7 @@ Disclosure.displayName = "Disclosure";
 interface AccordionProps {
   items: {
     title: ReactNode;
+    actions?: ReactNode;
     content: ReactNode;
     key: string;
   }[];
@@ -116,21 +125,35 @@ export function Accordion({ items, className = "", allowMultiple = false }: Acco
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, delay: items.indexOf(item) * 0.05 }}
         >
-          <button
-            type="button"
-            className="w-full flex items-center justify-between p-4 text-left hover:bg-surface-elevated transition-colors"
+          <div
+            role="button"
+            tabIndex={0}
+            aria-expanded={openKeys.includes(item.key)}
+            aria-controls={`accordion-content-${item.key}`}
+            className="w-full flex items-center gap-3 p-4 text-left hover:bg-surface-elevated transition-colors cursor-pointer"
             onClick={() => toggle(item.key)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(item.key); } }}
           >
-            {item.title}
+            <div className="flex min-w-0 flex-1 items-center justify-between">
+              {item.title}
+            </div>
+            {item.actions && (
+              <div className="flex shrink-0 items-center gap-2">
+                {item.actions}
+              </div>
+            )}
             <motion.div
               animate={{ rotate: openKeys.includes(item.key) ? 180 : 0 }}
               transition={{ duration: 0.2 }}
             >
               <ChevronDown size={16} className="text-muted" />
             </motion.div>
-          </button>
+          </div>
           
           <motion.div
+            id={`accordion-content-${item.key}`}
+            role="region"
+            aria-hidden={!openKeys.includes(item.key)}
             initial={{ height: 0, opacity: 0 }}
             animate={openKeys.includes(item.key) ? { height: "auto", opacity: 1 } : { height: 0, opacity: 0 }}
             exit={{ height: 0, opacity: 0 }}
@@ -160,7 +183,6 @@ interface ExpandableRowProps {
 
 export function ExpandableRow({ trigger, content, className = "", defaultOpen = false }: ExpandableRowProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  const height = useMotionValue(0);
 
   return (
     <motion.div className={className} layout>

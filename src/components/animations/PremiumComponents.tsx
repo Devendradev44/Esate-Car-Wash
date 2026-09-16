@@ -158,12 +158,11 @@ export function Reveal({
   once = true 
 }: RevealProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
   const reducedMotion = useReducedMotion();
+  const [isVisible, setIsVisible] = useState(reducedMotion);
 
   useEffect(() => {
     if (reducedMotion) {
-      setIsVisible(true);
       return;
     }
 
@@ -342,12 +341,11 @@ export function NumberCounter({
   prefix = "",
   suffix = ""
 }: AnimatedCounterProps) {
-  const [displayValue, setDisplayValue] = useState(0);
   const reducedMotion = useReducedMotion();
+  const [displayValue, setDisplayValue] = useState(reducedMotion ? value : 0);
 
   useEffect(() => {
     if (reducedMotion) {
-      setDisplayValue(value);
       return;
     }
 

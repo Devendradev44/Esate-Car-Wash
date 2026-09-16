@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { Plus, ChevronDown, ChevronRight, Trash2, Edit, X, Car, Sparkles } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Disclosure, Accordion } from "@/components/ui/Disclosure";
-import { SlideIn, FadeIn, StaggerContainer, StaggerItem } from "@/components/animations/PageTransition";
+import { StaggerContainer, StaggerItem } from "@/components/animations/PageTransition";
+import { AnimatedSelect } from "@/components/ui/AnimatedSelect";
 
 const POPULAR_BRANDS = [
   "Maruti Suzuki", "Hyundai", "Tata", "Mahindra", "Toyota", "Honda", "Kia", 
@@ -86,20 +87,31 @@ export default function VehiclesPage() {
             </div>
             <div className="mb-4">
               <label className={labelClasses}>What are you adding?</label>
-              <select value={addLevel} onChange={(e) => { setAddLevel(e.target.value); setNewName(""); setSelectedParentCat(""); setSelectedParentBrand(""); }} className={inputClasses}>
-                <option value="CATEGORY">Category (e.g. SUV)</option>
-                <option value="BRAND">Brand (e.g. Toyota)</option>
-                <option value="MODEL">Model (e.g. Fortuner)</option>
-              </select>
+              <AnimatedSelect
+                value={addLevel}
+                onChange={(e) => { setAddLevel(e.target.value); setNewName(""); setSelectedParentCat(""); setSelectedParentBrand(""); }}
+                label="What are you adding?"
+                placeholder="Select level"
+                options={[
+                  { value: "CATEGORY", label: "Category (e.g. SUV)" },
+                  { value: "BRAND", label: "Brand (e.g. Toyota)" },
+                  { value: "MODEL", label: "Model (e.g. Fortuner)" }
+                ]}
+                className={inputClasses}
+              />
             </div>
 
             {addLevel === "BRAND" && (
               <div className="mb-4">
                 <label className={labelClasses}>Under which Category?</label>
-                <select value={selectedParentCat} onChange={(e) => setSelectedParentCat(e.target.value)} className={inputClasses}>
-                  <option value="" disabled>Select category</option>
-                  {hierarchy.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <AnimatedSelect
+                  value={selectedParentCat}
+                  onChange={(e) => setSelectedParentCat(e.target.value)}
+                  label="Under which Category?"
+                  placeholder="Select category"
+                  options={hierarchy.map(c => ({ value: c.id, label: c.name }))}
+                  className={inputClasses}
+                />
               </div>
             )}
 
@@ -107,20 +119,26 @@ export default function VehiclesPage() {
               <>
                 <div className="mb-4">
                   <label className={labelClasses}>Under which Category?</label>
-                  <select value={selectedParentCat} onChange={(e) => { setSelectedParentCat(e.target.value); setSelectedParentBrand(""); }} className={inputClasses}>
-                    <option value="" disabled>Select category</option>
-                    {hierarchy.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                  <AnimatedSelect
+                    value={selectedParentCat}
+                    onChange={(e) => { setSelectedParentCat(e.target.value); setSelectedParentBrand(""); }}
+                    label="Under which Category?"
+                    placeholder="Select category"
+                    options={hierarchy.map(c => ({ value: c.id, label: c.name }))}
+                    className={inputClasses}
+                  />
                 </div>
                 {selectedParentCat && (
                   <div className="mb-4">
                     <label className={labelClasses}>Under which Brand?</label>
-                    <select value={selectedParentBrand} onChange={(e) => setSelectedParentBrand(e.target.value)} className={inputClasses}>
-                      <option value="" disabled>Select brand</option>
-                      {[...new Set([...POPULAR_BRANDS, ...hierarchy.find(c => c.id === selectedParentCat)?.brands.map(b => b.name) || []])].sort().map(b => (
-                        <option key={b} value={b}>{b}</option>
-                      ))}
-                    </select>
+                    <AnimatedSelect
+                      value={selectedParentBrand}
+                      onChange={(e) => setSelectedParentBrand(e.target.value)}
+                      label="Under which Brand?"
+                      placeholder="Select brand"
+                      options={[...new Set([...POPULAR_BRANDS, ...hierarchy.find(c => c.id === selectedParentCat)?.brands.map(b => b.name) || []])].sort().map(b => ({ value: b, label: b }))}
+                      className={inputClasses}
+                    />
                   </div>
                 )}
               </>
@@ -174,25 +192,28 @@ export default function VehiclesPage() {
               transition={{ duration: 0.3, delay: index * 0.05 }}
               className="border border-hairline bg-surface-card"
             >
-              <button
-                className="flex items-center justify-between p-4 w-full cursor-pointer hover:bg-surface-elevated transition-colors"
-                onClick={() => setIsOpen(prev => ({ ...prev, [cat.id]: !prev[cat.id] }))}
-              >
-                <div className="flex items-center gap-2">
-                  <Car size={18} className="text-yellow-400" />
+              <div className="flex items-center justify-between p-4 w-full hover:bg-surface-elevated transition-colors">
+                <button
+                  type="button"
+                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                  aria-expanded={isOpen[cat.id] ? "true" : "false"}
+                  onClick={() => setIsOpen(prev => ({ ...prev, [cat.id]: !prev[cat.id] }))}
+                >
+                  <Car size={18} className="text-yellow-400 shrink-0" />
                   <p className="text-lg font-bold uppercase text-ink">{cat.name}</p>
                   <motion.div
                     animate={{ rotate: isOpen[cat.id] ? 180 : 0 }}
                     transition={{ duration: 0.2 }}
+                    className="shrink-0"
                   >
                     {isOpen[cat.id] ? <ChevronDown size={16} className="text-ink" /> : <ChevronRight size={16} className="text-muted" />}
                   </motion.div>
+                </button>
+                <div className="flex shrink-0 gap-3">
+                  <button type="button" onClick={() => openEditModal("CATEGORY", cat.name, { catId: cat.id })} className="text-muted hover:text-ink" aria-label={`Edit ${cat.name}`}><Edit size={16} /></button>
+                  <button type="button" onClick={() => deleteVehicleCategory(cat.id)} className="text-muted hover:text-m-red" aria-label={`Delete ${cat.name}`}><Trash2 size={16} /></button>
                 </div>
-                <div className="flex gap-3">
-                  <button onClick={(e) => { e.stopPropagation(); openEditModal("CATEGORY", cat.name, { catId: cat.id }); }} className="text-muted hover:text-ink"><Edit size={16} /></button>
-                  <button onClick={(e) => { e.stopPropagation(); deleteVehicleCategory(cat.id); }} className="text-muted hover:text-m-red"><Trash2 size={16} /></button>
-                </div>
-              </button>
+              </div>
               
               <AnimatePresence>
                 {isOpen[cat.id] && (
@@ -218,46 +239,50 @@ export default function VehiclesPage() {
                               transition={{ duration: 0.2 }}
                               className="border border-hairline bg-surface-card p-3"
                             >
-                              <Disclosure className="w-full">
-                                <button type="button" className="w-full flex items-center justify-between p-3 hover:bg-surface-elevated transition-colors duration-150">
-                                  <div className="flex items-center gap-2">
-                                    <Sparkles size={14} className="text-yellow-400/50" />
+                              <Disclosure
+                                trigger={
+                                  <div className="flex min-w-0 items-center gap-2">
+                                    <Sparkles size={14} className="text-yellow-400/50 shrink-0" />
                                     <p className="text-sm font-bold text-ink">{brand.name}</p>
                                   </div>
-                                  <div className="flex gap-3">
-                                    <button onClick={() => openEditModal("BRAND", brand.name, { catId: cat.id, brandId: brand.id })} className="text-muted hover:text-ink"><Edit size={14} /></button>
-                                    <button onClick={() => deleteVehicleBrand(cat.id, brand.id)} className="text-muted hover:text-m-red"><Trash2 size={14} /></button>
+                                }
+                                actions={
+                                  <div className="flex items-center gap-2">
+                                    <button type="button" onClick={() => openEditModal("BRAND", brand.name, { catId: cat.id, brandId: brand.id })} className="text-muted hover:text-ink" aria-label={`Edit ${brand.name}`}><Edit size={14} /></button>
+                                    <button type="button" onClick={() => deleteVehicleBrand(cat.id, brand.id)} className="text-muted hover:text-m-red" aria-label={`Delete ${brand.name}`}><Trash2 size={14} /></button>
                                   </div>
-                                </button>
-                                <motion.div
-                                  initial={{ opacity: 0, height: 0 }}
-                                  animate={{ opacity: 1, height: "auto" }}
-                                  exit={{ opacity: 0, height: 0 }}
-                                  transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-                                  style={{ overflow: "hidden" }}
-                                >
-                                  <div className="px-4 pb-3 space-y-2">
-                                    {brand.models.map((model, modelIndex) => (
-                                      <motion.div
-                                        key={model.id}
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        transition={{ duration: 0.2, delay: modelIndex * 0.03 }}
-                                        className="border-t border-hairline bg-surface-soft pl-8"
-                                      >
-                                        <div className="flex items-center justify-between p-2">
-                                          <p className="text-xs font-light text-body">{model.name}</p>
-                                          <div className="flex gap-3">
-                                            <button onClick={() => openEditModal("MODEL", model.name, { catId: cat.id, brandId: brand.id, modelId: model.id })} className="text-muted hover:text-ink"><Edit size={12} /></button>
-                                            <button onClick={() => deleteVehicleModel(cat.id, brand.id, model.id)} className="text-muted hover:text-m-red"><Trash2 size={12} /></button>
+                                }
+                                content={
+                                  <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+                                    style={{ overflow: "hidden" }}
+                                  >
+                                    <div className="px-4 pb-3 space-y-2">
+                                      {brand.models.map((model, modelIndex) => (
+                                        <motion.div
+                                          key={model.id}
+                                          initial={{ opacity: 0, x: 20 }}
+                                          animate={{ opacity: 1, x: 0 }}
+                                          exit={{ opacity: 0, x: -20 }}
+                                          transition={{ duration: 0.2, delay: modelIndex * 0.03 }}
+                                          className="border-t border-hairline bg-surface-soft pl-8"
+                                        >
+                                          <div className="flex items-center justify-between p-2">
+                                            <p className="text-xs font-light text-body">{model.name}</p>
+                                            <div className="flex gap-3">
+                                              <button onClick={() => openEditModal("MODEL", model.name, { catId: cat.id, brandId: brand.id, modelId: model.id })} className="text-muted hover:text-ink"><Edit size={12} /></button>
+                                              <button onClick={() => deleteVehicleModel(cat.id, brand.id, model.id)} className="text-muted hover:text-m-red"><Trash2 size={12} /></button>
+                                            </div>
                                           </div>
-                                        </div>
-                                      </motion.div>
-                                    ))}
-                                  </div>
-                                </motion.div>
-                              </Disclosure>
+                                        </motion.div>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                }
+                              />
                             </motion.div>
                           </StaggerItem>
                         ))}
@@ -280,20 +305,20 @@ export default function VehiclesPage() {
               title: (
                 <motion.div
                   layout
-                  className="flex items-center justify-between w-full"
+                  className="flex items-center gap-3"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
                 >
-                  <div className="flex items-center gap-3">
-                    <Car size={18} className="text-yellow-400" />
-                    <span className="text-lg font-bold uppercase text-ink">{cat.name}</span>
-                  </div>
-                  <div className="flex gap-3">
-                    <button onClick={(e) => { e.stopPropagation(); openEditModal("CATEGORY", cat.name, { catId: cat.id }); }} className="text-muted hover:text-ink transition-colors"><Edit size={16} /></button>
-                    <button onClick={(e) => { e.stopPropagation(); deleteVehicleCategory(cat.id); }} className="text-muted hover:text-m-red transition-colors"><Trash2 size={16} /></button>
-                  </div>
+                  <Car size={18} className="text-yellow-400" />
+                  <span className="text-lg font-bold uppercase text-ink">{cat.name}</span>
                 </motion.div>
+              ),
+              actions: (
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => openEditModal("CATEGORY", cat.name, { catId: cat.id })} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${cat.name}`}><Edit size={16} /></button>
+                  <button type="button" onClick={() => deleteVehicleCategory(cat.id)} className="text-muted hover:text-m-red transition-colors" aria-label={`Delete ${cat.name}`}><Trash2 size={16} /></button>
+                </div>
               ),
               content: (
                 <motion.div
@@ -303,58 +328,62 @@ export default function VehiclesPage() {
                   transition={{ duration: 0.2 }}
                   className="pl-4 space-y-3"
                 >
-                  {cat.brands.length === 0 ? (
-                    <p className="text-xs font-light text-muted py-4">No brands added yet.</p>
-                  ) : (
-                    <StaggerContainer stagger={0.05} delay={0.05}>
-                      {cat.brands.map(brand => (
-                        <StaggerItem key={brand.id} delay={0.02}>
-                          <div key={brand.id} className="border-t border-hairline bg-surface-soft first:border-none">
-                            <Disclosure className="w-full">
-                              <button type="button" className="w-full flex items-center justify-between p-3 hover:bg-surface-elevated transition-colors duration-150">
-                                <div className="flex items-center gap-2">
-                                  <Sparkles size={14} className="text-yellow-400/50" />
-                                  <span className="text-sm font-bold text-ink">{brand.name}</span>
-                                </div>
-                                <div className="flex gap-3">
-                                  <button onClick={() => openEditModal("BRAND", brand.name, { catId: cat.id, brandId: brand.id })} className="text-muted hover:text-ink transition-colors"><Edit size={14} /></button>
-                                  <button onClick={() => deleteVehicleBrand(cat.id, brand.id)} className="text-muted hover:text-m-red transition-colors"><Trash2 size={14} /></button>
-                                </div>
-                              </button>
-                              <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-                                style={{ overflow: "hidden" }}
-                              >
-                                <div className="px-4 pb-3 space-y-2">
-                                  {brand.models.map((model, modelIndex) => (
-                                    <motion.div
-                                      key={model.id}
-                                      initial={{ opacity: 0, x: 20 }}
-                                      animate={{ opacity: 1, x: 0 }}
-                                      exit={{ opacity: 0, x: -20 }}
-                                      transition={{ duration: 0.2, delay: modelIndex * 0.03 }}
-                                      className="border-t border-hairline bg-surface-soft pl-8"
-                                    >
-                                      <div className="flex items-center justify-between p-2">
-                                        <p className="text-xs font-light text-body">{model.name}</p>
-                                        <div className="flex gap-3">
-                                          <button onClick={() => openEditModal("MODEL", model.name, { catId: cat.id, brandId: brand.id, modelId: model.id })} className="text-muted hover:text-ink transition-colors"><Edit size={12} /></button>
-                                          <button onClick={() => deleteVehicleModel(cat.id, brand.id, model.id)} className="text-muted hover:text-m-red transition-colors"><Trash2 size={12} /></button>
-                                        </div>
-                                      </div>
-                                    </motion.div>
-                                  ))}
-                                </div>
-                              </motion.div>
-                            </Disclosure>
-                          </div>
-                        </StaggerItem>
-                      ))}
-                    </StaggerContainer>
-                  )}
+{cat.brands.length === 0 ? (
+                      <p className="text-xs font-light text-muted py-4">No brands added yet.</p>
+                    ) : (
+                      <StaggerContainer stagger={0.05} delay={0.05}>
+                        {cat.brands.map(brand => (
+                          <StaggerItem key={brand.id} delay={0.02}>
+                            <div key={brand.id} className="border-t border-hairline bg-surface-soft first:border-none">
+                              <Disclosure
+                                trigger={
+                                  <div className="flex min-w-0 items-center gap-2">
+                                    <Sparkles size={14} className="text-yellow-400/50 shrink-0" />
+                                    <span className="text-sm font-bold text-ink">{brand.name}</span>
+                                  </div>
+                                }
+                                actions={
+                                  <div className="flex items-center gap-2">
+                                    <button type="button" onClick={() => openEditModal("BRAND", brand.name, { catId: cat.id, brandId: brand.id })} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${brand.name}`}><Edit size={14} /></button>
+                                    <button type="button" onClick={() => deleteVehicleBrand(cat.id, brand.id)} className="text-muted hover:text-m-red transition-colors" aria-label={`Delete ${brand.name}`}><Trash2 size={14} /></button>
+                                  </div>
+                                }
+                                content={
+                                  <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+                                    style={{ overflow: "hidden" }}
+                                  >
+                                    <div className="px-4 pb-3 space-y-2">
+                                      {brand.models.map((model, modelIndex) => (
+                                        <motion.div
+                                          key={model.id}
+                                          initial={{ opacity: 0, x: 20 }}
+                                          animate={{ opacity: 1, x: 0 }}
+                                          exit={{ opacity: 0, x: -20 }}
+                                          transition={{ duration: 0.2, delay: modelIndex * 0.03 }}
+                                          className="border-t border-hairline bg-surface-soft pl-8"
+                                        >
+                                          <div className="flex items-center justify-between p-2">
+                                            <p className="text-xs font-light text-body">{model.name}</p>
+                                            <div className="flex gap-3">
+                                              <button onClick={() => openEditModal("MODEL", model.name, { catId: cat.id, brandId: brand.id, modelId: model.id })} className="text-muted hover:text-ink transition-colors"><Edit size={12} /></button>
+                                              <button onClick={() => deleteVehicleModel(cat.id, brand.id, model.id)} className="text-muted hover:text-m-red transition-colors"><Trash2 size={12} /></button>
+                                            </div>
+                                          </div>
+                                        </motion.div>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                }
+                              />
+                            </div>
+                          </StaggerItem>
+                        ))}
+                      </StaggerContainer>
+                    )}
                 </motion.div>
               ),
             }))}

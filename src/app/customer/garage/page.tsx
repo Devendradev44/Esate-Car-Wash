@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Plus, Trash2, X, Edit } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { AnimatedSelect } from "@/components/ui/AnimatedSelect";
 
 export default function GaragePage() {
 
@@ -113,23 +114,35 @@ export default function GaragePage() {
             </div>
             
             <div className="space-y-4 mb-8">
-              <select value={newCat} onChange={(e) => { setNewCat(e.target.value); setNewBrand(""); setNewModel(""); }} className={inputClasses}>
-                <option value="" disabled>Category</option>
-                {vehicleHierarchy.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <AnimatedSelect
+                value={newCat}
+                onChange={(e) => { setNewCat(e.target.value); setNewBrand(""); setNewModel(""); }}
+                label="Category"
+                placeholder="Category"
+                options={vehicleHierarchy.map(c => ({ value: c.id, label: c.name }))}
+                className={inputClasses}
+              />
               
               {newCat && (
-                <select value={newBrand} onChange={(e) => { setNewBrand(e.target.value); setNewModel(""); }} className={inputClasses}>
-                  <option value="" disabled>Brand</option>
-                  {brandsForNewCat.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                </select>
+                <AnimatedSelect
+                  value={newBrand}
+                  onChange={(e) => { setNewBrand(e.target.value); setNewModel(""); }}
+                  label="Brand"
+                  placeholder="Brand"
+                  options={brandsForNewCat.map(b => ({ value: b.id, label: b.name }))}
+                  className={inputClasses}
+                />
               )}
 
               {newBrand && (
-                <select value={newModel} onChange={(e) => setNewModel(e.target.value)} className={inputClasses}>
-                  <option value="" disabled>Model</option>
-                  {modelsForNewBrand.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                </select>
+                <AnimatedSelect
+                  value={newModel}
+                  onChange={(e) => setNewModel(e.target.value)}
+                  label="Model"
+                  placeholder="Model"
+                  options={modelsForNewBrand.map(m => ({ value: m.id, label: m.name }))}
+                  className={inputClasses}
+                />
               )}
 
               {newModel && (
