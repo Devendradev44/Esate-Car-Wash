@@ -1,10 +1,10 @@
 "use client";
-import { useState } from "react";
-import { Plus, Search, Trash2, X, Edit, Receipt } from "lucide-react";
+import { useState, useRef } from "react";
+import { Plus, Search, Trash2, X, Edit, Receipt, Tag, Download, Upload } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { AnimatedSelect } from "@/components/ui/AnimatedSelect";
+import { toCSV, downloadCSV, parseCSV } from "@/lib/csv";
 
-const expenseCategories = ["SALARY", "RENT", "WATER", "ELECTRICITY", "MAINTENANCE", "TRAVEL", "FUEL", "EQUIPMENT", "REPAIR", "FOOD", "CLEANING_MATERIAL", "MARKETING", "MISCELLANEOUS"];
 const expensePaymentMethods = ["CASH", "UPI", "CHEQUE", "ACCOUNT_TRANSFER"];
 
 export default function ExpensesPage() {
@@ -13,28 +13,90 @@ export default function ExpensesPage() {
   const addExpense = useStore((state) => state.addExpense);
   const updateExpense = useStore((state) => state.updateExpense);
   const deleteExpense = useStore((state) => state.deleteExpense);
+  const expenseCategories = useStore((state) => state.expenseCategories);
+  const addExpenseCategory = useStore((state) => state.addExpenseCategory);
+  const removeExpenseCategory = useStore((state) => state.removeExpenseCategory);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState("");
-  
+  const [showCatModal, setShowCatModal] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
+  const [catError, setCatError] = useState("");
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importError, setImportError] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
   const [date, setDate] = useState("");
   const [name, setName] = useState("");
-  const [category, setCategory] = useState(expenseCategories[0]);
+  const [category, setCategory] = useState(expenseCategories[0] || "");
   const [amount, setAmount] = useState("");
   const [paymentType, setPaymentType] = useState(expensePaymentMethods[0]);
   const [notes, setNotes] = useState("");
 
-
-  const filteredExpenses = expenses.filter(e => 
+  const filteredExpenses = expenses.filter(e =>
     e.name.toLowerCase().includes(searchQuery.toLowerCase()) || e.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleExport = () => {
+    const csv = toCSV(expenses, [
+      { key: "date", header: "Date" },
+      { key: "name", header: "Name" },
+      { key: "category", header: "Category" },
+      { key: "amount", header: "Amount" },
+      { key: "paymentType", header: "Payment Type" },
+      { key: "notes", header: "Notes" },
+    ]);
+    downloadCSV(`expenses_${new Date().toISOString().slice(0, 10)}.csv`, csv);
+  };
+
+  const handleImport = async (file: File) => {
+    try {
+      const rows = await parseCSV(file);
+      if (rows.length < 2) { setImportError("CSV must have a header row and data."); return; }
+      const header = rows[0].map(h => h.trim().toUpperCase());
+      const required = ["DATE", "NAME", "CATEGORY", "AMOUNT"];
+      const missing = required.filter(r => !header.includes(r));
+      if (missing.length > 0) { setImportError(`Missing columns: ${missing.join(", ")}`); return; }
+
+      const dateIdx = header.indexOf("DATE");
+      const nameIdx = header.indexOf("NAME");
+      const catIdx = header.indexOf("CATEGORY");
+      const amountIdx = header.indexOf("AMOUNT");
+      const paymentIdx = header.indexOf("PAYMENT TYPE");
+      const notesIdx = header.indexOf("NOTES");
+
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const dateVal = row[dateIdx]?.trim();
+        const nameVal = row[nameIdx]?.trim();
+        const catVal = row[catIdx]?.trim();
+        const amountVal = row[amountIdx]?.trim();
+        if (!dateVal || !nameVal || !catVal || !amountVal) continue;
+        addExpense({
+          id: `e${Date.now()}_${i}`,
+          date: dateVal,
+          name: nameVal,
+          category: catVal.toUpperCase(),
+          amount: Number(amountVal) || 0,
+          paymentType: paymentIdx >= 0 && row[paymentIdx]?.trim()
+            ? (row[paymentIdx].trim().toUpperCase() as "CASH" | "UPI" | "CHEQUE" | "ACCOUNT_TRANSFER")
+            : "CASH",
+          notes: notesIdx >= 0 ? row[notesIdx]?.trim() || "" : "",
+        });
+      }
+      setShowImportModal(false);
+      setImportError("");
+    } catch {
+      setImportError("Failed to parse CSV file.");
+    }
+  };
 
   const openAddModal = () => {
     setIsEditing(false);
     setDate(""); setName(""); setAmount(""); setNotes("");
-    setCategory(expenseCategories[0]); setPaymentType(expensePaymentMethods[0]);
+    setCategory(expenseCategories[0] || ""); setPaymentType(expensePaymentMethods[0]);
     setShowModal(true);
   };
 
@@ -47,15 +109,29 @@ export default function ExpensesPage() {
   };
 
   const handleSaveExpense = () => {
-    if (!name || !amount || !date) return;
+    if (!name || !amount || !date || !category) return;
     if (isEditing) {
       updateExpense(currentId, date, name, Number(amount), category, paymentType, notes);
     } else {
       addExpense({ id: `e${Date.now()}`, date, name, category, amount: Number(amount), paymentType, notes });
     }
     setDate(""); setName(""); setAmount(""); setNotes("");
-    setCategory(expenseCategories[0]); setPaymentType(expensePaymentMethods[0]);
+    setCategory(expenseCategories[0] || ""); setPaymentType(expensePaymentMethods[0]);
     setShowModal(false);
+  };
+
+  const handleAddCategory = () => {
+    const trimmed = newCategory.trim().toUpperCase();
+    if (!trimmed) return;
+    if (expenseCategories.includes(trimmed)) {
+      setCatError("Category already exists.");
+      return;
+    }
+    addExpenseCategory(trimmed);
+    setNewCategory("");
+    setCatError("");
+    setShowCatModal(false);
+    setCategory(trimmed);
   };
 
   const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
@@ -63,9 +139,10 @@ export default function ExpensesPage() {
 
   return (
     <div className="p-6 md:p-12 relative">
+      {/* EXPENSE MODAL */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 overflow-y-auto py-10 p-4">
-          <div className="w-full max-w-md border border-hairline bg-surface-soft p-8">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-bold uppercase text-ink">{isEditing ? "Edit Expense" : "Add Expense"}</h3>
               <button onClick={() => setShowModal(false)} className="text-muted hover:text-ink"><X size={20} /></button>
@@ -103,19 +180,99 @@ export default function ExpensesPage() {
         </div>
       )}
 
+      {/* CATEGORY MODAL */}
+      {showCatModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="w-full max-w-sm max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold uppercase text-ink">Add Category</h3>
+              <button onClick={() => { setShowCatModal(false); setCatError(""); }} className="text-muted hover:text-ink"><X size={18} /></button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className={labelClasses}>Category Name</label>
+                <input
+                  type="text"
+                  value={newCategory}
+                  onChange={(e) => { setNewCategory(e.target.value); setCatError(""); }}
+                  placeholder="e.g. INSURANCE"
+                  className={inputClasses}
+                  autoFocus
+                />
+              </div>
+              {catError && <p className="text-xs font-semibold text-red-500 bg-red-500/10 border border-red-500/20 py-2 rounded-lg text-center">{catError}</p>}
+              <button onClick={handleAddCategory} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">
+                Add Category
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* IMPORT MODAL */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold uppercase text-ink">Import Expenses</h3>
+              <button onClick={() => { setShowImportModal(false); setImportError(""); }} className="text-muted hover:text-ink"><X size={20} /></button>
+            </div>
+            <div className="space-y-4">
+              <p className="text-xs font-light text-muted">Upload a CSV with columns: Date, Name, Category, Amount (required).</p>
+              <input
+                type="file"
+                accept=".csv"
+                ref={fileRef}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImport(file);
+                }}
+                className={inputClasses + " border-none bg-transparent p-0"}
+              />
+              {importError && <p className="text-xs font-semibold text-red-500 bg-red-500/10 border border-red-500/20 py-2 rounded-lg text-center">{importError}</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-normal text-ink">Expenses</h2>
           <p className="mt-2 text-sm font-light text-body">Track operational costs: salaries, rent, materials, etc.</p>
         </div>
-        <button onClick={openAddModal} className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
-          <Plus size={14} /> Add Expense
-        </button>
+        <div className="flex gap-3">
+          <button onClick={handleExport} className="flex items-center justify-center gap-2 border border-hairline bg-surface-card px-4 py-3 text-xs font-bold uppercase tracking-machined text-body hover:text-ink hover:bg-surface-elevated transition-colors">
+            <Download size={14} /> Export Expenses
+          </button>
+          <button onClick={() => setShowImportModal(true)} className="flex items-center justify-center gap-2 border border-hairline bg-surface-card px-4 py-3 text-xs font-bold uppercase tracking-machined text-body hover:text-ink hover:bg-surface-elevated transition-colors">
+            <Upload size={14} /> Import Expenses
+          </button>
+          <button onClick={() => setShowCatModal(true)} className="flex items-center justify-center gap-2 border border-hairline bg-surface-card px-4 py-3 text-xs font-bold uppercase tracking-machined text-body hover:text-ink hover:bg-surface-elevated transition-colors">
+            <Tag size={14} /> Manage Categories
+          </button>
+          <button onClick={openAddModal} className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
+            <Plus size={14} /> Add Expense
+          </button>
+        </div>
       </div>
 
       <div className="mb-6 flex items-center gap-3 border border-hairline bg-surface-card p-3">
         <Search size={16} className="text-muted" />
         <input type="text" placeholder="Search by name or category..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={inputClasses + " border-none bg-transparent p-0 focus:outline-none"} />
+      </div>
+
+      {/* CATEGORY CHIPS */}
+      <div className="mb-6 flex flex-wrap gap-2">
+        {expenseCategories.map(cat => (
+          <span key={cat} className="flex items-center gap-1 px-3 py-1 text-[10px] font-bold uppercase tracking-machined bg-surface-elevated text-body border border-hairline rounded-full">
+            {cat}
+            {expenseCategories.length > 1 && (
+              <button onClick={() => removeExpenseCategory(cat)} className="hover:text-m-red ml-1">
+                <X size={10} />
+              </button>
+            )}
+          </span>
+        ))}
       </div>
 
       {/* MOBILE CARDS */}

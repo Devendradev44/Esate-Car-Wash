@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, Car, Building2, CalendarDays, IndianRupee, Settings, LogOut, Receipt, Wrench } from "lucide-react";
+import { LayoutDashboard, Users, Car, Building2, CalendarDays, Settings, LogOut, Receipt, Wrench } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 const navItems = [
@@ -9,10 +9,9 @@ const navItems = [
   { icon: CalendarDays, label: "Bookings", href: "/bookings" },
   { icon: Building2, label: "Communities", href: "/communities" },
   { icon: Car, label: "Vehicles", href: "/vehicles" },
-  { icon: Wrench, label: "Services", href: "/services" }, 
+  { icon: Wrench, label: "Services", href: "/services" },
   { icon: Users, label: "Staff", href: "/staff" },
-  { icon: IndianRupee, label: "Revenue", href: "/revenue" },
-  { icon: Receipt, label: "Expenses", href: "/expenses" }, 
+  { icon: Receipt, label: "Expenses", href: "/expenses" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 

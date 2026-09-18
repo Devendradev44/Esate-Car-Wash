@@ -95,7 +95,7 @@ export default function AddressesPage() {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md border border-hairline bg-surface-soft p-8">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-bold uppercase text-ink">{isEditing ? "Edit Address" : "Add Address"}</h3>
               <button onClick={() => setShowModal(false)} className="text-muted hover:text-ink"><X size={20} /></button>

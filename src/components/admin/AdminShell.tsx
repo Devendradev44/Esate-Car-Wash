@@ -25,7 +25,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 flex-col overflow-hidden">
         
         {/* Mobile Top Header with Hamburger */}
-        <div className="flex h-16 items-center border-b border-hairline bg-canvas p-4 md:hidden">
+        <div className="fixed top-0 left-0 right-0 z-[60] flex h-16 items-center border-b border-hairline bg-canvas p-4 md:hidden">
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-ink">
             {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
           </button>

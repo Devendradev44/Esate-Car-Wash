@@ -21,9 +21,8 @@ export default function AdminManagement() {
   const addAdmin = useStore((state) => state.addAdmin);
   const updateAdmin = useStore((state) => state.updateAdmin);
   const deleteAdmin = useStore((state) => state.deleteAdmin);
-  const timeSlots = useStore((state) => state.timeSlots);
-  const addTimeSlot = useStore((state) => state.addTimeSlot);
-  const deleteTimeSlot = useStore((state) => state.deleteTimeSlot);
+  const communities = useStore((state) => state.communities);
+  const updateCommunityTimeRange = useStore((state) => state.updateCommunityTimeRange);
   const currentUser = useStore((state) => state.mockUser);
 
   const [showModal, setShowModal] = useState(false);
@@ -38,11 +37,11 @@ export default function AdminManagement() {
   const [formStatus, setFormStatus] = useState<"ACTIVE" | "DISABLED">("ACTIVE");
   const [error, setError] = useState("");
   const [expandedAdmin, setExpandedAdmin] = useState<string | null>(null);
-  const [showTimeSlotModal, setShowTimeSlotModal] = useState(false);
-  const [timeSlotLabel, setTimeSlotLabel] = useState("");
-  const [timeSlotStart, setTimeSlotStart] = useState("");
-  const [timeSlotEnd, setTimeSlotEnd] = useState("");
-  const [timeSlotError, setTimeSlotError] = useState("");
+  const [showTimeRangeModal, setShowTimeRangeModal] = useState(false);
+  const [editingCommunityId, setEditingCommunityId] = useState("");
+  const [timeRangeStart, setTimeRangeStart] = useState("");
+  const [timeRangeEnd, setTimeRangeEnd] = useState("");
+  const [timeRangeError, setTimeRangeError] = useState("");
 
   const isSuperAdmin = (admin: typeof admins[0]) => admin.id === "admin_1";
   const currentUserId = currentUser?.id;
@@ -169,58 +168,42 @@ export default function AdminManagement() {
     return `${String(displayHours).padStart(2, "0")}:${minutesValue} ${modifier}`;
   };
 
-  // Time Slot Management Functions
-  const openAddTimeSlotModal = () => {
-    setTimeSlotLabel("");
-    setTimeSlotStart("");
-    setTimeSlotEnd("");
-    setTimeSlotError("");
-    setShowTimeSlotModal(true);
+  // Community Time Range Functions
+  const openTimeRangeModal = (communityId: string) => {
+    const community = communities.find(c => c.id === communityId);
+    setEditingCommunityId(communityId);
+    setTimeRangeStart(community?.timeRange?.start || "09:00");
+    setTimeRangeEnd(community?.timeRange?.end || "18:00");
+    setTimeRangeError("");
+    setShowTimeRangeModal(true);
   };
 
-  const validateTimeSlotForm = () => {
-    const startMinutes = timeToMinutes(timeSlotStart);
-    const endMinutes = timeToMinutes(timeSlotEnd);
-
-    if (startMinutes === null || endMinutes === null) {
-      setTimeSlotError("Please enter valid start and end times.");
+  const validateTimeRange = () => {
+    const startM = timeToMinutes(timeRangeStart);
+    const endM = timeToMinutes(timeRangeEnd);
+    if (startM === null || endM === null) {
+      setTimeRangeError("Please enter valid start and end times.");
       return false;
     }
-    if (startMinutes < 9 * 60 || startMinutes > 18 * 60) {
-      setTimeSlotError("Start time must be between 09:00 AM and 06:00 PM.");
+    if (startM >= endM) {
+      setTimeRangeError("Start time must be before end time.");
       return false;
     }
-    if (endMinutes <= 9 * 60 || endMinutes > 18 * 60 + 30) {
-      setTimeSlotError("End time must be between 09:30 AM and 06:30 PM.");
+    if (startM < 9 * 60 || startM > 21 * 60) {
+      setTimeRangeError("Start time must be between 09:00 and 21:00.");
       return false;
     }
-    if (endMinutes - startMinutes !== 30) {
-      setTimeSlotError("Each time slot must be exactly 30 minutes.");
+    if (endM <= startM || endM > 21 * 60 + 30) {
+      setTimeRangeError("End time must be between 09:30 and 21:30.");
       return false;
     }
-    if (timeSlots.some(slot => slot.startTime === timeSlotStart && slot.endTime === timeSlotEnd)) {
-      setTimeSlotError("This time slot already exists.");
-      return false;
-    }
-
-    setTimeSlotLabel(`${formatTimeLabel(timeSlotStart)} - ${formatTimeLabel(timeSlotEnd)}`);
     return true;
   };
 
-  const handleTimeSlotSave = () => {
-    if (!validateTimeSlotForm()) return;
-    addTimeSlot(timeSlotLabel, timeSlotStart, timeSlotEnd);
-    setTimeSlotLabel("");
-    setTimeSlotStart("");
-    setTimeSlotEnd("");
-    setTimeSlotError("");
-    setShowTimeSlotModal(false);
-  };
-
-  const handleTimeSlotDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this time slot?")) {
-      deleteTimeSlot(id);
-    }
+  const handleTimeRangeSave = () => {
+    if (!validateTimeRange()) return;
+    updateCommunityTimeRange(editingCommunityId, timeRangeStart, timeRangeEnd);
+    setShowTimeRangeModal(false);
   };
 
   const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
@@ -433,45 +416,42 @@ export default function AdminManagement() {
         )}
       </div>
 
-      {/* TIME SLOT MANAGEMENT SECTION */}
+      {/* COMMUNITY TIME RANGES SECTION */}
       <div className="mt-16 pt-16 border-t border-hairline">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-normal text-ink">Time Slot Management</h2>
-            <p className="mt-2 text-sm font-light text-body">Manage 30-minute booking slots (9 AM - 6:30 PM).</p>
+            <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-normal text-ink">Community Time Ranges</h2>
+            <p className="mt-2 text-sm font-light text-body">Manage booking time ranges per community.</p>
           </div>
-          <button onClick={openAddTimeSlotModal} className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
-            <Clock size={14} /> Add Time Slot
-          </button>
         </div>
 
-        {timeSlots.length === 0 ? (
+        {communities.length === 0 ? (
           <div className="text-center text-muted text-sm font-light mt-20 py-12">
-            No time slots configured.
+            No communities configured.
           </div>
         ) : (
           <div className="space-y-4">
-            {[...timeSlots].sort((a, b) => a.startTime.localeCompare(b.startTime)).map(slot => (
-              <div 
-                key={slot.id} 
-                className="border border-hairline bg-surface-card p-6 transition-colors"
-              >
-                <div className="flex items-center justify-between p-4">
+            {communities.map(c => (
+              <div key={c.id} className="border border-hairline bg-surface-card p-6 transition-colors">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-yellow-400/20 flex items-center justify-center">
                       <Clock size={20} className="text-yellow-400" />
                     </div>
                     <div>
-                      <p className="text-lg font-bold text-ink">{slot.label}</p>
-                      <p className="text-sm font-light text-muted">{slot.startTime} - {slot.endTime}</p>
+                      <p className="text-lg font-bold text-ink">{c.name}</p>
+                      <p className="text-sm font-light text-muted">{c.address}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <button 
-                      onClick={() => handleTimeSlotDelete(slot.id)} 
-                      className="text-muted hover:text-m-red transition-colors p-1"
+                    <p className="text-sm font-bold text-yellow-dark">
+                      {c.timeRange?.start ? `${c.timeRange.start} - ${c.timeRange.end}` : "Not set"}
+                    </p>
+                    <button
+                      onClick={() => openTimeRangeModal(c.id)}
+                      className="text-muted hover:text-ink transition-colors p-1"
                     >
-                      <Trash size={18} />
+                      <Settings size={18} />
                     </button>
                   </div>
                 </div>
@@ -479,79 +459,51 @@ export default function AdminManagement() {
             ))}
           </div>
         )}
-        
-        {/* ADD TIME SLOT MODAL */}
-        {showTimeSlotModal && (
+
+        {/* EDIT TIME RANGE MODAL */}
+        {showTimeRangeModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-            <div className="w-full max-w-md border border-hairline bg-surface-soft p-8">
+            <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
               <div className="flex items-center justify-between mb-8">
-                <h3 className="text-xl font-bold uppercase text-ink">Add Time Slot</h3>
-                <button onClick={() => setShowTimeSlotModal(false)} className="text-muted hover:text-ink"><X size={20} /></button>
+                <h3 className="text-xl font-bold uppercase text-ink">Edit Time Range</h3>
+                <button onClick={() => setShowTimeRangeModal(false)} className="text-muted hover:text-ink"><X size={20} /></button>
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-machined text-muted mb-2">Label (e.g., 09:00 - 09:30 AM)</label>
+                  <label className="block text-xs font-bold uppercase tracking-machined text-muted mb-2">Start Time</label>
                   <input
-                    type="text"
-                    value={timeSlotLabel}
-                    onChange={(e) => setTimeSlotLabel(e.target.value)}
-                    placeholder="09:00 - 09:30 AM"
+                    type="time"
+                    value={timeRangeStart}
+                    onChange={(e) => setTimeRangeStart(e.target.value)}
                     className="w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none rounded-lg"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-machined text-muted mb-2">Start Time</label>
-                    <input
-                      type="time"
-                      min="09:00"
-                      max="18:00"
-                      step="1800"
-                      value={timeSlotStart}
-                      onChange={(e) => {
-                        setTimeSlotStart(e.target.value);
-                        if (e.target.value && timeSlotEnd) {
-                          setTimeSlotLabel(`${formatTimeLabel(e.target.value)} - ${formatTimeLabel(timeSlotEnd)}`);
-                        }
-                      }}
-                      className="w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none rounded-lg"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-machined text-muted mb-2">End Time</label>
-                    <input
-                      type="time"
-                      min="09:30"
-                      max="18:30"
-                      step="1800"
-                      value={timeSlotEnd}
-                      onChange={(e) => {
-                        setTimeSlotEnd(e.target.value);
-                        if (timeSlotStart && e.target.value) {
-                          setTimeSlotLabel(`${formatTimeLabel(timeSlotStart)} - ${formatTimeLabel(e.target.value)}`);
-                        }
-                      }}
-                      className="w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none rounded-lg"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-machined text-muted mb-2">End Time</label>
+                  <input
+                    type="time"
+                    value={timeRangeEnd}
+                    onChange={(e) => setTimeRangeEnd(e.target.value)}
+                    className="w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none rounded-lg"
+                  />
                 </div>
-                {timeSlotError && (
+                {timeRangeError && (
                   <p className="text-xs font-semibold text-red-500 bg-red-500/10 border border-red-500/20 py-2 rounded-lg text-center">
-                    {timeSlotError}
+                    {timeRangeError}
                   </p>
                 )}
                 <div className="flex gap-3 mt-4">
-                  <button 
-                    onClick={() => setShowTimeSlotModal(false)}
+                  <button
+                    onClick={() => setShowTimeRangeModal(false)}
                     className="flex-1 border border-hairline py-3 text-sm font-bold text-body hover:bg-surface-elevated transition-colors rounded-lg"
                   >
                     Cancel
                   </button>
-                  <button 
-                    onClick={handleTimeSlotSave}
+                  <button
+                    onClick={handleTimeRangeSave}
                     className="flex-1 bg-yellow-dark py-3 text-sm font-bold text-black hover:bg-yellow-light transition-colors rounded-lg"
                   >
-                    Save Time Slot
+                    Save Time Range
                   </button>
                 </div>
               </div>

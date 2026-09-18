@@ -31,7 +31,7 @@ type AdminUser = {
 
 type CustomerVehicle = { id: string; category: string; brand: string; model: string; reg: string; isDefault: boolean };
 type CustomerAddress = { id: string; community: string; flat: string };
-type Community = { id: string; name: string; address: string; status: "ACTIVE" | "HIDDEN"; slotCapacity: number };
+type Community = { id: string; name: string; address: string; status: "ACTIVE" | "HIDDEN"; slotCapacity: number; timeRange?: { start: string; end: string } };
 type TimeSlot = { id: string; label: string; startTime: string; endTime: string };
 type ServiceItem = { id: string; name: string; description: string; duration: number; pricing: Record<string, number> };
 type BookingItem = { 
@@ -49,11 +49,7 @@ export const mockHash = (password: string) => `hash_${btoa(password).slice(0, 16
 export const verifyMockHash = (password: string, hash: string) => mockHash(password) === hash;
 
 // --- INITIAL MOCK DATA ---
-const initialCommunities: Community[] = [
-  { id: "c1", name: "Prestige Shantiniketan", address: "Whitefield Main Rd, Bangalore", status: "ACTIVE", slotCapacity: 1 },
-  { id: "c2", name: "Sobha Halcyon", address: "Jalahalli, Bangalore", status: "ACTIVE", slotCapacity: 1 },
-  { id: "c3", name: "Brigade Gateway", address: "Malleshwaram, Bangalore", status: "HIDDEN", slotCapacity: 1 },
-];
+const initialCommunities: Community[] = [];
 
 const formatTimeLabel = (minutes: number) => {
   const hours24 = Math.floor(minutes / 60);
@@ -143,7 +139,8 @@ type AppStore = {
   // Community Actions
   addCommunity: (community: Community) => void;
   updateCommunityStatus: (id: string, status: "ACTIVE" | "HIDDEN") => void;
-  updateCommunity: (id: string, name: string, address: string, slotCapacity: number) => void;
+  updateCommunity: (id: string, name: string, address: string, slotCapacity: number, timeRange?: { start: string; end: string }) => void;
+  updateCommunityTimeRange: (id: string, start: string, end: string) => void;
   deleteCommunity: (id: string) => void;
 
   // Address Actions
@@ -180,6 +177,10 @@ deleteCustomerVehicle: (id: string) => void;
   updateExpense: (id: string, date: string, name: string, amount: number, category: string, paymentType: string, notes: string) => void;
   deleteExpense: (id: string) => void;
 
+  expenseCategories: string[];
+  addExpenseCategory: (category: string) => void;
+  removeExpenseCategory: (category: string) => void;
+
   // Staff Actions
   addStaff: (staff: StaffItem) => void;
   updateStaff: (id: string, data: { name?: string; phone?: string; community?: string; pin?: string; status?: "ACTIVE" | "DISABLED" }) => void;
@@ -198,6 +199,7 @@ export const useStore = create<AppStore>()(
       services: initialServices,
       bookings: initialBookings,
       expenses: initialExpenses,
+      expenseCategories: ["SALARY", "RENT", "WATER", "ELECTRICITY", "MAINTENANCE", "TRAVEL", "FUEL", "EQUIPMENT", "REPAIR", "FOOD", "CLEANING_MATERIAL", "MARKETING", "MISCELLANEOUS"],
       staff: initialStaff,
       
       // Admin management
@@ -267,8 +269,11 @@ updateMockUser: (data) => set((state) => {
         communities: state.communities.map(c => c.id === id ? { ...c, status } : c)
       })),
       deleteCommunity: (id) => set((state) => ({ communities: state.communities.filter(c => c.id !== id) })),
-      updateCommunity: (id, name, address, slotCapacity) => set((state) => ({
-        communities: state.communities.map(c => c.id === id ? { ...c, name, address, slotCapacity } : c)
+      updateCommunity: (id, name, address, slotCapacity, timeRange) => set((state) => ({
+        communities: state.communities.map(c => c.id === id ? { ...c, name, address, slotCapacity, ...(timeRange ? { timeRange } : {}) } : c)
+      })),
+      updateCommunityTimeRange: (id, start, end) => set((state) => ({
+        communities: state.communities.map(c => c.id === id ? { ...c, timeRange: { start, end } } : c)
       })),
 
       // Address
@@ -373,6 +378,13 @@ updateMockUser: (data) => set((state) => {
       })),
       deleteExpense: (id) => set((state) => ({ expenses: state.expenses.filter(e => e.id !== id) })),
 
+      addExpenseCategory: (category) => set((state) => ({
+        expenseCategories: state.expenseCategories.includes(category.toUpperCase()) ? state.expenseCategories : [...state.expenseCategories, category.toUpperCase()]
+      })),
+      removeExpenseCategory: (category) => set((state) => ({
+        expenseCategories: state.expenseCategories.filter(c => c !== category)
+      })),
+
       // Staff
       addStaff: (newStaff) => set((state) => ({ staff: [...state.staff, newStaff] })),
       updateStaff: (id: string, data: { name?: string; phone?: string; community?: string; pin?: string; status?: "ACTIVE" | "DISABLED" }) => set((state) => ({
@@ -381,8 +393,8 @@ updateMockUser: (data) => set((state) => {
       deleteStaff: (id) => set((state) => ({ staff: state.staff.filter(s => s.id !== id) })),
     }),
     {
-      name: "estate-car-wash-v12",
-      version: 12,
+      name: "estate-car-wash-v13",
+      version: 13,
       migrate: (persistedState) => {
         const state = persistedState && typeof persistedState === "object"
           ? persistedState as Partial<AppStore>
@@ -412,6 +424,7 @@ updateMockUser: (data) => set((state) => {
         });
         return {
           ...state,
+          communities: [],
           timeSlots: hasLegacyTimeSlots ? initialTimeSlots : (Array.isArray(state.timeSlots) ? state.timeSlots : initialTimeSlots),
         } as AppStore;
       },
@@ -422,4 +435,30 @@ updateMockUser: (data) => set((state) => {
 export const useHydrated = () => {
   const [hydrated] = useState(true);
   return hydrated;
+};
+
+export const getTimeSlotsForCommunity = (communityId?: string): TimeSlot[] => {
+  if (!communityId) return initialTimeSlots;
+  const store = useStore.getState();
+  const community = store.communities.find(c => c.id === communityId);
+  if (!community?.timeRange?.start || !community?.timeRange?.end) return initialTimeSlots;
+  const startMinutes = parseInt(community.timeRange.start.split(":")[0]) * 60 + parseInt(community.timeRange.start.split(":")[1]);
+  const endMinutes = parseInt(community.timeRange.end.split(":")[0]) * 60 + parseInt(community.timeRange.end.split(":")[1]);
+  const fmt24 = (mins: number) => `${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`;
+  const fmt12 = (mins: number) => {
+    const h = Math.floor(mins / 60);
+    const mod = h >= 12 ? "PM" : "AM";
+    const dh = h % 12 || 12;
+    return `${String(dh).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")} ${mod}`;
+  };
+  const slots: TimeSlot[] = [];
+  for (let m = startMinutes; m < endMinutes; m += 30) {
+    slots.push({
+      id: `ts-c-${communityId}-${fmt24(m)}-${fmt24(m + 30)}`,
+      label: `${fmt12(m)} - ${fmt12(m + 30)}`,
+      startTime: fmt24(m),
+      endTime: fmt24(m + 30),
+    });
+  }
+  return slots;
 };

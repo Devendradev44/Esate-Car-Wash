@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Check, MapPin, Car, Wrench, Calendar } from "lucide-react";
-import { useStore } from "@/lib/store"; 
+import { useStore, getTimeSlotsForCommunity } from "@/lib/store"; 
 import { AnimatedSelect } from "@/components/ui/AnimatedSelect"; 
 
 export default function BookService() {
@@ -67,6 +67,7 @@ export default function BookService() {
   const selectedCommunityName = savedAddresses.find(a => a.id === selectedAddressId)?.community || newCommunity;
   const selectedCommunityObj = allCommunities.find(c => c.name === selectedCommunityName);
   const slotCapacity = selectedCommunityObj?.slotCapacity || 1;
+  const scheduleTimeSlots = selectedCommunityObj ? getTimeSlotsForCommunity(selectedCommunityObj.id) : timeSlots;
 
   const isSlotDisabled = (slotLabel: string) => {
     // 1. Check past time
@@ -329,7 +330,7 @@ export default function BookService() {
         <div className="mb-8">
           <p className="text-xs font-bold uppercase tracking-machined text-muted mb-2">Time Slot</p>
           <div className="grid grid-cols-2 gap-3">
-            {[...timeSlots].sort((a, b) => a.startTime.localeCompare(b.startTime)).map(t => {
+            {[...scheduleTimeSlots].sort((a, b) => a.startTime.localeCompare(b.startTime)).map(t => {
               const isFull = isSlotDisabled(t.label);
               return (
                 <button 

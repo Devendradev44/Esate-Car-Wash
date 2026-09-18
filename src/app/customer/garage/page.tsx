@@ -107,7 +107,7 @@ export default function GaragePage() {
       {/* Add Vehicle Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md border border-hairline bg-surface-soft p-8">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-bold uppercase text-ink">Add Vehicle</h3>
               <button onClick={() => setShowAddModal(false)} className="text-muted hover:text-ink"><X size={20} /></button>
@@ -179,7 +179,7 @@ export default function GaragePage() {
       {/* Edit Vehicle Modal */}
       {showEditModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md border border-hairline bg-surface-soft p-8">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-bold uppercase text-ink">Edit Registration</h3>
               <button onClick={() => setShowEditModal(false)} className="text-muted hover:text-ink"><X size={20} /></button>

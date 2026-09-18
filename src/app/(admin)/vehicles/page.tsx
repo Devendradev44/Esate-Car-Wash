@@ -1,14 +1,15 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Plus, ChevronDown, ChevronRight, Trash2, Edit, X, Car, Sparkles } from "lucide-react";
+import { Plus, ChevronDown, ChevronRight, Trash2, Edit, X, Car, Sparkles, Download, Upload } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Disclosure, Accordion } from "@/components/ui/Disclosure";
 import { StaggerContainer, StaggerItem } from "@/components/animations/PageTransition";
 import { AnimatedSelect } from "@/components/ui/AnimatedSelect";
+import { toCSV, downloadCSV, parseCSV } from "@/lib/csv";
 
 const POPULAR_BRANDS = [
-  "Maruti Suzuki", "Hyundai", "Tata", "Mahindra", "Toyota", "Honda", "Kia", 
+  "Maruti Suzuki", "Hyundai", "Tata", "Mahindra", "Toyota", "Honda", "Kia",
   "Volkswagen", "Skoda", "Nissan", "BMW", "Mercedes-Benz", "Audi", "Renault", "Porsche"
 ];
 
@@ -26,7 +27,10 @@ export default function VehiclesPage() {
   const updateVehicleModel = useStore((state) => state.updateVehicleModel);
 
   const [isOpen, setIsOpen] = useState<Record<string, boolean>>({});
-  
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importError, setImportError] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
   // Add Modal State
   const [showAddModal, setShowAddModal] = useState(false);
   const [addLevel, setAddLevel] = useState("CATEGORY");
@@ -40,6 +44,79 @@ export default function VehiclesPage() {
   const [editName, setEditName] = useState("");
   const [editIds, setEditIds] = useState<{ catId?: string, brandId?: string, modelId?: string }>({});
 
+  const handleExport = () => {
+    const flat: Array<{ Category: string; Brand: string; Model: string }> = [];
+    hierarchy.forEach(cat => {
+      if (cat.brands.length === 0) {
+        flat.push({ Category: cat.name, Brand: "", Model: "" });
+      } else {
+        cat.brands.forEach(brand => {
+          if (brand.models.length === 0) {
+            flat.push({ Category: cat.name, Brand: brand.name, Model: "" });
+          } else {
+            brand.models.forEach(model => {
+              flat.push({ Category: cat.name, Brand: brand.name, Model: model.name });
+            });
+          }
+        });
+      }
+    });
+    const csv = toCSV(flat, [
+      { key: "Category", header: "Category" },
+      { key: "Brand", header: "Brand" },
+      { key: "Model", header: "Model" },
+    ]);
+    downloadCSV(`vehicles_${new Date().toISOString().slice(0, 10)}.csv`, csv);
+  };
+
+  const handleImport = async (file: File) => {
+    try {
+      const rows = await parseCSV(file);
+      if (rows.length < 2) { setImportError("CSV must have a header row and data."); return; }
+      const header = rows[0].map(h => h.trim().toUpperCase());
+      if (!header.includes("CATEGORY") || !header.includes("BRAND") || !header.includes("MODEL")) {
+        setImportError("Missing columns: Category, Brand, Model");
+        return;
+      }
+      const catIdx = header.indexOf("CATEGORY");
+      const brandIdx = header.indexOf("BRAND");
+      const modelIdx = header.indexOf("MODEL");
+
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const catName = row[catIdx]?.trim();
+        const brandName = row[brandIdx]?.trim();
+        const modelName = row[modelIdx]?.trim();
+        if (!catName) continue;
+
+        const existingCat = hierarchy.find(c => c.name === catName);
+        if (existingCat) {
+          if (brandName) {
+            const existingBrand = existingCat.brands.find(b => b.name === brandName);
+            if (existingBrand) {
+              if (modelName) {
+                if (!existingBrand.models.find(m => m.name === modelName)) {
+                  addVehicleModel(existingCat.id, existingBrand.name, { id: `model_${Date.now()}_${i}`, name: modelName });
+                }
+              }
+            } else {
+              addVehicleBrand(existingCat.id, { id: `brand_${Date.now()}_${i}`, name: brandName, models: modelName ? [{ id: `model_${Date.now()}_${i}`, name: modelName }] : [] });
+            }
+          }
+        } else {
+          const newCat: { id: string; name: string; brands: Array<{ id: string; name: string; models: Array<{ id: string; name: string }> }> } = { id: `cat_${Date.now()}_${i}`, name: catName, brands: [] };
+          if (brandName) {
+            newCat.brands.push({ id: `brand_${Date.now()}_${i}`, name: brandName, models: modelName ? [{ id: `model_${Date.now()}_${i}`, name: modelName }] : [] });
+          }
+          addVehicleCategory(newCat);
+        }
+      }
+      setShowImportModal(false);
+      setImportError("");
+    } catch {
+      setImportError("Failed to parse CSV file.");
+    }
+  };
 
   const handleAddItem = () => {
     if (!newName.trim()) return;
@@ -80,7 +157,7 @@ export default function VehiclesPage() {
       {/* ADD MODAL */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md border border-hairline bg-surface-soft p-8">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-bold uppercase text-ink">Add Vehicle Item</h3>
               <button onClick={() => setShowAddModal(false)} className="text-muted hover:text-ink"><X size={20} /></button>
@@ -156,7 +233,7 @@ export default function VehiclesPage() {
       {/* EDIT MODAL */}
       {showEditModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md border border-hairline bg-surface-soft p-8">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-bold uppercase text-ink">Edit {editLevel}</h3>
               <button onClick={() => setShowEditModal(false)} className="text-muted hover:text-ink"><X size={20} /></button>
@@ -170,14 +247,48 @@ export default function VehiclesPage() {
         </div>
       )}
 
+      {/* IMPORT MODAL */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold uppercase text-ink">Import Vehicles</h3>
+              <button onClick={() => { setShowImportModal(false); setImportError(""); }} className="text-muted hover:text-ink"><X size={20} /></button>
+            </div>
+            <div className="space-y-4">
+              <p className="text-xs font-light text-muted">Upload a CSV with columns: Category, Brand, Model.</p>
+              <input
+                type="file"
+                accept=".csv"
+                ref={fileRef}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImport(file);
+                }}
+                className={inputClasses + " border-none bg-transparent p-0"}
+              />
+              {importError && <p className="text-xs font-semibold text-red-500 bg-red-500/10 border border-red-500/20 py-2 rounded-lg text-center">{importError}</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-normal text-ink">Vehicle Master</h2>
           <p className="mt-2 text-sm font-light text-body">Manage the 3-tier Category → Brand → Model hierarchy.</p>
         </div>
-        <button onClick={() => setShowAddModal(true)} className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
-          <Plus size={14} /> Add Item
-        </button>
+        <div className="flex gap-3">
+          <button onClick={handleExport} className="flex items-center justify-center gap-2 border border-hairline bg-surface-card px-4 py-3 text-xs font-bold uppercase tracking-machined text-body hover:text-ink hover:bg-surface-elevated transition-colors">
+            <Download size={14} /> Export Vehicles
+          </button>
+          <button onClick={() => setShowImportModal(true)} className="flex items-center justify-center gap-2 border border-hairline bg-surface-card px-4 py-3 text-xs font-bold uppercase tracking-machined text-body hover:text-ink hover:bg-surface-elevated transition-colors">
+            <Upload size={14} /> Import Vehicles
+          </button>
+          <button onClick={() => setShowAddModal(true)} className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
+            <Plus size={14} /> Add Item
+          </button>
+        </div>
       </div>
 
       {/* MOBILE ACCORDION CARDS */}
@@ -214,7 +325,7 @@ export default function VehiclesPage() {
                   <button type="button" onClick={() => deleteVehicleCategory(cat.id)} className="text-muted hover:text-m-red" aria-label={`Delete ${cat.name}`}><Trash2 size={16} /></button>
                 </div>
               </div>
-              
+
               <AnimatePresence>
                 {isOpen[cat.id] && (
                   <motion.div
@@ -328,62 +439,62 @@ export default function VehiclesPage() {
                   transition={{ duration: 0.2 }}
                   className="pl-4 space-y-3"
                 >
-{cat.brands.length === 0 ? (
-                      <p className="text-xs font-light text-muted py-4">No brands added yet.</p>
-                    ) : (
-                      <StaggerContainer stagger={0.05} delay={0.05}>
-                        {cat.brands.map(brand => (
-                          <StaggerItem key={brand.id} delay={0.02}>
-                            <div key={brand.id} className="border-t border-hairline bg-surface-soft first:border-none">
-                              <Disclosure
-                                trigger={
-                                  <div className="flex min-w-0 items-center gap-2">
-                                    <Sparkles size={14} className="text-yellow-400/50 shrink-0" />
-                                    <span className="text-sm font-bold text-ink">{brand.name}</span>
-                                  </div>
-                                }
-                                actions={
-                                  <div className="flex items-center gap-2">
-                                    <button type="button" onClick={() => openEditModal("BRAND", brand.name, { catId: cat.id, brandId: brand.id })} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${brand.name}`}><Edit size={14} /></button>
-                                    <button type="button" onClick={() => deleteVehicleBrand(cat.id, brand.id)} className="text-muted hover:text-m-red transition-colors" aria-label={`Delete ${brand.name}`}><Trash2 size={14} /></button>
-                                  </div>
-                                }
-                                content={
-                                  <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: "auto" }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-                                    style={{ overflow: "hidden" }}
-                                  >
-                                    <div className="px-4 pb-3 space-y-2">
-                                      {brand.models.map((model, modelIndex) => (
-                                        <motion.div
-                                          key={model.id}
-                                          initial={{ opacity: 0, x: 20 }}
-                                          animate={{ opacity: 1, x: 0 }}
-                                          exit={{ opacity: 0, x: -20 }}
-                                          transition={{ duration: 0.2, delay: modelIndex * 0.03 }}
-                                          className="border-t border-hairline bg-surface-soft pl-8"
-                                        >
-                                          <div className="flex items-center justify-between p-2">
-                                            <p className="text-xs font-light text-body">{model.name}</p>
-                                            <div className="flex gap-3">
-                                              <button onClick={() => openEditModal("MODEL", model.name, { catId: cat.id, brandId: brand.id, modelId: model.id })} className="text-muted hover:text-ink transition-colors"><Edit size={12} /></button>
-                                              <button onClick={() => deleteVehicleModel(cat.id, brand.id, model.id)} className="text-muted hover:text-m-red transition-colors"><Trash2 size={12} /></button>
-                                            </div>
+                  {cat.brands.length === 0 ? (
+                    <p className="text-xs font-light text-muted py-4">No brands added yet.</p>
+                  ) : (
+                    <StaggerContainer stagger={0.05} delay={0.05}>
+                      {cat.brands.map(brand => (
+                        <StaggerItem key={brand.id} delay={0.02}>
+                          <div key={brand.id} className="border-t border-hairline bg-surface-soft first:border-none">
+                            <Disclosure
+                              trigger={
+                                <div className="flex min-w-0 items-center gap-2">
+                                  <Sparkles size={14} className="text-yellow-400/50 shrink-0" />
+                                  <span className="text-sm font-bold text-ink">{brand.name}</span>
+                                </div>
+                              }
+                              actions={
+                                <div className="flex items-center gap-2">
+                                  <button type="button" onClick={() => openEditModal("BRAND", brand.name, { catId: cat.id, brandId: brand.id })} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${brand.name}`}><Edit size={14} /></button>
+                                  <button type="button" onClick={() => deleteVehicleBrand(cat.id, brand.id)} className="text-muted hover:text-m-red transition-colors" aria-label={`Delete ${brand.name}`}><Trash2 size={14} /></button>
+                                </div>
+                              }
+                              content={
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: "auto" }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+                                  style={{ overflow: "hidden" }}
+                                >
+                                  <div className="px-4 pb-3 space-y-2">
+                                    {brand.models.map((model, modelIndex) => (
+                                      <motion.div
+                                        key={model.id}
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -20 }}
+                                        transition={{ duration: 0.2, delay: modelIndex * 0.03 }}
+                                        className="border-t border-hairline bg-surface-soft pl-8"
+                                      >
+                                        <div className="flex items-center justify-between p-2">
+                                          <p className="text-xs font-light text-body">{model.name}</p>
+                                          <div className="flex gap-3">
+                                            <button onClick={() => openEditModal("MODEL", model.name, { catId: cat.id, brandId: brand.id, modelId: model.id })} className="text-muted hover:text-ink transition-colors"><Edit size={12} /></button>
+                                            <button onClick={() => deleteVehicleModel(cat.id, brand.id, model.id)} className="text-muted hover:text-m-red transition-colors"><Trash2 size={12} /></button>
                                           </div>
-                                        </motion.div>
-                                      ))}
-                                    </div>
-                                  </motion.div>
-                                }
-                              />
-                            </div>
-                          </StaggerItem>
-                        ))}
-                      </StaggerContainer>
-                    )}
+                                        </div>
+                                      </motion.div>
+                                    ))}
+                                  </div>
+                                </motion.div>
+                              }
+                            />
+                          </div>
+                        </StaggerItem>
+                      ))}
+                    </StaggerContainer>
+                  )}
                 </motion.div>
               ),
             }))}
@@ -393,3 +504,4 @@ export default function VehiclesPage() {
     </div>
   );
 }
+

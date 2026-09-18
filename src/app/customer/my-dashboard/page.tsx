@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { CalendarDays, Car, Wrench, ArrowRight, XCircle } from "lucide-react";
 import { useState } from "react";
-import { useStore } from "@/lib/store";
+import { useStore, getTimeSlotsForCommunity } from "@/lib/store";
 
 export default function CustomerDashboard() {
   const mockUser = useStore((state) => state.mockUser);
@@ -29,7 +29,15 @@ export default function CustomerDashboard() {
   const myBookings = bookings.filter(b => b.customer === (mockUser?.name || "Guest"));
   const upcomingBookings = myBookings.filter(b => b.bookingStatus === "BOOKED");
   const pastBookings = myBookings.filter(b => b.bookingStatus !== "BOOKED");
-  const allTimeSlotsStore = useStore.getState().timeSlots;
+  const communityContextId = upcomingBookings.length > 0
+    ? (() => {
+        const cName = upcomingBookings[0]?.community;
+        return useStore.getState().communities.find(c => c.name === cName)?.id;
+      })()
+    : undefined;
+  const allTimeSlotsStore = communityContextId
+    ? getTimeSlotsForCommunity(communityContextId)
+    : allTimeSlots;
 
   const openCancelModal = (booking: typeof bookings[0]) => {
     setCancelModal({ booking, mode: 'confirm' });
@@ -153,7 +161,7 @@ export default function CustomerDashboard() {
         {/* Cancel/Reschedule Modal */}
         {cancelModal.booking && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-            <div className="w-full max-w-md border border-hairline bg-surface-soft p-6 rounded-lg">
+            <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-6 rounded-lg">
               {cancelModal.mode === 'confirm' ? (
                 <div className="space-y-4">
                   <h3 className="text-xl font-bold text-ink">Cancel Booking?</h3>

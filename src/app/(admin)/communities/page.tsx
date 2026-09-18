@@ -18,6 +18,8 @@ export default function CommunitiesPage() {
   const [newName, setNewName] = useState("");
   const [newAddress, setNewAddress] = useState("");
   const [slotCapacity, setSlotCapacity] = useState("1");
+  const [timeRangeStart, setTimeRangeStart] = useState("09:00");
+  const [timeRangeEnd, setTimeRangeEnd] = useState("18:00");
 
 
   const filteredCommunities = communities.filter(c => 
@@ -36,22 +38,25 @@ export default function CommunitiesPage() {
     setShowModal(true);
   };
 
-  const openEditModal = (id: string, name: string, address: string, capacity: number) => {
+  const openEditModal = (id: string, name: string, address: string, capacity: number, timeRange?: { start: string; end: string }) => {
     setIsEditing(true);
     setCurrentId(id);
     setNewName(name); setNewAddress(address);
     setSlotCapacity(capacity.toString());
+    setTimeRangeStart(timeRange?.start || "09:00");
+    setTimeRangeEnd(timeRange?.end || "18:00");
     setShowModal(true);
   };
 
   const handleSaveCommunity = () => {
     if (!newName || !newAddress) return;
     if (isEditing) {
-      updateCommunity(currentId, newName, newAddress, Number(slotCapacity));
+      updateCommunity(currentId, newName, newAddress, Number(slotCapacity), { start: timeRangeStart, end: timeRangeEnd });
     } else {
-      addCommunity({ id: `c${Date.now()}`, name: newName, address: newAddress, status: "ACTIVE", slotCapacity: Number(slotCapacity) });
+      addCommunity({ id: `c${Date.now()}`, name: newName, address: newAddress, status: "ACTIVE", slotCapacity: Number(slotCapacity), timeRange: { start: timeRangeStart, end: timeRangeEnd } });
     }
     setNewName(""); setNewAddress(""); setSlotCapacity("1");
+    setTimeRangeStart("09:00"); setTimeRangeEnd("18:00");
     setShowModal(false);
   };
 
@@ -96,6 +101,24 @@ export default function CommunitiesPage() {
                 className={inputClasses} 
               />
             </div>
+            <div className="mb-8">
+              <label className={labelClasses}>Start Time</label>
+              <input 
+                type="time" 
+                value={timeRangeStart} 
+                onChange={(e) => setTimeRangeStart(e.target.value)} 
+                className={inputClasses} 
+              />
+            </div>
+            <div className="mb-8">
+              <label className={labelClasses}>End Time</label>
+              <input 
+                type="time" 
+                value={timeRangeEnd} 
+                onChange={(e) => setTimeRangeEnd(e.target.value)} 
+                className={inputClasses} 
+              />
+            </div>
             <button onClick={handleSaveCommunity} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">
               {isEditing ? "Save Changes" : "Save Community"}
             </button>
@@ -132,9 +155,9 @@ export default function CommunitiesPage() {
               </span>
             </div>
             <p className="text-xs font-light text-muted mb-2 flex items-center gap-2"><MapPin size={12} /> {c.address}</p>
-            <p className="text-xs font-bold text-yellow-dark mb-4">Capacity: {c.slotCapacity} cars/slot</p>
+            <p className="text-xs font-bold text-yellow-dark mb-4">Capacity: {c.slotCapacity} cars/slot{c.timeRange ? ` · ${c.timeRange.start} - ${c.timeRange.end}` : ""}</p>
             <div className="flex items-center justify-end gap-4 border-t border-hairline pt-3">
-              <button onClick={() => openEditModal(c.id, c.name, c.address, c.slotCapacity)} className="text-muted hover:text-ink transition-colors"><Edit size={16} /></button>
+              <button onClick={() => openEditModal(c.id, c.name, c.address, c.slotCapacity, c.timeRange)} className="text-muted hover:text-ink transition-colors"><Edit size={16} /></button>
               <button onClick={() => toggleStatus(c.id)} className="text-muted hover:text-warning transition-colors">
                 {c.status === "ACTIVE" ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -151,6 +174,7 @@ export default function CommunitiesPage() {
             <tr>
               <th className="py-4 px-6 text-left text-xs font-bold uppercase tracking-machined text-muted">Name</th>
               <th className="py-4 px-6 text-left text-xs font-bold uppercase tracking-machined text-muted">Address</th>
+              <th className="py-4 px-6 text-left text-xs font-bold uppercase tracking-machined text-muted">Time Range</th>
               <th className="py-4 px-6 text-left text-xs font-bold uppercase tracking-machined text-muted">Capacity</th>
               <th className="py-4 px-6 text-left text-xs font-bold uppercase tracking-machined text-muted">Status</th>
               <th className="py-4 px-6 text-right text-xs font-bold uppercase tracking-machined text-muted">Actions</th>
@@ -161,6 +185,7 @@ export default function CommunitiesPage() {
               <tr key={c.id} className="border-b border-hairline last:border-none hover:bg-surface-elevated transition-colors">
                 <td className="py-4 px-6 text-sm font-bold text-ink">{c.name}</td>
                 <td className="py-4 px-6 text-sm font-light text-body">{c.address}</td>
+                <td className="py-4 px-6 text-sm font-bold text-yellow-dark">{c.timeRange ? `${c.timeRange.start} - ${c.timeRange.end}` : "—"}</td>
                 <td className="py-4 px-6 text-sm font-bold text-yellow-dark">{c.slotCapacity} cars/slot</td>
                 <td className="py-4 px-6">
                   <span className={`text-xs font-bold uppercase tracking-machined px-2 py-1 ${c.status === "ACTIVE" ? "text-success" : "text-muted"}`}>
@@ -169,7 +194,7 @@ export default function CommunitiesPage() {
                 </td>
                 <td className="py-4 px-6 text-right">
                   <div className="flex items-center justify-end gap-3">
-                    <button onClick={() => openEditModal(c.id, c.name, c.address, c.slotCapacity)} className="text-muted hover:text-ink transition-colors"><Edit size={16} /></button>
+                    <button onClick={() => openEditModal(c.id, c.name, c.address, c.slotCapacity, c.timeRange)} className="text-muted hover:text-ink transition-colors"><Edit size={16} /></button>
                     <button onClick={() => toggleStatus(c.id)} className="text-muted hover:text-warning transition-colors">
                       {c.status === "ACTIVE" ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
