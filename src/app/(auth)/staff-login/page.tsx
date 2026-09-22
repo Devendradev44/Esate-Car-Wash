@@ -4,6 +4,8 @@ import { Car } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { AuthGate } from "@/components/AuthGate";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export default function StaffLoginPage() {
   const router = useRouter();
@@ -12,10 +14,6 @@ export default function StaffLoginPage() {
   const [error, setError] = useState("");
   const [phone, setPhone] = useState("");
   const [pin, setPin] = useState("");
-
-  const inputClasses = "w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-3 text-sm font-normal focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400/50 transition-all rounded-lg appearance-none";
-  const labelClasses = "block text-[10px] font-bold text-muted mb-2";
-  const buttonClasses = "w-full bg-yellow-400 py-3 text-sm font-bold text-black hover:bg-yellow-300 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20";
 
   const handleLogin = () => {
     setError("");
@@ -45,7 +43,6 @@ export default function StaffLoginPage() {
     <AuthGate>
       <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 font-sans">
         <div className="w-full max-w-md">
-          {/* Logo */}
           <div className="mb-8 flex flex-row items-center justify-center gap-3">
             <div className="bg-yellow-400 p-2 rounded-lg">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" width="24" height="24">
@@ -65,7 +62,6 @@ export default function StaffLoginPage() {
             </div>
           </div>
 
-          {/* Card Container */}
           <div className="bg-zinc-900 border border-zinc-800 p-8 min-h-[480px] flex flex-col rounded-xl shadow-2xl shadow-black/50">
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-ink mb-1">Staff Sign In</h2>
@@ -76,29 +72,31 @@ export default function StaffLoginPage() {
               <div className="animate-fade-in-up space-y-4">
                 <div>
                   <label className="block text-[10px] font-bold text-muted mb-2">Phone Number</label>
-                  <input
+                  <Input
                     type="tel"
                     maxLength={10}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
                     placeholder="98765 43210"
-                    className="w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-3 text-sm font-normal focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400/50 transition-all rounded-lg appearance-none"
                   />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-muted mb-2">4-Digit PIN</label>
-                  <input
+                  <Input
                     type="password"
                     value={pin}
                     onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
                     placeholder="****"
                     maxLength={4}
-                    className="w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-3 text-sm font-normal focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400/50 transition-all rounded-lg appearance-none text-center text-xl tracking-[0.5em]"
+                    className="text-center text-xl tracking-[0.5em]"
                   />
                 </div>
-                <button onClick={handleLogin} className="w-full bg-yellow-400 py-3 text-sm font-bold text-black hover:bg-yellow-300 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20">
+                <Button
+                  onClick={handleLogin}
+                  className="w-full bg-yellow-400 py-3 text-sm font-bold text-black hover:bg-yellow-300 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20"
+                >
                   Login
-                </button>
+                </Button>
 
                 {error && (
                   <div className="mt-4 text-center text-xs font-semibold text-red-500 bg-red-500/10 border border-red-500/20 py-2 rounded-lg">

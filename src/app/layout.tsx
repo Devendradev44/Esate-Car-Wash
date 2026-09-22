@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ToastProvider } from "@/components/shared";
 
 // Use system fonts to avoid network issues during build
 const fontClass = "font-sans";
@@ -32,7 +33,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={cn("font-sans")}>
       <body className={`${fontClass} antialiased text-white`}>
-        <TooltipProvider>{children}</TooltipProvider>
+        <TooltipProvider>
+          {children}
+        </TooltipProvider>
+        <ToastProvider />
       </body>
     </html>
   );

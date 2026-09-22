@@ -1,4 +1,5 @@
-"use client";
+﻿"use client";
+
 import { useState, useMemo } from "react";
 import {
   CalendarDays,
@@ -9,10 +10,19 @@ import {
   IndianRupee,
   Wallet,
   TrendingUp,
-  Building2,
-  ChevronDown,
+  TrendingDown,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { StatCard } from "@/components/shared/StatCard";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Toolbar } from "@/components/layout/Toolbar";
+import { FilterBar } from "@/components/layout/FilterBar";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { SectionHeader } from "@/components/layout/SectionHeader";
 
 type DateFilter = "TODAY" | "YESTERDAY" | "MONTH" | "YEAR" | "CUSTOM";
 
@@ -79,35 +89,30 @@ export default function AdminDashboard() {
   }, [bookings, start, end, communityFilter]);
 
   const kpis = useMemo(() => {
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const today = new Date();
+    const todayLocalStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    
     const todayBookings = bookings.filter(
-      (b) => b.date === todayStr && (communityFilter === "ALL" || b.community === communityFilter)
+      (b) => b.date === todayLocalStr && b.bookingStatus === "BOOKED" && (communityFilter === "ALL" || b.community === communityFilter)
     ).length;
     const inProgress = filteredBookings.filter((b) => b.bookingStatus === "BOOKED").length;
     const completed = filteredBookings.filter((b) => b.bookingStatus === "COMPLETED").length;
-    const upcoming = bookings.filter(
+  const upcoming = bookings.filter(
       (b) =>
-        b.date > todayStr &&
+        b.date > todayLocalStr &&
         b.bookingStatus === "BOOKED" &&
         (communityFilter === "ALL" || b.community === communityFilter)
     ).length;
-    const todayRevenue = bookings
+  const todayRevenue = bookings
       .filter(
         (b) =>
-          b.date === todayStr &&
+          b.date === todayLocalStr &&
           b.paymentStatus === "PAID" &&
           (communityFilter === "ALL" || b.community === communityFilter)
       )
       .reduce((sum, b) => sum + b.amount, 0);
     const todayExpense = expenses
-      .filter((e) => e.date === todayStr)
-      .reduce((sum, e) => sum + e.amount, 0);
-    const monthlyExpense = expenses
-      .filter((e) => {
-        const d = new Date(e.date);
-        const now = new Date();
-        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-      })
+      .filter((e) => e.date === todayLocalStr)
       .reduce((sum, e) => sum + e.amount, 0);
     const totalRevenue = bookings
       .filter((b) => b.paymentStatus === "PAID")
@@ -116,15 +121,14 @@ export default function AdminDashboard() {
     const netProfit = totalRevenue - totalExpense;
 
     return [
-      { title: "Today's Bookings", value: todayBookings, icon: CalendarDays, iconColor: "text-yellow-dark", color: "text-ink" },
-      { title: "In Progress", value: inProgress, icon: Clock, iconColor: "text-warning", color: "text-ink" },
-      { title: "Completed", value: completed, icon: CheckCircle2, iconColor: "text-success", color: "text-ink" },
-      { title: "Upcoming", value: upcoming, icon: ArrowUpRight, iconColor: "text-ink", color: "text-ink" },
-      { title: "Today's Revenue", value: `₹${todayRevenue.toLocaleString('en-IN')}`, icon: IndianRupee, iconColor: "text-success", color: "text-success" },
-      { title: "Today's Expense", value: `₹${todayExpense.toLocaleString('en-IN')}`, icon: ArrowDownRight, iconColor: "text-m-red", color: "text-m-red" },
-      { title: "Monthly Expense", value: `₹${monthlyExpense.toLocaleString('en-IN')}`, icon: TrendingUp, iconColor: "text-muted", color: "text-ink" },
-      { title: "Total Revenue", value: `₹${totalRevenue.toLocaleString('en-IN')}`, icon: Wallet, iconColor: "text-success", color: "text-success" },
-      { title: "Net Profit", value: `₹${netProfit.toLocaleString('en-IN')}`, icon: Wallet, iconColor: netProfit >= 0 ? "text-success" : "text-m-red", color: netProfit >= 0 ? "text-success" : "text-m-red" },
+      { title: "Today's Bookings", value: todayBookings, icon: CalendarDays, trend: { value: 0, label: "today" } },
+      { title: "In Progress", value: inProgress, icon: Clock, trend: { value: 0, label: "pending" } },
+      { title: "Completed", value: completed, icon: CheckCircle2, trend: { value: 0, label: "done" } },
+      { title: "Upcoming", value: upcoming, icon: ArrowUpRight, trend: { value: 0, label: "scheduled" } },
+      { title: "Today's Revenue", value: `Rs.${todayRevenue.toLocaleString("en-IN")}`, icon: IndianRupee, trend: { value: 0, label: "collected" } },
+      { title: "Today's Expense", value: `Rs.${todayExpense.toLocaleString("en-IN")}`, icon: ArrowDownRight, trend: { value: 0, label: "spent" } },
+      { title: "Total Revenue", value: `Rs.${totalRevenue.toLocaleString("en-IN")}`, icon: Wallet, trend: { value: 0, label: "all-time" } },
+      { title: "Net Profit", value: `Rs.${netProfit.toLocaleString("en-IN")}`, icon: netProfit >= 0 ? TrendingUp : TrendingDown, trend: { value: 0, label: "net" } },
     ];
   }, [bookings, expenses, filteredBookings, communityFilter]);
 
@@ -134,101 +138,107 @@ export default function AdminDashboard() {
       .slice(0, 5);
   }, [bookings]);
 
-  return (
-    <div className="p-6 md:p-12">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold uppercase tracking-normal text-ink">Dashboard</h2>
-        <p className="mt-2 text-sm font-light text-body">Business overview and key metrics.</p>
-      </div>
+  const filterOptions: { key: DateFilter; label: string }[] = [
+    { key: "TODAY", label: "Today" },
+    { key: "YESTERDAY", label: "Yesterday" },
+    { key: "MONTH", label: "Month" },
+    { key: "YEAR", label: "Year" },
+    { key: "CUSTOM", label: "Date Filter" },
+  ];
 
-      {/* FILTER BAR */}
-      <div className="mb-8 flex flex-col md:flex-row gap-4 items-start md:items-center">
-        <div className="flex flex-wrap gap-2">
-          {([
-            { key: "TODAY", label: "Today" },
-            { key: "YESTERDAY", label: "Yesterday" },
-            { key: "MONTH", label: "Month" },
-            { key: "YEAR", label: "Year" },
-            { key: "CUSTOM", label: "Date Filter" },
-          ] as { key: DateFilter; label: string }[]).map((f) => (
-            <button
-              key={f.key}
-              onClick={() => setDateFilter(f.key)}
-              className={`px-4 py-2 text-xs font-bold uppercase tracking-machined border transition-colors ${
-                dateFilter === f.key
-                  ? "bg-yellow-dark text-ink border-yellow-dark"
-                  : "bg-surface-card text-muted border-hairline hover:text-ink hover:border-muted"
-              }`}
-            >
-              {f.label}
-            </button>
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <PageContainer padding="lg" maxWidth="7xl">
+        <PageHeader
+          title="Dashboard"
+          description="Business overview and key metrics."
+        />
+
+        <Toolbar>
+          <FilterBar>
+            <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as DateFilter)}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Select Date Filter" />
+              </SelectTrigger>
+              <SelectContent>
+                {filterOptions.map((f) => (
+                  <SelectItem key={f.key} value={f.key}>
+                    {f.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {dateFilter === "CUSTOM" && (
+              <input
+                type="date"
+                value={customDate}
+                onChange={(e) => setCustomDate(e.target.value)}
+                className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            )}
+
+            <Select value={communityFilter} onValueChange={(v) => setCommunityFilter(v || "ALL")}>
+              <SelectTrigger className="w-full sm:w-56">
+                <SelectValue placeholder="All Communities" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Communities</SelectItem>
+                {communities.map((c) => (
+                  <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FilterBar>
+        </Toolbar>
+
+        <SectionHeader title="Key Performance Indicators" description="Today's and overall business metrics." />
+
+        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {kpis.map((kpi) => (
+            <StatCard key={kpi.title} title={kpi.title} value={kpi.value} icon={kpi.icon} trend={kpi.trend} />
           ))}
         </div>
 
-        {dateFilter === "CUSTOM" && (
-          <input
-            type="date"
-            value={customDate}
-            onChange={(e) => setCustomDate(e.target.value)}
-            className="bg-surface-card border border-hairline text-ink p-2 text-sm font-light focus:border-yellow-dark focus:outline-none rounded-lg"
-          />
-        )}
-
-        <div className="flex items-center gap-2 ml-auto">
-          <Building2 size={14} className="text-muted" />
-          <select
-            value={communityFilter}
-            onChange={(e) => setCommunityFilter(e.target.value)}
-            className="bg-surface-card border border-hairline text-ink p-2 text-sm font-light focus:border-yellow-dark focus:outline-none rounded-lg appearance-none cursor-pointer"
-          >
-            <option value="ALL">All Communities</option>
-            {communities.map((c) => (
-              <option key={c.id} value={c.name}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={14} className="text-muted -ml-3 pointer-events-none" />
-        </div>
-      </div>
-
-      {/* KPI GRID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 mb-10">
-        {kpis.map((kpi) => (
-          <div key={kpi.title} className="border border-hairline bg-surface-card p-6 hover:bg-surface-elevated transition-colors">
-            <div className="flex items-center gap-2 mb-4">
-              <kpi.icon size={16} className={kpi.iconColor} />
-              <p className="text-xs font-bold uppercase tracking-machined text-muted">{kpi.title}</p>
+        <Card className="mt-8">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <div>
+              <CardTitle className="text-lg font-semibold">Recent Bookings</CardTitle>
+              <CardDescription>Latest 5 bookings across all communities.</CardDescription>
             </div>
-            <p className={`text-2xl md:text-3xl font-bold ${kpi.color}`}>{kpi.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* RECENT BOOKINGS */}
-      <div className="border border-hairline bg-surface-card p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-sm font-bold uppercase tracking-machined text-muted">Recent Bookings</h3>
-        </div>
-        <div className="space-y-3">
-          {recentBookings.length === 0 ? (
-            <p className="text-sm font-light text-muted text-center py-4">No bookings yet.</p>
-          ) : (
-            recentBookings.map((b) => (
-              <div key={b.id} className="flex justify-between items-center border-b border-hairline pb-3 last:border-none last:pb-0">
-                <div>
-                  <p className="text-sm font-bold text-ink">{b.customer}</p>
-                  <p className="text-xs font-light text-muted">{b.service} · {b.vehicle}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-ink">₹{b.amount}</p>
-                  <p className={`text-xs font-bold uppercase tracking-machined ${b.paymentStatus === "PAID" ? "text-success" : "text-warning"}`}>{b.paymentStatus}</p>
-                </div>
+            <Badge variant="secondary" className="text-xs">
+              {recentBookings.length} records
+            </Badge>
+          </CardHeader>
+          <CardContent>
+            {recentBookings.length === 0 ? (
+              <EmptyState icon={CalendarDays} title="No bookings yet" description="Bookings will appear here once they are created." />
+            ) : (
+              <div className="divide-y divide-border">
+                {recentBookings.map((b) => (
+                  <div key={b.id} className="flex items-center justify-between py-3.5 transition-colors hover:bg-muted/40">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-foreground">{b.customer}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {b.service} · {b.vehicle}
+                      </p>
+                    </div>
+                    <div className="ml-4 text-right">
+                      <p className="text-sm font-bold text-foreground">Rs.{b.amount}</p>
+                      <Badge
+                        variant={b.paymentStatus === "PAID" ? "default" : "secondary"}
+                        className="text-[10px] font-semibold uppercase"
+                      >
+                        {b.paymentStatus}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))
-          )}
-        </div>
-      </div>
+            )}
+          </CardContent>
+        </Card>
+      </PageContainer>
     </div>
   );
 }

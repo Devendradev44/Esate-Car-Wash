@@ -2,10 +2,14 @@
 import { useState } from "react";
 import { Plus, MapPin, Trash2, X, Edit } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { toast } from "@/components/ui/toast";
 import { AnimatedSelect } from "@/components/ui/AnimatedSelect";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 export default function AddressesPage() {
-
   const addresses = useStore((state) => state.addresses);
   const communities = useStore((state) => state.communities);
   const addAddress = useStore((state) => state.addAddress);
@@ -15,47 +19,61 @@ export default function AddressesPage() {
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState("");
-  
   const [community, setCommunity] = useState("");
   const [flat, setFlat] = useState("");
-
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const openAddModal = () => {
     setIsEditing(false);
-    setCommunity(""); setFlat("");
+    setCommunity("");
+    setFlat("");
     setShowModal(true);
   };
 
   const openEditModal = (id: string, c: string, f: string) => {
     setIsEditing(true);
     setCurrentId(id);
-    setCommunity(c); setFlat(f);
+    setCommunity(c);
+    setFlat(f);
     setShowModal(true);
   };
 
   const handleSaveAddress = () => {
-    if (!community || !flat) return;
-    
+    if (!community || !flat) {
+      toast.add({ type: "error", title: "Missing fields", description: "Please select a community and enter a flat number." });
+      return;
+    }
+
     if (isEditing) {
       updateAddress(currentId, community, flat);
+      toast.add({ type: "success", title: "Address updated", description: `${flat} in ${community} has been saved.` });
     } else {
       addAddress({
         id: `a${Date.now()}`,
         community,
-        flat
+        flat,
       });
+      toast.add({ type: "success", title: "Address added", description: `${flat} in ${community} has been saved.` });
     }
 
-    setCommunity(""); setFlat("");
+    setCommunity("");
+    setFlat("");
     setShowModal(false);
   };
 
-  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
+  const handleDelete = () => {
+    if (!deleteId) return;
+    const target = addresses.find(a => a.id === deleteId);
+    deleteAddress(deleteId);
+    setDeleteId(null);
+    toast.add({
+      type: "success",
+      title: "Address deleted",
+      description: target ? `${target.flat} in ${target.community} has been removed.` : "Address removed.",
+    });
+  };
 
-  // You will need to add updateAddress and deleteAddress to your store.ts for this to work!
-  // addAddress: (newAddress) => set((state) => ({ addresses: [...state.addresses, newAddress] })),
-  // updateAddress: (id, community, flat) => set((state) => ({ addresses: state.addresses.map(a => a.id === id ? { ...a, community, flat } : a) })),
-  // deleteAddress: (id) => set((state) => ({ addresses: state.addresses.filter(a => a.id !== id) })),
+  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas pb-24">
@@ -64,14 +82,29 @@ export default function AddressesPage() {
           <h1 className="text-2xl font-bold uppercase text-ink">My Addresses</h1>
           <p className="mt-1 text-sm font-light text-body">Manage your saved locations.</p>
         </div>
-        <button onClick={openAddModal} className="p-3 border border-yellow-dark text-yellow-dark hover:bg-yellow-dark hover:text-ink transition-colors">
+        <Button
+          onClick={openAddModal}
+          className="p-3 border border-yellow-dark text-yellow-dark hover:bg-yellow-dark hover:text-ink transition-colors"
+        >
           <Plus size={20} />
-        </button>
+        </Button>
       </div>
 
       <div className="flex-1 p-6 space-y-4">
         {addresses.length === 0 ? (
-          <div className="text-center text-muted text-sm font-light mt-20">No addresses saved yet.</div>
+          <EmptyState
+            icon={MapPin}
+            title="No addresses saved"
+            description="Add your first address to book services in your community."
+            action={
+              <Button
+                onClick={openAddModal}
+                className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors"
+              >
+                <Plus size={14} /> Add Address
+              </Button>
+            }
+          />
         ) : (
           addresses.map(a => (
             <div key={a.id} className="border border-hairline bg-surface-card p-5">
@@ -84,8 +117,22 @@ export default function AddressesPage() {
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={() => openEditModal(a.id, a.community, a.flat)} className="text-muted hover:text-ink transition-colors"><Edit size={16} /></button>
-                  <button onClick={() => deleteAddress(a.id)} className="text-muted hover:text-m-red transition-colors"><Trash2 size={16} /></button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => openEditModal(a.id, a.community, a.flat)}
+                    className="text-muted hover:text-ink transition-colors"
+                  >
+                    <Edit size={16} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setDeleteId(a.id)}
+                    className="text-muted hover:text-m-red transition-colors"
+                  >
+                    <Trash2 size={16} />
+                  </Button>
                 </div>
               </div>
             </div>
@@ -98,31 +145,58 @@ export default function AddressesPage() {
           <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-bold uppercase text-ink">{isEditing ? "Edit Address" : "Add Address"}</h3>
-              <button onClick={() => setShowModal(false)} className="text-muted hover:text-ink"><X size={20} /></button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowModal(false)}
+                className="text-muted hover:text-ink"
+              >
+                <X size={20} />
+              </Button>
             </div>
-            
+
             <div className="mb-4">
               <label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Community</label>
               <AnimatedSelect
-              value={community}
-              onChange={(e) => setCommunity(e.target.value)}
-              label="Community"
-              placeholder="Select community"
-              options={communities.map(c => ({ value: c.name, label: c.name }))}
-              className={inputClasses}
-            />
+                value={community}
+                onChange={(e) => setCommunity(e.target.value)}
+                label="Community"
+                placeholder="Select community"
+                options={communities.map(c => ({ value: c.name, label: c.name }))}
+                className={inputClasses}
+              />
             </div>
             <div className="mb-8">
               <label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Flat Number</label>
-              <input type="text" value={flat} onChange={(e) => setFlat(e.target.value)} placeholder="e.g. C-503" className={inputClasses} />
+              <Input
+                type="text"
+                value={flat}
+                onChange={(e) => setFlat(e.target.value)}
+                placeholder="e.g. C-503"
+                className={inputClasses}
+              />
             </div>
 
-            <button onClick={handleSaveAddress} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">
+            <Button
+              onClick={handleSaveAddress}
+              className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light"
+            >
               {isEditing ? "Save Changes" : "Save Address"}
-            </button>
+            </Button>
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteId !== null}
+        onOpenChange={(open) => setDeleteId(open ? deleteId : null)}
+        title="Delete Address"
+        description="Are you sure you want to delete this address? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="destructive"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

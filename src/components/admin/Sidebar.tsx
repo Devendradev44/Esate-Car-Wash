@@ -1,13 +1,14 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, Car, Building2, CalendarDays, Settings, LogOut, Receipt, Wrench } from "lucide-react";
+import { LayoutDashboard, Users, Car, Building2, CalendarDays, Settings, LogOut, Receipt, Wrench, User as CustomerIcon } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: CalendarDays, label: "Bookings", href: "/bookings" },
   { icon: Building2, label: "Communities", href: "/communities" },
+  { icon: CustomerIcon, label: "Customers", href: "/customers" },
   { icon: Car, label: "Vehicles", href: "/vehicles" },
   { icon: Wrench, label: "Services", href: "/services" },
   { icon: Users, label: "Staff", href: "/staff" },

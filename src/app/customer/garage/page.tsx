@@ -2,7 +2,12 @@
 import { useState } from "react";
 import { Plus, Trash2, X, Edit } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { toast } from "@/components/ui/toast";
 import { AnimatedSelect } from "@/components/ui/AnimatedSelect";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 export default function GaragePage() {
 
@@ -25,17 +30,26 @@ export default function GaragePage() {
   const [newModel, setNewModel] = useState("");
   const [newReg, setNewReg] = useState("");
 
-  // Edit State
+// Edit State
   const [editId, setEditId] = useState("");
   const [editReg, setEditReg] = useState("");
-
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const brandsForNewCat = vehicleHierarchy.find(c => c.id === newCat)?.brands || [];
   const modelsForNewBrand = brandsForNewCat.find(b => b.id === newBrand)?.models || [];
 
   const handleSaveVehicle = () => {
-    if (!newCat || !newBrand || !newModel || !newReg) return;
-    
+    if (!newCat || !newBrand || !newModel || !newReg) {
+      toast.add({ type: "error", title: "Missing fields", description: "Please select category, brand, model and enter a registration number." });
+      return;
+    }
+
+    const regRegex = /^[A-Z]{2}\s?\d{1,2}\s?[A-Z]{1,3}\s?\d{1,4}$/;
+    if (!regRegex.test(newReg)) {
+      toast.add({ type: "error", title: "Invalid registration", description: "Use format: AP 12 SM 1234" });
+      return;
+    }
+
     const catName = vehicleHierarchy.find(c => c.id === newCat)?.name || "";
     const brandName = brandsForNewCat.find(b => b.id === newBrand)?.name || "";
     const modelName = modelsForNewBrand.find(m => m.id === newModel)?.name || "";
@@ -49,8 +63,12 @@ export default function GaragePage() {
       isDefault: false
     });
 
-    setNewCat(""); setNewBrand(""); setNewModel(""); setNewReg("");
+    setNewCat("");
+    setNewBrand("");
+    setNewModel("");
+    setNewReg("");
     setShowAddModal(false);
+    toast.add({ type: "success", title: "Vehicle added", description: `${brandName} ${modelName} (${newReg}) saved to your garage.` });
   };
 
   const openEditModal = (id: string, reg: string) => {
@@ -60,14 +78,27 @@ export default function GaragePage() {
   };
 
   const handleEditSave = () => {
-  const regRegex = /^[A-Z]{2}\s?\d{1,2}\s?[A-Z]{1,3}\s?\d{1,4}$/;
-  if (!regRegex.test(editReg)) {
-    alert("Invalid registration format. Use: AP 12 SM 1234");
-    return;
-  }
-  updateCustomerVehicle(editId, editReg);
-  setShowEditModal(false);
-};
+    const regRegex = /^[A-Z]{2}\s?\d{1,2}\s?[A-Z]{1,3}\s?\d{1,4}$/;
+    if (!regRegex.test(editReg)) {
+      toast.add({ type: "error", title: "Invalid registration", description: "Use format: AP 12 SM 1234" });
+      return;
+    }
+    updateCustomerVehicle(editId, editReg);
+    setShowEditModal(false);
+    toast.add({ type: "success", title: "Registration updated", description: `Registration changed to ${editReg}.` });
+  };
+
+  const handleDelete = () => {
+    if (!deleteId) return;
+    const target = customerGarage.find(v => v.id === deleteId);
+    deleteCustomerVehicle(deleteId);
+    setDeleteId(null);
+    toast.add({
+      type: "success",
+      title: "Vehicle deleted",
+      description: target ? `${target.brand} ${target.model} has been removed.` : "Vehicle removed.",
+    });
+  };
 
   const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
 
@@ -78,14 +109,26 @@ export default function GaragePage() {
           <h1 className="text-2xl font-bold uppercase text-ink">My Garage</h1>
           <p className="mt-1 text-sm font-light text-body">Manage your saved vehicles.</p>
         </div>
-        <button onClick={() => setShowAddModal(true)} className="p-3 border border-yellow-dark text-yellow-dark hover:bg-yellow-dark hover:text-ink transition-colors">
+        <Button onClick={() => setShowAddModal(true)} className="p-3 border border-yellow-dark text-yellow-dark hover:bg-yellow-dark hover:text-ink transition-colors">
           <Plus size={20} />
-        </button>
+        </Button>
       </div>
 
       <div className="flex-1 p-6 space-y-4">
         {customerGarage.length === 0 ? (
-          <div className="text-center text-muted text-sm font-light mt-20">No vehicles saved yet.</div>
+          <EmptyState
+            icon={Plus}
+            title="No vehicles saved"
+            description="Add your first vehicle to get accurate pricing for your bookings."
+            action={
+              <Button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors"
+              >
+                <Plus size={14} /> Add Vehicle
+              </Button>
+            }
+          />
         ) : (
           customerGarage.map(v => (
             <div key={v.id} className="border border-hairline bg-surface-card p-5">
@@ -95,8 +138,8 @@ export default function GaragePage() {
                   <p className="text-xs font-light text-muted mt-1">{v.reg} · {v.category}</p>
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={() => openEditModal(v.id, v.reg)} className="text-muted hover:text-ink transition-colors"><Edit size={16} /></button>
-                  <button onClick={() => deleteCustomerVehicle(v.id)} className="text-muted hover:text-m-red transition-colors"><Trash2 size={16} /></button>
+                  <Button variant="ghost" size="icon" onClick={() => openEditModal(v.id, v.reg)} className="text-muted hover:text-ink transition-colors"><Edit size={16} /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => setDeleteId(v.id)} className="text-muted hover:text-m-red transition-colors"><Trash2 size={16} /></Button>
                 </div>
               </div>
             </div>

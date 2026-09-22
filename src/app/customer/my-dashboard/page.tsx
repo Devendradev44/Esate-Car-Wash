@@ -150,7 +150,7 @@ export default function CustomerDashboard() {
                   </div>
                   <div className="flex items-center justify-between text-xs font-light text-body">
                     <span className="flex items-center gap-2"><Car size={12} /> {b.vehicle}</span>
-                    <span className={`font-bold ${b.paymentStatus === "PAID" ? "text-success" : "text-muted"}`}>{b.paymentStatus}</span>
+                    <span className={`font-bold ${b.paymentStatus === "PAID" ? "text-success" : "text-muted"}`}>{b.paymentStatus}{b.paymentMethod ? ` · ${b.paymentMethod}` : ""}</span>
                   </div>
                 </div>
               ))}

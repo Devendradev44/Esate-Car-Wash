@@ -4,7 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Check, MapPin, Car, Wrench, Calendar } from "lucide-react";
 import { useStore, getTimeSlotsForCommunity } from "@/lib/store"; 
-import { AnimatedSelect } from "@/components/ui/AnimatedSelect"; 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export default function BookService() {
   const router = useRouter();
@@ -61,6 +63,12 @@ export default function BookService() {
   const getTodayDate = () => {
     const today = new Date();
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  };
+
+  // Flat number validation - allows alphanumeric formats like M-39, M39, A-101 (max 6 chars)
+  const isValidFlatNumber = (flat: string) => {
+    const cleanFlat = flat.replace(/-/g, "");
+    return /^[A-Za-z0-9]{1,6}$/.test(cleanFlat) && flat.length <= 6;
   };
 
   // CAPACITY & PAST TIME LOGIC
@@ -163,31 +171,29 @@ export default function BookService() {
         <label className={labelClasses}><MapPin size={14} /> Community & Flat</label>
         
         {/* Community Dropdown */}
-        <AnimatedSelect
-          value={selectedCommunity}
-          onChange={(e) => { setSelectedCommunity(e.target.value); setSelectedFlat(""); setSelectedAddressId(""); }}
-          label="Community"
-          placeholder="Select Community"
-          options={activeCommunities.map(c => ({ value: c.name, label: c.name }))}
-          className={inputClasses}
-        />
+        <Select value={selectedCommunity} onValueChange={(v) => { setSelectedCommunity(v || ""); setSelectedFlat(""); setSelectedAddressId(""); }}>
+          <SelectTrigger className={inputClasses}>
+            <SelectValue placeholder="Select Community" />
+          </SelectTrigger>
+          <SelectContent>
+            {activeCommunities.map(c => (
+              <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         {/* Flat Dropdown - shows flats for selected community */}
         {selectedCommunity && (
-          <>
-            <AnimatedSelect
-              value={selectedFlat}
-              onChange={(e) => { setSelectedFlat(e.target.value); setSelectedAddressId(""); }}
-              label="Flat Number"
-              placeholder="Select Flat"
-              options={savedAddresses.filter(a => a.community === selectedCommunity).map(a => ({ value: a.flat, label: a.flat }))}
-              className={inputClasses}
-            />
-            {/* If customer has only one flat in this community, show hint */}
-            {savedAddresses.filter(a => a.community === selectedCommunity).length === 1 && (
-              <p className="text-xs font-light text-muted ml-2 mt-1">Only one flat in this community</p>
-            )}
-          </>
+          <Select value={selectedFlat} onValueChange={(v) => { setSelectedFlat(v || ""); setSelectedAddressId(""); }}>
+            <SelectTrigger className={inputClasses}>
+              <SelectValue placeholder="Select Flat" />
+            </SelectTrigger>
+            <SelectContent>
+              {savedAddresses.filter(a => a.community === selectedCommunity).map(a => (
+                <SelectItem key={a.flat} value={a.flat}>{a.flat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
 
         {/* Add new address */}
@@ -197,22 +203,43 @@ export default function BookService() {
           </button>
         ) : (
           <div className="border border-hairline bg-surface-soft p-4 mb-8 space-y-3">
-            <AnimatedSelect
-              value={newCommunity}
-              onChange={(e) => setNewCommunity(e.target.value)}
-              label="Community"
-              placeholder="Choose community"
-              options={activeCommunities.map(c => ({ value: c.name, label: c.name }))}
+            <Select value={newCommunity} onValueChange={(v) => setNewCommunity(v || "")}>
+              <SelectTrigger className={inputClasses}>
+                <SelectValue placeholder="Choose community" />
+              </SelectTrigger>
+              <SelectContent>
+                {activeCommunities.map(c => (
+                  <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input 
+              type="text" 
+              value={newFlat} 
+              onChange={(e) => {
+                const val = e.target.value.toUpperCase();
+                if (val.length <= 6) setNewFlat(val);
+              }} 
+              placeholder="Flat Number (e.g. M-39, M39, A-101)"
               className={inputClasses}
+              maxLength={6}
             />
-            <input type="text" value={newFlat} onChange={(e) => setNewFlat(e.target.value)} placeholder="Flat Number (e.g. C-503)" className={inputClasses} />
-            <button onClick={() => { 
-              if (!newCommunity || !newFlat) return;
-              const newAddr = { id: `a${Date.now()}`, community: newCommunity, flat: newFlat };
-              addAddress(newAddr);
-              setSelectedAddressId(newAddr.id); 
-              setShowAddAddress(false); 
-            }} className="bg-yellow-dark w-full py-3 text-xs font-bold uppercase tracking-machined text-ink">Save Address</button>
+            <Button
+              onClick={() => {
+                if (!newCommunity || !newFlat) return;
+                if (!isValidFlatNumber(newFlat)) {
+                  setError("Invalid flat number. Use format like M-39, M39, A-101 (max 6 chars, alphanumeric only)");
+                  return;
+                }
+                const newAddr = { id: `a${Date.now()}`, community: newCommunity, flat: newFlat };
+                addAddress(newAddr);
+                setSelectedAddressId(newAddr.id);
+                setShowAddAddress(false);
+              }}
+              className="bg-yellow-dark w-full py-3 text-xs font-bold uppercase tracking-machined text-ink"
+            >
+              Save Address
+            </Button>
           </div>
         )}
 
@@ -236,30 +263,42 @@ export default function BookService() {
         ) : (
           <div className="border border-hairline bg-surface-soft p-4 mb-8 space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <AnimatedSelect
-                value={newCat}
-                onChange={(e) => setNewCat(e.target.value)}
-                label="Category"
-                placeholder="Category"
-                options={vehicleHierarchy.map(c => ({ value: c.name, label: c.name }))}
-                className={inputClasses}
-              />
-              <AnimatedSelect
-                value={newBrand}
-                onChange={(e) => setNewBrand(e.target.value)}
-                label="Brand"
-                placeholder="Brand"
-                options={vehicleHierarchy.flatMap(c => c.brands.map(b => ({ value: b.name, label: b.name }))).filter((v, i, a) => a.findIndex(x => x.value === v.value) === i)}
-                className={inputClasses}
-              />
-              <AnimatedSelect
-                value={newModel}
-                onChange={(e) => setNewModel(e.target.value)}
-                label="Model"
-                placeholder="Model"
-                options={vehicleHierarchy.flatMap(c => c.brands.flatMap(b => b.models.map(m => ({ value: m.name, label: m.name })))).filter((v, i, a) => a.findIndex(x => x.value === v.value) === i)}
-                className={inputClasses}
-              />
+              <Select value={newCat} onValueChange={(v) => { setNewCat(v || ""); setNewBrand(""); setNewModel(""); }}>
+                <SelectTrigger className={inputClasses}>
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {vehicleHierarchy.map(c => (
+                    <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {newCat && (
+                <Select value={newBrand} onValueChange={(v) => { setNewBrand(v || ""); setNewModel(""); }}>
+                  <SelectTrigger className={inputClasses}>
+                    <SelectValue placeholder="Brand" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {brandsForNewCat.map(b => (
+                      <SelectItem key={b.name} value={b.name}>{b.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {newBrand && (
+                <Select value={newModel} onValueChange={(v) => setNewModel(v || "")}>
+                  <SelectTrigger className={inputClasses}>
+                    <SelectValue placeholder="Model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {modelsForNewBrand.map(m => (
+                      <SelectItem key={m.name} value={m.name}>{m.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <input 
                 type="text" 
                 value={newReg} 

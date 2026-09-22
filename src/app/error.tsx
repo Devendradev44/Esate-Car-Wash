@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
@@ -20,15 +21,18 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
         An unexpected error occurred. Please try again, or return to the login page if the problem persists.
       </p>
       <div className="flex gap-4">
-        <button 
-          onClick={reset} 
+        <Button
+          onClick={reset}
           className="bg-yellow-dark px-8 py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors"
         >
           Try Again
-        </button>
-        <Link href="/login" className="border border-hairline px-8 py-4 text-xs font-bold uppercase tracking-machined text-muted hover:text-ink transition-colors">
+        </Button>
+        <Button
+          render={<Link href="/login" />}
+          className="border border-hairline px-8 py-4 text-xs font-bold uppercase tracking-machined text-muted hover:text-ink transition-colors"
+        >
           Return Home
-        </Link>
+        </Button>
       </div>
     </div>
   );

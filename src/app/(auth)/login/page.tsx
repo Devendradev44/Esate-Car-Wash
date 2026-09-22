@@ -1,12 +1,12 @@
 "use client";
-import React from "react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Car } from "lucide-react";
 import { useStore, verifyMockHash, mockHash } from "@/lib/store";
 import { AuthGate } from "@/components/AuthGate";
 import { PasswordInput } from "@/components/ui/PasswordInput";
-import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 enum Step { LOGIN, SIGNUP_PHONE, SIGNUP_OTP, SIGNUP_DETAILS }
 
@@ -25,10 +25,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-
-  const inputClasses = "w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-3 text-sm font-normal focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400/50 transition-all rounded-lg appearance-none";
-  const labelClasses = "block text-[10px] font-bold text-muted mb-2";
-  const buttonClasses = "w-full bg-yellow-400 py-3 text-sm font-bold text-black hover:bg-yellow-300 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20";
 
   const handleCustomerLogin = () => {
     setError("");
@@ -166,39 +162,40 @@ export default function LoginPage() {
                 {/* CUSTOMER - Phone + Password Login */}
                 {step === Step.LOGIN && (
                   <div className="space-y-4">
-                    <div>
-                      <label className={labelClasses}>Phone Number</label>
-                      <input
-                        type="tel"
-                        maxLength={10}
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                        placeholder="98765 43210"
-                        className={inputClasses}
-                      />
-                    </div>
-                    <PasswordInput
-                      value={password}
-                      onChange={setPassword}
-                      placeholder="••••••••"
-                      label="Password"
-                      autoComplete="current-password"
+<div>
+                    <label className="block text-[10px] font-bold text-muted mb-2">Phone Number</label>
+                    <Input
+                      type="tel"
+                      maxLength={10}
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                      placeholder="98765 43210"
                     />
-                    <div className="flex items-center justify-between mt-1 mb-2">
-                      <label className="flex items-center gap-2 text-[10px] font-medium text-muted cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={rememberMe}
-                          onChange={(e) => setRememberMe(e.target.checked)}
-                          className="w-4 h-4 accent-yellow-400 border-zinc-700 rounded focus:ring-yellow-400"
-                        />
-                        Remember me
-                      </label>
-                      <button className="text-[10px] font-semibold text-muted hover:text-yellow-400 transition-colors">
-                        Forgot Password?
-                      </button>
-                    </div>
-                    <button onClick={handleLogin} className={buttonClasses}>Sign in</button>
+                  </div>
+                  <PasswordInput
+                    value={password}
+                    onChange={setPassword}
+                    placeholder="••••••••"
+                    label="Password"
+                    autoComplete="current-password"
+                  />
+                  <div className="flex items-center justify-between mt-1 mb-2">
+                    <label className="flex items-center gap-2 text-[10px] font-medium text-muted cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="w-4 h-4 accent-yellow-400 border-zinc-700 rounded focus:ring-yellow-400"
+                      />
+                      Remember me
+                    </label>
+                    <button className="text-[10px] font-semibold text-muted hover:text-yellow-400 transition-colors">
+                      Forgot Password?
+                    </button>
+                  </div>
+                  <Button onClick={handleLogin} className="w-full bg-yellow-400 py-3 text-sm font-bold text-black hover:bg-yellow-300 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20">
+                    Sign in
+                  </Button>
 
                     <button
                       onClick={() => setStep(Step.SIGNUP_PHONE)}
@@ -213,18 +210,19 @@ export default function LoginPage() {
                 {step === Step.SIGNUP_PHONE && (
                   <div className="space-y-4">
                     <p className="text-xs font-bold text-yellow-400 text-center">Create your account</p>
-                    <div>
-                      <label className={labelClasses}>Phone Number</label>
-                      <input
-                        type="tel"
-                        maxLength={10}
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                        placeholder="98765 43210"
-                        className={inputClasses}
-                      />
-                    </div>
-                    <button onClick={handleRequestOTP} className={buttonClasses}>Get OTP</button>
+<div>
+                    <label className="block text-[10px] font-bold text-muted mb-2">Phone Number</label>
+                    <Input
+                      type="tel"
+                      maxLength={10}
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                      placeholder="98765 43210"
+                    />
+                  </div>
+                  <Button onClick={handleRequestOTP} className="w-full bg-yellow-400 py-3 text-sm font-bold text-black hover:bg-yellow-300 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20">
+                    Get OTP
+                  </Button>
 
                     <button
                       onClick={() => setStep(Step.LOGIN)}
@@ -240,18 +238,20 @@ export default function LoginPage() {
                   <div className="space-y-4">
                     <p className="text-xs font-bold text-yellow-400 text-center">Verify your phone number</p>
                     <p className="text-xs text-muted text-center">Enter the 6-digit code sent to {phone}</p>
-                    <div>
-                      <label className={labelClasses}>Enter OTP</label>
-                      <input
-                        type="text"
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                        placeholder="6-digit code"
-                        maxLength={6}
-                        className={inputClasses + " text-center text-xl tracking-[0.5em]"}
-                      />
-                    </div>
-                    <button onClick={handleVerifyOTP} className={buttonClasses}>Verify & Continue</button>
+<div>
+                    <label className="block text-[10px] font-bold text-muted mb-2">Enter OTP</label>
+                    <Input
+                      type="text"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                      placeholder="6-digit code"
+                      maxLength={6}
+                      className="text-center text-xl tracking-[0.5em]"
+                    />
+                  </div>
+                  <Button onClick={handleVerifyOTP} className="w-full bg-yellow-400 py-3 text-sm font-bold text-black hover:bg-yellow-300 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20">
+                    Verify & Continue
+                  </Button>
                     <button
                       onClick={handleBackToPhone}
                       className="w-full text-center text-xs font-semibold text-muted hover:text-yellow-400 transition-colors py-2"
@@ -265,19 +265,19 @@ export default function LoginPage() {
                 {step === Step.SIGNUP_DETAILS && (
                   <div className="space-y-4">
                     <p className="text-xs font-bold text-yellow-400 text-center">Complete your profile</p>
-                    <div className="grid grid-cols-2 gap-4">
+<div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className={labelClasses}>First Name</label>
-                        <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Rahul" className={inputClasses} />
+                        <label className="block text-[10px] font-bold text-muted mb-2">First Name</label>
+                        <Input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Rahul" />
                       </div>
                       <div>
-                        <label className={labelClasses}>Last Name</label>
-                        <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Sharma" className={inputClasses} />
+                        <label className="block text-[10px] font-bold text-muted mb-2">Last Name</label>
+                        <Input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Sharma" />
                       </div>
                     </div>
                     <div>
-                      <label className={labelClasses}>Email</label>
-                      <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className={inputClasses} />
+                      <label className="block text-[10px] font-bold text-muted mb-2">Email</label>
+                      <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
                     </div>
                     <PasswordInput
                       value={password}
@@ -286,9 +286,9 @@ export default function LoginPage() {
                       label="Password"
                       autoComplete="new-password"
                     />
-                    <button onClick={handleLogin} className="w-full bg-green-500 py-3 text-sm font-bold text-black hover:bg-green-400 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-green-500/20">
+                    <Button onClick={handleLogin} className="w-full bg-green-500 py-3 text-sm font-bold text-black hover:bg-green-400 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-green-500/20">
                       Create Account
-                    </button>
+                    </Button>
                     <button
                       onClick={handleBackToPhone}
                       className="w-full text-center text-xs font-semibold text-muted hover:text-yellow-400 transition-colors py-2"

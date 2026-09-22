@@ -252,14 +252,8 @@ updateMockUser: (data) => set((state) => {
       addTimeSlot: (label: string, startTime: string, endTime?: string) => set((state) => ({ timeSlots: [...state.timeSlots, { id: `ts${Date.now()}`, label, startTime, endTime: endTime || startTime }] })),
       deleteTimeSlot: (id) => set((state) => ({ timeSlots: state.timeSlots.filter(t => t.id !== id) })),
 
-      addresses: [
-        { id: "a1", community: "Prestige Shantiniketan", flat: "A-401" },
-        { id: "a2", community: "Sobha Halcyon", flat: "B-1202" },
-      ],
-      customerGarage: [
-        { id: "v1", category: "SUV", brand: "Toyota", model: "Fortuner", reg: "TG 09 AB 1234", isDefault: true },
-        { id: "v2", category: "Hatchback", brand: "Maruti Suzuki", model: "Swift", reg: "TG 11 CX 5678", isDefault: false },
-      ],
+      addresses: [],
+      customerGarage: [],
       customers: [],
 
       // --- MUTATIONS ---

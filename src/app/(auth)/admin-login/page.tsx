@@ -5,19 +5,16 @@ import { useRouter } from "next/navigation";
 import { useStore, verifyMockHash } from "@/lib/store";
 import { AuthGate } from "@/components/AuthGate";
 import { PasswordInput } from "@/components/ui/PasswordInput";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const setMockUser = useStore((state) => state.setMockUser);
-  const updateAdminLastLogin = useStore((state) => state.updateAdminLastLogin);
 
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  const inputClasses = "w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-3 text-sm font-normal focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400/50 transition-all rounded-lg appearance-none";
-  const labelClasses = "block text-[10px] font-bold text-muted mb-2";
-  const buttonClasses = "w-full bg-yellow-400 py-3 text-sm font-bold text-black hover:bg-yellow-300 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20";
 
   const handleLogin = () => {
     setError("");
@@ -49,7 +46,6 @@ export default function AdminLoginPage() {
     <AuthGate>
       <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 font-sans">
         <div className="w-full max-w-md">
-          {/* Logo */}
           <div className="mb-8 flex flex-row items-center justify-center gap-3">
             <div className="bg-yellow-400 p-2 rounded-lg">
               <Car size={24} className="text-black" />
@@ -60,7 +56,6 @@ export default function AdminLoginPage() {
             </div>
           </div>
 
-          {/* Card Container */}
           <div className="bg-zinc-900 border border-zinc-800 p-8 min-h-[480px] flex flex-col rounded-xl shadow-2xl shadow-black/50">
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-ink mb-1">Admin Sign In</h2>
@@ -71,12 +66,11 @@ export default function AdminLoginPage() {
               <div className="animate-fade-in-up space-y-4">
                 <div>
                   <label className="block text-[10px] font-bold text-muted mb-2">Email Address</label>
-                  <input
+                  <Input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="admin@estatecarspa.com"
-                    className="w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-3 text-sm font-normal focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400/50 transition-all rounded-lg appearance-none"
                     autoComplete="email"
                   />
                 </div>
@@ -87,9 +81,12 @@ export default function AdminLoginPage() {
                   label="Password"
                   autoComplete="current-password"
                 />
-                <button onClick={handleLogin} className="w-full bg-yellow-400 py-3 text-sm font-bold text-black hover:bg-yellow-300 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20">
+                <Button
+                  onClick={handleLogin}
+                  className="w-full bg-yellow-400 py-3 text-sm font-bold text-black hover:bg-yellow-300 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20"
+                >
                   Sign in
-                </button>
+                </Button>
 
                 {error && (
                   <div className="mt-4 text-center text-xs font-semibold text-red-500 bg-red-500/10 border border-red-500/20 py-2 rounded-lg">
