@@ -19,6 +19,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Toolbar } from "@/components/layout/Toolbar";
 import { FilterBar } from "@/components/layout/FilterBar";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -170,11 +171,11 @@ export default function AdminDashboard() {
             </Select>
 
             {dateFilter === "CUSTOM" && (
-              <input
+              <Input
                 type="date"
                 value={customDate}
                 onChange={(e) => setCustomDate(e.target.value)}
-                className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="w-full h-8 sm:w-48 rounded-lg border border-hairline bg-surface-card px-3 text-sm font-light text-ink focus:border-yellow-dark focus:outline-none"
               />
             )}
 
@@ -216,7 +217,7 @@ export default function AdminDashboard() {
             ) : (
               <div className="divide-y divide-border">
                 {recentBookings.map((b) => (
-                  <div key={b.id} className="flex items-center justify-between py-3.5 transition-colors hover:bg-muted/40">
+                  <div key={b.id} className="flex items-center justify-between py-3.5 transition-colors hover:bg-muted-bg/40">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-foreground">{b.customer}</p>
                       <p className="truncate text-xs text-muted-foreground">
@@ -225,12 +226,20 @@ export default function AdminDashboard() {
                     </div>
                     <div className="ml-4 text-right">
                       <p className="text-sm font-bold text-foreground">Rs.{b.amount}</p>
-                      <Badge
-                        variant={b.paymentStatus === "PAID" ? "default" : "secondary"}
-                        className="text-[10px] font-semibold uppercase"
-                      >
-                        {b.paymentStatus}
-                      </Badge>
+                      <div className="mt-1 flex items-center justify-end gap-1.5">
+                        <Badge
+                          variant={b.bookingStatus === "COMPLETED" ? "default" : b.bookingStatus === "CANCELLED" ? "destructive" : "secondary"}
+                          className="text-[10px] font-semibold uppercase"
+                        >
+                          {b.bookingStatus}
+                        </Badge>
+                        <Badge
+                          variant={b.paymentStatus === "PAID" ? "default" : "secondary"}
+                          className="text-[10px] font-semibold uppercase"
+                        >
+                          {b.paymentStatus}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
                 ))}

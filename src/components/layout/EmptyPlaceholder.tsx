@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -20,7 +20,7 @@ export function EmptyPlaceholder({
   return (
     <div className={cn("flex flex-col items-center justify-center py-12 px-4 text-center", className)}>
       {Icon && (
-        <div className="mb-4 inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted">
+        <div className="mb-4 inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted-bg">
           <Icon size={24} className="text-muted-foreground" />
         </div>
       )}

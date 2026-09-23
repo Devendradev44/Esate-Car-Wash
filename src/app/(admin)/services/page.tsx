@@ -2,6 +2,11 @@
 import { useState } from "react";
 import { Plus, Search, Edit, Trash2, X, Wrench } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 
 const vehicleCategories = ["Hatchback", "Sedan", "SUV", "Luxury"];
 
@@ -16,6 +21,7 @@ export default function ServicesPage() {
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
@@ -76,31 +82,31 @@ export default function ServicesPage() {
           <div className="w-full max-w-lg border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-bold uppercase text-ink">{isEditing ? "Edit Service" : "Add Service & Pricing"}</h3>
-              <button onClick={() => setShowModal(false)} className="text-muted hover:text-ink"><X size={20} /></button>
+              <Button type="button" variant="ghost" size="icon-sm" onClick={() => setShowModal(false)} className="text-muted hover:text-ink" aria-label="Close service form"><X size={20} /></Button>
             </div>
             
             <div className="mb-6">
               <label className={labelClasses}>Service Name</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Premium Wash" className={inputClasses} />
+              <Input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Premium Wash" className={inputClasses} />
             </div>
             <div className="mb-8">
               <label className={labelClasses}>Description</label>
-              <input type="text" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="e.g. Deep interior detailing" className={inputClasses} />
+              <Input type="text" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="e.g. Deep interior detailing" className={inputClasses} />
             </div>
 
             <label className={labelClasses}>Pricing by Vehicle Category (₹)</label>
             <div className="grid grid-cols-2 gap-4 mb-8">
               {vehicleCategories.map(cat => (
-                <div key={cat} className="border border-hairline bg-surface-card p-4">
+                <Card key={cat} className="border border-hairline bg-surface-card p-4 gap-1 rounded-none ring-0 ring-transparent">
                   <p className="text-xs font-bold uppercase tracking-machined text-ink mb-2">{cat}</p>
-                  <input type="number" min="0" value={pricing[cat]} onChange={(e) => handlePricingChange(cat, e.target.value)} placeholder="0" className={inputClasses + " text-center"} />
-                </div>
+                  <Input type="number" min="0" value={pricing[cat]} onChange={(e) => handlePricingChange(cat, e.target.value)} placeholder="0" className={inputClasses + " text-center"} />
+                </Card>
               ))}
             </div>
 
-            <button onClick={handleSaveService} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">
+            <Button type="button" onClick={handleSaveService} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">
               {isEditing ? "Save Changes" : "Save Service"}
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -110,28 +116,28 @@ export default function ServicesPage() {
           <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-normal text-ink">Services & Pricing</h2>
           <p className="mt-2 text-sm font-light text-body">Define services and their category-specific prices.</p>
         </div>
-        <button onClick={openAddModal} className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
+        <Button type="button" onClick={openAddModal} className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
           <Plus size={14} /> Add Service
-        </button>
+        </Button>
       </div>
 
       <div className="mb-6 flex items-center gap-3 border border-hairline bg-surface-card p-3">
         <Search size={16} className="text-muted" />
-        <input type="text" placeholder="Search services..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={inputClasses + " border-none bg-transparent p-0 focus:outline-none"} />
+        <Input type="text" placeholder="Search services..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={inputClasses + " border-none bg-transparent p-0 focus:outline-none"} />
       </div>
 
       {/* MOBILE CARDS */}
       <div className="md:hidden space-y-4">
         {filteredServices.map(s => (
-          <div key={s.id} className="border border-hairline bg-surface-card p-4">
-            <div className="flex justify-between items-start mb-3">
+          <Card key={s.id} className="border border-hairline bg-surface-card p-4 gap-3 rounded-none ring-0 ring-transparent">
+            <div className="flex justify-between items-start">
               <div>
                 <p className="text-lg font-bold text-ink flex items-center gap-2"><Wrench size={14} className="text-muted" /> {s.name}</p>
                 <p className="text-xs font-light text-muted mt-1">{s.description}</p>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => openEditModal(s.id, s.name, s.description, s.pricing)} className="text-muted hover:text-ink transition-colors"><Edit size={16} /></button>
-                <button onClick={() => deleteService(s.id)} className="text-muted hover:text-m-red transition-colors"><Trash2 size={16} /></button>
+                <Button type="button" variant="ghost" size="icon-sm" onClick={() => openEditModal(s.id, s.name, s.description, s.pricing)} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${s.name}`}><Edit size={16} /></Button>
+                <Button type="button" variant="ghost" size="icon-sm" onClick={() => setDeleteId(s.id)} className="text-muted hover:text-m-red transition-colors" aria-label={`Delete ${s.name}`}><Trash2 size={16} /></Button>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 border-t border-hairline pt-3">
@@ -142,42 +148,56 @@ export default function ServicesPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         ))}
       </div>
 
       {/* DESKTOP TABLE */}
       <div className="hidden md:block border border-hairline overflow-x-auto bg-surface-card">
-        <table className="w-full min-w-[800px]">
-          <thead className="border-b border-hairline bg-surface-soft">
-            <tr>
-              <th className="py-4 px-6 text-left text-xs font-bold uppercase tracking-machined text-muted">Name</th>
-              <th className="py-4 px-6 text-left text-xs font-bold uppercase tracking-machined text-muted">Desc</th>
+        <Table className="w-full min-w-[800px]">
+          <TableHeader className="border-b border-hairline bg-surface-soft">
+            <TableRow>
+              <TableHead className="py-4 px-6 text-left text-xs font-bold uppercase tracking-machined text-muted">Name</TableHead>
+              <TableHead className="py-4 px-6 text-left text-xs font-bold uppercase tracking-machined text-muted">Desc</TableHead>
               {vehicleCategories.map(cat => (
-                <th key={cat} className="py-4 px-6 text-center text-xs font-bold uppercase tracking-machined text-muted">{cat} Price</th>
+                <TableHead key={cat} className="py-4 px-6 text-center text-xs font-bold uppercase tracking-machined text-muted">{cat} Price</TableHead>
               ))}
-              <th className="py-4 px-6 text-right text-xs font-bold uppercase tracking-machined text-muted">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+              <TableHead className="py-4 px-6 text-right text-xs font-bold uppercase tracking-machined text-muted">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {filteredServices.map(s => (
-              <tr key={s.id} className="border-b border-hairline last:border-none hover:bg-surface-elevated transition-colors">
-                <td className="py-4 px-6 text-sm font-bold text-ink">{s.name}</td>
-                <td className="py-4 px-6 text-sm font-light text-body">{s.description}</td>
+              <TableRow key={s.id} className="border-b border-hairline last:border-none hover:bg-surface-elevated transition-colors">
+                <TableCell className="py-4 px-6 text-sm font-bold text-ink">{s.name}</TableCell>
+                <TableCell className="py-4 px-6 text-sm font-light text-body">{s.description}</TableCell>
                 {vehicleCategories.map(cat => (
-                  <td key={cat} className="py-4 px-6 text-sm font-bold text-yellow-dark text-center">₹{s.pricing[cat] || 0}</td>
+                  <TableCell key={cat} className="py-4 px-6 text-sm font-bold text-yellow-dark text-center">₹{s.pricing[cat] || 0}</TableCell>
                 ))}
-                <td className="py-4 px-6 text-right">
+                <TableCell className="py-4 px-6 text-right">
                   <div className="flex items-center justify-end gap-3">
-                    <button onClick={() => openEditModal(s.id, s.name, s.description, s.pricing)} className="text-muted hover:text-ink transition-colors"><Edit size={16} /></button>
-                    <button onClick={() => deleteService(s.id)} className="text-muted hover:text-m-red transition-colors"><Trash2 size={16} /></button>
+                    <Button type="button" variant="ghost" size="icon-sm" onClick={() => openEditModal(s.id, s.name, s.description, s.pricing)} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${s.name}`}><Edit size={16} /></Button>
+                    <Button type="button" variant="ghost" size="icon-sm" onClick={() => setDeleteId(s.id)} className="text-muted hover:text-m-red transition-colors" aria-label={`Delete ${s.name}`}><Trash2 size={16} /></Button>
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
+
+      <ConfirmDialog
+        open={deleteId !== null}
+        onOpenChange={(open) => setDeleteId(open ? deleteId : null)}
+        title="Delete Service"
+        description="Are you sure you want to delete this service? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="destructive"
+        onConfirm={() => {
+          if (deleteId) deleteService(deleteId);
+          setDeleteId(null);
+        }}
+      />
     </div>
   );
 }

@@ -5,6 +5,8 @@ import { useStore, mockHash } from "@/lib/store";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -58,9 +60,7 @@ export default function SignupPage() {
       phone,
     });
 
-    setTimeout(() => {
-      window.location.href = "/customer/my-dashboard";
-    }, 100);
+    router.push("/customer/my-dashboard");
   };
 
   return (
@@ -85,16 +85,17 @@ export default function SignupPage() {
           </div>
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-800 p-8 min-h-[520px] flex flex-col rounded-xl shadow-2xl shadow-black/50">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-ink mb-1">Join Estate</h2>
-            <p className="text-xs text-body">Register to book services and manage your garage.</p>
-          </div>
+        <Card className="flex min-h-[520px] flex-col rounded-xl border border-zinc-800 bg-zinc-900 py-0 shadow-2xl shadow-black/50 ring-0">
+          <CardContent className="flex flex-col p-8">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-ink mb-1">Join Estate</h2>
+              <p className="text-xs text-body">Register to book services and manage your garage.</p>
+            </div>
 
           <form onSubmit={handleSubmit} className="flex-1 flex flex-col justify-center space-y-5">
             <div className="mb-4 flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2">
               <div className="flex w-full flex-col space-y-2">
-                <label htmlFor="firstname" className="block text-[10px] font-bold text-muted mb-2">First name</label>
+                <Label htmlFor="firstname" className="mb-2 block text-[10px] font-bold leading-normal text-muted">First name</Label>
                 <Input
                   id="firstname"
                   value={firstName}
@@ -104,7 +105,7 @@ export default function SignupPage() {
                 />
               </div>
               <div className="flex w-full flex-col space-y-2">
-                <label htmlFor="lastname" className="block text-[10px] font-bold text-muted mb-2">Last name</label>
+                <Label htmlFor="lastname" className="mb-2 block text-[10px] font-bold leading-normal text-muted">Last name</Label>
                 <Input
                   id="lastname"
                   value={lastName}
@@ -116,7 +117,7 @@ export default function SignupPage() {
             </div>
 
             <div className="flex w-full flex-col space-y-2 mb-4">
-              <label htmlFor="email" className="block text-[10px] font-bold text-muted mb-2">Email Address</label>
+              <Label htmlFor="email" className="mb-2 block text-[10px] font-bold leading-normal text-muted">Email Address</Label>
               <Input
                 id="email"
                 value={email}
@@ -127,7 +128,7 @@ export default function SignupPage() {
             </div>
 
             <div className="flex w-full flex-col space-y-2 mb-4">
-              <label htmlFor="phone" className="block text-[10px] font-bold text-muted mb-2">Phone Number</label>
+              <Label htmlFor="phone" className="mb-2 block text-[10px] font-bold leading-normal text-muted">Phone Number</Label>
               <Input
                 id="phone"
                 value={phone}
@@ -138,16 +139,14 @@ export default function SignupPage() {
               />
             </div>
 
-            <div className="flex w-full flex-col space-y-2 mb-8">
-              <label htmlFor="password" className="block text-[10px] font-bold text-muted mb-2">Password</label>
-              <Input
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                type="password"
-              />
-            </div>
+            <PasswordInput
+              value={password}
+              onChange={setPassword}
+              placeholder="••••••••"
+              label="Password"
+              autoComplete="new-password"
+              className="mb-8"
+            />
 
             {error && (
               <p className="text-center text-xs font-semibold text-red-500 bg-red-500/10 border border-red-500/20 py-2 rounded-lg">
@@ -157,7 +156,7 @@ export default function SignupPage() {
 
             <Button
               type="submit"
-              className="w-full bg-yellow-400 py-3 text-sm font-bold text-black hover:bg-yellow-300 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20"
+              className="h-auto w-full rounded-lg bg-yellow-400 py-3 text-sm font-bold text-black transition-all hover:bg-yellow-300 hover:shadow-lg hover:shadow-yellow-400/20 active:scale-95"
             >
               Sign up
             </Button>
@@ -171,7 +170,8 @@ export default function SignupPage() {
               Sign in
             </a>
           </p>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

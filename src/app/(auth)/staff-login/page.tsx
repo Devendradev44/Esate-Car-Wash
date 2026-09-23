@@ -1,11 +1,12 @@
 "use client";
 import { useState } from "react";
-import { Car } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { AuthGate } from "@/components/AuthGate";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function StaffLoginPage() {
   const router = useRouter();
@@ -62,16 +63,17 @@ export default function StaffLoginPage() {
             </div>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 p-8 min-h-[480px] flex flex-col rounded-xl shadow-2xl shadow-black/50">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-ink mb-1">Staff Sign In</h2>
-              <p className="text-xs text-body">Access the staff dashboard.</p>
-            </div>
+          <Card className="flex min-h-[480px] flex-col rounded-xl border border-zinc-800 bg-zinc-900 py-0 shadow-2xl shadow-black/50 ring-0">
+            <CardContent className="flex flex-1 flex-col p-8">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-ink mb-1">Staff Sign In</h2>
+                <p className="text-xs text-body">Access the staff dashboard.</p>
+              </div>
 
-            <div className="flex-1 flex flex-col justify-center">
-              <div className="animate-fade-in-up space-y-4">
-                <div>
-                  <label className="block text-[10px] font-bold text-muted mb-2">Phone Number</label>
+              <div className="flex-1 flex flex-col justify-center">
+                <div className="animate-fade-in-up space-y-4">
+                  <div>
+                    <Label className="mb-2 block text-[10px] font-bold leading-normal text-muted">Phone Number</Label>
                   <Input
                     type="tel"
                     maxLength={10}
@@ -81,7 +83,7 @@ export default function StaffLoginPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-muted mb-2">4-Digit PIN</label>
+                  <Label className="mb-2 block text-[10px] font-bold leading-normal text-muted">4-Digit PIN</Label>
                   <Input
                     type="password"
                     value={pin}
@@ -93,7 +95,7 @@ export default function StaffLoginPage() {
                 </div>
                 <Button
                   onClick={handleLogin}
-                  className="w-full bg-yellow-400 py-3 text-sm font-bold text-black hover:bg-yellow-300 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20"
+                  className="h-auto w-full rounded-lg bg-yellow-400 py-3 text-sm font-bold text-black transition-all hover:bg-yellow-300 hover:shadow-lg hover:shadow-yellow-400/20 active:scale-95"
                 >
                   Login
                 </Button>
@@ -105,7 +107,8 @@ export default function StaffLoginPage() {
                 )}
               </div>
             </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </AuthGate>

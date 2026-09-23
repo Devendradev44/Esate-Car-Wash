@@ -30,7 +30,7 @@ export function StatCard({
   const isDown = trend && trend.value < 0;
 
   return (
-    <Card className={`transition-all duration-200 hover:shadow-md hover:border-border/80 ${className}`}>
+    <Card className={`transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:ring-foreground/25 ${className}`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
           {title}

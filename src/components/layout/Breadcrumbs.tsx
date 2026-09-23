@@ -37,9 +37,9 @@ export function Breadcrumbs({
       <Link href={homeHref} className="hover:text-foreground transition-colors">
         {homeLabel}
       </Link>
-      {segments.map((crumb, index) => (
+      {segments.map((crumb) => (
         <span key={crumb.href} className="flex items-center gap-1.5">
-          <ChevronRight size={12} className="text-muted-foreground/50" />
+          <ChevronRight size={12} className="text-muted-foreground" />
           {crumb.isLast ? (
             <span className="text-foreground font-medium">{crumb.label}</span>
           ) : (

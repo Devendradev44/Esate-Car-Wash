@@ -1,11 +1,14 @@
 "use client";
 import { useState } from "react";
-import { Plus, MapPin, Trash2, X, Edit } from "lucide-react";
+import { Plus, MapPin, Trash2, Edit } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { toast } from "@/components/ui/toast";
 import { AnimatedSelect } from "@/components/ui/AnimatedSelect";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
@@ -73,7 +76,7 @@ export default function AddressesPage() {
     });
   };
 
-  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
+  const inputClasses = "w-full h-auto bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas pb-24">
@@ -107,7 +110,7 @@ export default function AddressesPage() {
           />
         ) : (
           addresses.map(a => (
-            <div key={a.id} className="border border-hairline bg-surface-card p-5">
+            <Card key={a.id} className="gap-0 rounded-none border border-hairline bg-surface-card p-5 ring-0">
               <div className="flex justify-between items-start">
                 <div className="flex items-start gap-3">
                   <MapPin size={20} className="text-yellow-dark mt-1" />
@@ -135,28 +138,21 @@ export default function AddressesPage() {
                   </Button>
                 </div>
               </div>
-            </div>
+            </Card>
           ))
         )}
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-bold uppercase text-ink">{isEditing ? "Edit Address" : "Add Address"}</h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowModal(false)}
-                className="text-muted hover:text-ink"
-              >
-                <X size={20} />
-              </Button>
-            </div>
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto gap-0 rounded-none border border-hairline bg-surface-soft p-8 ring-0 sm:max-w-md">
+          <div className="flex items-center justify-between mb-8">
+            <DialogTitle className="text-xl font-bold uppercase text-ink">
+              {isEditing ? "Edit Address" : "Add Address"}
+            </DialogTitle>
+          </div>
 
             <div className="mb-4">
-              <label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Community</label>
+              <Label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Community</Label>
               <AnimatedSelect
                 value={community}
                 onChange={(e) => setCommunity(e.target.value)}
@@ -167,7 +163,7 @@ export default function AddressesPage() {
               />
             </div>
             <div className="mb-8">
-              <label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Flat Number</label>
+              <Label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Flat Number</Label>
               <Input
                 type="text"
                 value={flat}
@@ -179,13 +175,12 @@ export default function AddressesPage() {
 
             <Button
               onClick={handleSaveAddress}
-              className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light"
+              className="flex h-auto w-full items-center justify-center gap-2 rounded-none bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light"
             >
               {isEditing ? "Save Changes" : "Save Address"}
             </Button>
-          </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={deleteId !== null}

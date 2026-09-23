@@ -1,16 +1,14 @@
-"use client";
+﻿"use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useStore } from "@/lib/store";
 import {
   Bell,
   Settings,
   User,
   LogOut,
-  Search as SearchIcon,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -26,7 +24,20 @@ import { Search as SearchIconComponent } from "lucide-react";
 
 export function Topbar() {
   const pathname = usePathname();
-  const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
+  const mockUser = useStore((state) => state.mockUser);
+  const logoutMockUser = useStore((state) => state.logoutMockUser);
+
+  const fallbackInitials = (mockUser?.name || "Admin User")
+    .split(" ")
+    .map((part) => part.charAt(0))
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  const displayName = mockUser?.name || "Admin User";
+  const displayEmail = mockUser?.email || "admin@estatecarspa.com";
 
   const breadcrumbs = pathname
     .split("/")
@@ -47,9 +58,9 @@ export function Topbar() {
           <Link href="/dashboard" className="hover:text-foreground transition-colors">
             Dashboard
           </Link>
-          {breadcrumbs.map((crumb, index) => (
+          {breadcrumbs.map((crumb) => (
             <span key={crumb.href} className="flex items-center gap-1.5">
-              <span className="text-muted-foreground/50">/</span>
+              <span className="text-muted-foreground">/</span>
               {crumb.isLast ? (
                 <span className="text-foreground font-medium">{crumb.label}</span>
               ) : (
@@ -74,7 +85,7 @@ export function Topbar() {
               placeholder="Search bookings, customers..."
               value=""
               onChange={() => {}}
-              className="w-full pl-10 pr-4 py-2 text-sm bg-muted/50 border border-border rounded-lg outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+              className="w-full pl-10 pr-4 py-2 text-sm bg-muted-bg/50 border border-border rounded-lg outline-none focus:ring-2 focus:ring-ring focus:border-ring"
             />
           </div>
 
@@ -86,34 +97,38 @@ export function Topbar() {
           </Button>
 
           <DropdownMenu>
-            <DropdownMenuTrigger>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src="" alt="User" />
-                  <AvatarFallback className="bg-primary text-primary-foreground">
-                    AD
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
+            <DropdownMenuTrigger className="relative inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-surface-elevated">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src="" alt={displayName} />
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  {fallbackInitials}
+                </AvatarFallback>
+              </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end">
               <DropdownMenuLabel className="font-medium">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium text-foreground">Admin User</p>
-                  <p className="text-xs text-muted-foreground">admin@estatecarwash.com</p>
+                  <p className="text-sm font-medium text-foreground">{displayName}</p>
+                  <p className="text-xs text-muted-foreground">{displayEmail}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => window.location.href = "/profile"}>
+              <DropdownMenuItem onSelect={() => router.push("/profile")}>
                 <User size={14} className="mr-2 h-4 w-4" />
                 Profile
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.location.href = "/settings"}>
+              <DropdownMenuItem onSelect={() => router.push("/settings")}>
                 <Settings size={14} className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => window.location.href = "/logout"} className="text-destructive focus:text-destructive">
+              <DropdownMenuItem
+                onSelect={() => {
+                  logoutMockUser();
+                  router.push("/login");
+                }}
+                className="text-destructive focus:text-destructive"
+              >
                 <LogOut size={14} className="mr-2 h-4 w-4" />
                 Log out
               </DropdownMenuItem>

@@ -10,7 +10,6 @@ import {
   Mail,
   Phone,
   Clock,
-  X,
   Users as UsersIcon,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
@@ -85,7 +84,6 @@ export default function CustomersPage() {
   });
 
 const activeCount = customers.filter((c) => c.phone).length;
-  const hiddenCount = customers.filter((c) => !c.phone).length;
 
   const openAddModal = () => {
     setIsEditing(false);
@@ -289,7 +287,7 @@ const activeCount = customers.filter((c) => c.phone).length;
               </TableHeader>
               <TableBody>
                 {filteredCustomers.map((c) => (
-                  <TableRow key={c.id} className="group hover:bg-muted/40 transition-colors duration-200">
+                  <TableRow key={c.id} className="group hover:bg-muted-bg/40 transition-colors duration-200">
                     <TableCell>
                       <Avatar className="size-9">
                         <AvatarFallback className="bg-primary/15 text-primary text-xs font-bold">

@@ -13,14 +13,7 @@ export const StaggerContainer = forwardRef<HTMLDivElement, {
   stagger?: number;
   direction?: "up" | "down" | "left" | "right";
 } & HTMLMotionProps<"div">>(
-  ({ children, className = "", delay = 0, stagger = 0.08, direction = "up", ...props }, ref) => {
-    const variants = {
-      up: { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } },
-      down: { hidden: { opacity: 0, y: -20 }, show: { opacity: 1, y: 0 } },
-      left: { hidden: { opacity: 0, x: -20 }, show: { opacity: 1, x: 0 } },
-      right: { hidden: { opacity: 0, x: 20 }, show: { opacity: 1, x: 0 } },
-    };
-
+  ({ children, className = "", delay = 0, stagger = 0.08, ...props }, ref) => {
     return (
       <motion.div
         ref={ref}
@@ -86,7 +79,6 @@ StaggerItem.displayName = "StaggerItem";
 export function PageTransition({ 
   children, 
   className = "", 
-  mode, 
   duration = 0.3 
 }: { 
   children: ReactNode; 

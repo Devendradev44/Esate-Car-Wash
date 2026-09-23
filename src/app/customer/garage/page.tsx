@@ -1,13 +1,16 @@
 "use client";
 import { useState } from "react";
-import { Plus, Trash2, X, Edit } from "lucide-react";
+import { Plus, Trash2, Edit } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { toast } from "@/components/ui/toast";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { AnimatedSelect } from "@/components/ui/AnimatedSelect";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 export default function GaragePage() {
 
@@ -23,6 +26,7 @@ export default function GaragePage() {
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   
   // Add State
   const [newCat, setNewCat] = useState("");
@@ -33,7 +37,6 @@ export default function GaragePage() {
 // Edit State
   const [editId, setEditId] = useState("");
   const [editReg, setEditReg] = useState("");
-  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const brandsForNewCat = vehicleHierarchy.find(c => c.id === newCat)?.brands || [];
   const modelsForNewBrand = brandsForNewCat.find(b => b.id === newBrand)?.models || [];
@@ -88,19 +91,7 @@ export default function GaragePage() {
     toast.add({ type: "success", title: "Registration updated", description: `Registration changed to ${editReg}.` });
   };
 
-  const handleDelete = () => {
-    if (!deleteId) return;
-    const target = customerGarage.find(v => v.id === deleteId);
-    deleteCustomerVehicle(deleteId);
-    setDeleteId(null);
-    toast.add({
-      type: "success",
-      title: "Vehicle deleted",
-      description: target ? `${target.brand} ${target.model} has been removed.` : "Vehicle removed.",
-    });
-  };
-
-  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
+  const inputClasses = "w-full h-auto bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas pb-24">
@@ -131,7 +122,7 @@ export default function GaragePage() {
           />
         ) : (
           customerGarage.map(v => (
-            <div key={v.id} className="border border-hairline bg-surface-card p-5">
+            <Card key={v.id} className="gap-0 rounded-none border border-hairline bg-surface-card p-5 ring-0">
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-lg font-bold text-ink">{v.brand} {v.model}</p>
@@ -142,107 +133,120 @@ export default function GaragePage() {
                   <Button variant="ghost" size="icon" onClick={() => setDeleteId(v.id)} className="text-muted hover:text-m-red transition-colors"><Trash2 size={16} /></Button>
                 </div>
               </div>
-            </div>
+            </Card>
           ))
         )}
       </div>
 
-      {/* Add Vehicle Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-bold uppercase text-ink">Add Vehicle</h3>
-              <button onClick={() => setShowAddModal(false)} className="text-muted hover:text-ink"><X size={20} /></button>
-            </div>
+      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto gap-0 rounded-none border border-hairline bg-surface-soft p-8 ring-0 sm:max-w-md">
+          <div className="flex items-center justify-between mb-8">
+            <DialogTitle className="text-xl font-bold uppercase text-ink">Add Vehicle</DialogTitle>
+          </div>
+          
+          <div className="space-y-4 mb-8">
+            <AnimatedSelect
+              value={newCat}
+              onChange={(e) => { setNewCat(e.target.value); setNewBrand(""); setNewModel(""); }}
+              label="Category"
+              placeholder="Category"
+              options={vehicleHierarchy.map(c => ({ value: c.id, label: c.name }))}
+              className={inputClasses}
+            />
             
-            <div className="space-y-4 mb-8">
+            {newCat && (
               <AnimatedSelect
-                value={newCat}
-                onChange={(e) => { setNewCat(e.target.value); setNewBrand(""); setNewModel(""); }}
-                label="Category"
-                placeholder="Category"
-                options={vehicleHierarchy.map(c => ({ value: c.id, label: c.name }))}
+                value={newBrand}
+                onChange={(e) => { setNewBrand(e.target.value); setNewModel(""); }}
+                label="Brand"
+                placeholder="Brand"
+                options={brandsForNewCat.map(b => ({ value: b.id, label: b.name }))}
                 className={inputClasses}
               />
-              
-              {newCat && (
-                <AnimatedSelect
-                  value={newBrand}
-                  onChange={(e) => { setNewBrand(e.target.value); setNewModel(""); }}
-                  label="Brand"
-                  placeholder="Brand"
-                  options={brandsForNewCat.map(b => ({ value: b.id, label: b.name }))}
-                  className={inputClasses}
-                />
-              )}
+            )}
 
-              {newBrand && (
-                <AnimatedSelect
-                  value={newModel}
-                  onChange={(e) => setNewModel(e.target.value)}
-                  label="Model"
-                  placeholder="Model"
-                  options={modelsForNewBrand.map(m => ({ value: m.id, label: m.name }))}
-                  className={inputClasses}
-                />
-              )}
+            {newBrand && (
+              <AnimatedSelect
+                value={newModel}
+                onChange={(e) => setNewModel(e.target.value)}
+                label="Model"
+                placeholder="Model"
+                options={modelsForNewBrand.map(m => ({ value: m.id, label: m.name }))}
+                className={inputClasses}
+              />
+            )}
 
-              {newModel && (
-                <input 
-                  type="text" 
-                  value={newReg} 
-                  onChange={(e) => setNewReg(formatRegNumber(e.target.value))} 
-                  maxLength={14}
-                  placeholder="AP 12 SM 1234" 
-                  className={inputClasses} 
-                />
-              )}
-            </div>
-
-            {/* ADDED REGEX VALIDATION TO SAVE BUTTON */}
-            <button 
-              onClick={() => {
-                const regRegex = /^[A-Z]{2}\s?\d{1,2}\s?[A-Z]{1,3}\s?\d{1,4}$/;
-                if (!regRegex.test(newReg)) {
-                  alert("Invalid registration format. Use: AP 12 SM 1234");
-                  return;
-                }
-                handleSaveVehicle();
-              }} 
-              disabled={!newModel || !newReg} 
-              className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light disabled:opacity-50"
-            >
-              Save Vehicle
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Vehicle Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-bold uppercase text-ink">Edit Registration</h3>
-              <button onClick={() => setShowEditModal(false)} className="text-muted hover:text-ink"><X size={20} /></button>
-            </div>
-            <div className="mb-8">
-              <label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Registration Number</label>
-              <input 
-                type="text" 
-                value={editReg} 
-                onChange={(e) => setEditReg(formatRegNumber(e.target.value))} 
+            {newModel && (
+              <Input
+                type="text"
+                value={newReg}
+                onChange={(e) => setNewReg(formatRegNumber(e.target.value))}
                 maxLength={14}
-                className={inputClasses} 
-              />   
-           </div>
-            <button onClick={handleEditSave} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">
-              Save Changes
-            </button>
+                placeholder="AP 12 SM 1234"
+                className={inputClasses}
+              />
+            )}
           </div>
-        </div>
-      )}
+
+          <Button
+            onClick={() => {
+              const regRegex = /^[A-Z]{2}\s?\d{1,2}\s?[A-Z]{1,3}\s?\d{1,4}$/;
+              if (!regRegex.test(newReg)) {
+                toast.add({ type: "error", title: "Invalid registration", description: "Use format: AP 12 SM 1234" });
+                return;
+              }
+              handleSaveVehicle();
+            }}
+            disabled={!newModel || !newReg}
+            className="flex h-auto w-full items-center justify-center gap-2 rounded-none bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light disabled:opacity-50"
+          >
+            Save Vehicle
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto gap-0 rounded-none border border-hairline bg-surface-soft p-8 ring-0 sm:max-w-md">
+          <div className="flex items-center justify-between mb-8">
+            <DialogTitle className="text-xl font-bold uppercase text-ink">Edit Registration</DialogTitle>
+          </div>
+          <div className="mb-8">
+            <Label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Registration Number</Label>
+            <Input
+              type="text"
+              value={editReg}
+              onChange={(e) => setEditReg(formatRegNumber(e.target.value))}
+              maxLength={14}
+              className={inputClasses}
+            />
+         </div>
+          <Button onClick={handleEditSave} className="flex h-auto w-full items-center justify-center gap-2 rounded-none bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">
+            Save Changes
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={deleteId !== null}
+        onOpenChange={(open) => setDeleteId(open ? deleteId : null)}
+        title="Delete Vehicle"
+        description="Are you sure you want to remove this vehicle from your garage? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="destructive"
+        onConfirm={() => {
+          if (deleteId) {
+            const target = customerGarage.find((item) => item.id === deleteId);
+            deleteCustomerVehicle(deleteId);
+            toast.add({
+              type: "success",
+              title: "Vehicle deleted",
+              description: target ? `${target.brand} ${target.model} has been removed.` : "Vehicle removed.",
+            });
+          }
+          setDeleteId(null);
+        }}
+      />
     </div>
   );
 }

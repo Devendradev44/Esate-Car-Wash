@@ -7,6 +7,9 @@ import { AuthGate } from "@/components/AuthGate";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent } from "@/components/ui/card";
 
 enum Step { LOGIN, SIGNUP_PHONE, SIGNUP_OTP, SIGNUP_DETAILS }
 
@@ -16,7 +19,7 @@ export default function LoginPage() {
   const addCustomer = useStore((state) => state.addCustomer);
 
   const [step, setStep] = useState<Step>(Step.LOGIN);
-  const [error, setError] = useState("");
+  const [, setError] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
 
   const [phone, setPhone] = useState("");
@@ -149,8 +152,9 @@ export default function LoginPage() {
           </div>
 
           {/* Card Container - Aceternity Style */}
-          <div className="bg-zinc-900 border border-zinc-800 p-8 min-h-[480px] flex flex-col rounded-xl shadow-2xl shadow-black/50">
-            <div className="mb-6">
+          <Card className="flex min-h-[480px] flex-col rounded-xl border border-zinc-800 bg-zinc-900 py-0 shadow-2xl shadow-black/50 ring-0">
+            <CardContent className="flex flex-1 flex-col p-8">
+              <div className="mb-6">
               <h2 className="text-2xl font-bold text-ink mb-1">Sign in</h2>
               <p className="text-xs text-body">Welcome back. Access your car spa portal.</p>
             </div>
@@ -163,7 +167,7 @@ export default function LoginPage() {
                 {step === Step.LOGIN && (
                   <div className="space-y-4">
 <div>
-                    <label className="block text-[10px] font-bold text-muted mb-2">Phone Number</label>
+                    <Label className="mb-2 block text-[10px] font-bold leading-normal text-muted">Phone Number</Label>
                     <Input
                       type="tel"
                       maxLength={10}
@@ -180,29 +184,32 @@ export default function LoginPage() {
                     autoComplete="current-password"
                   />
                   <div className="flex items-center justify-between mt-1 mb-2">
-                    <label className="flex items-center gap-2 text-[10px] font-medium text-muted cursor-pointer">
-                      <input
-                        type="checkbox"
+                    <Label className="flex cursor-pointer items-center gap-2 text-[10px] font-medium text-muted">
+                      <Checkbox
                         checked={rememberMe}
-                        onChange={(e) => setRememberMe(e.target.checked)}
-                        className="w-4 h-4 accent-yellow-400 border-zinc-700 rounded focus:ring-yellow-400"
+                        onCheckedChange={(c) => setRememberMe(c)}
+                        className="h-4 w-4 rounded border-zinc-700 accent-yellow-400 focus:ring-yellow-400"
                       />
                       Remember me
-                    </label>
-                    <button className="text-[10px] font-semibold text-muted hover:text-yellow-400 transition-colors">
+                    </Label>
+                    <Button
+                      variant="ghost"
+                      className="h-auto rounded-lg px-0 text-[10px] font-semibold text-muted transition-colors hover:bg-transparent hover:text-yellow-400"
+                    >
                       Forgot Password?
-                    </button>
+                    </Button>
                   </div>
-                  <Button onClick={handleLogin} className="w-full bg-yellow-400 py-3 text-sm font-bold text-black hover:bg-yellow-300 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20">
+                  <Button onClick={handleLogin} className="h-auto w-full rounded-lg bg-yellow-400 py-3 text-sm font-bold text-black transition-all hover:bg-yellow-300 hover:shadow-lg hover:shadow-yellow-400/20 active:scale-95">
                     Sign in
                   </Button>
 
-                    <button
+                    <Button
+                      variant="ghost"
                       onClick={() => setStep(Step.SIGNUP_PHONE)}
-                      className="w-full text-center text-xs font-semibold text-muted hover:text-yellow-400 transition-colors py-2"
+                      className="h-auto w-full rounded-lg px-2 py-2 text-center text-xs font-semibold text-muted transition-colors hover:bg-transparent hover:text-yellow-400"
                     >
                       Create new account
-                    </button>
+                    </Button>
                   </div>
                 )}
 
@@ -211,7 +218,7 @@ export default function LoginPage() {
                   <div className="space-y-4">
                     <p className="text-xs font-bold text-yellow-400 text-center">Create your account</p>
 <div>
-                    <label className="block text-[10px] font-bold text-muted mb-2">Phone Number</label>
+                    <Label className="mb-2 block text-[10px] font-bold leading-normal text-muted">Phone Number</Label>
                     <Input
                       type="tel"
                       maxLength={10}
@@ -220,16 +227,17 @@ export default function LoginPage() {
                       placeholder="98765 43210"
                     />
                   </div>
-                  <Button onClick={handleRequestOTP} className="w-full bg-yellow-400 py-3 text-sm font-bold text-black hover:bg-yellow-300 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20">
+                  <Button onClick={handleRequestOTP} className="h-auto w-full rounded-lg bg-yellow-400 py-3 text-sm font-bold text-black transition-all hover:bg-yellow-300 hover:shadow-lg hover:shadow-yellow-400/20 active:scale-95">
                     Get OTP
                   </Button>
 
-                    <button
+                    <Button
+                      variant="ghost"
                       onClick={() => setStep(Step.LOGIN)}
-                      className="w-full text-center text-xs font-semibold text-muted hover:text-yellow-400 transition-colors py-2"
+                      className="h-auto w-full rounded-lg px-2 py-2 text-center text-xs font-semibold text-muted transition-colors hover:bg-transparent hover:text-yellow-400"
                     >
                       Back to login
-                    </button>
+                    </Button>
                   </div>
                 )}
 
@@ -239,7 +247,7 @@ export default function LoginPage() {
                     <p className="text-xs font-bold text-yellow-400 text-center">Verify your phone number</p>
                     <p className="text-xs text-muted text-center">Enter the 6-digit code sent to {phone}</p>
 <div>
-                    <label className="block text-[10px] font-bold text-muted mb-2">Enter OTP</label>
+                    <Label className="mb-2 block text-[10px] font-bold leading-normal text-muted">Enter OTP</Label>
                     <Input
                       type="text"
                       value={otp}
@@ -249,15 +257,16 @@ export default function LoginPage() {
                       className="text-center text-xl tracking-[0.5em]"
                     />
                   </div>
-                  <Button onClick={handleVerifyOTP} className="w-full bg-yellow-400 py-3 text-sm font-bold text-black hover:bg-yellow-300 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20">
+                  <Button onClick={handleVerifyOTP} className="h-auto w-full rounded-lg bg-yellow-400 py-3 text-sm font-bold text-black transition-all hover:bg-yellow-300 hover:shadow-lg hover:shadow-yellow-400/20 active:scale-95">
                     Verify & Continue
                   </Button>
-                    <button
+                    <Button
+                      variant="ghost"
                       onClick={handleBackToPhone}
-                      className="w-full text-center text-xs font-semibold text-muted hover:text-yellow-400 transition-colors py-2"
+                      className="h-auto w-full rounded-lg px-2 py-2 text-center text-xs font-semibold text-muted transition-colors hover:bg-transparent hover:text-yellow-400"
                     >
                       Change phone number
-                    </button>
+                    </Button>
                   </div>
                 )}
 
@@ -267,16 +276,16 @@ export default function LoginPage() {
                     <p className="text-xs font-bold text-yellow-400 text-center">Complete your profile</p>
 <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-[10px] font-bold text-muted mb-2">First Name</label>
+                        <Label className="mb-2 block text-[10px] font-bold leading-normal text-muted">First Name</Label>
                         <Input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Rahul" />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold text-muted mb-2">Last Name</label>
+                        <Label className="mb-2 block text-[10px] font-bold leading-normal text-muted">Last Name</Label>
                         <Input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Sharma" />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-muted mb-2">Email</label>
+                      <Label className="mb-2 block text-[10px] font-bold leading-normal text-muted">Email</Label>
                       <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
                     </div>
                     <PasswordInput
@@ -286,20 +295,22 @@ export default function LoginPage() {
                       label="Password"
                       autoComplete="new-password"
                     />
-                    <Button onClick={handleLogin} className="w-full bg-green-500 py-3 text-sm font-bold text-black hover:bg-green-400 transition-all rounded-lg active:scale-95 hover:shadow-lg hover:shadow-green-500/20">
+                    <Button onClick={handleLogin} className="h-auto w-full rounded-lg bg-green-500 py-3 text-sm font-bold text-black transition-all hover:bg-green-400 hover:shadow-lg hover:shadow-green-500/20 active:scale-95">
                       Create Account
                     </Button>
-                    <button
+                    <Button
+                      variant="ghost"
                       onClick={handleBackToPhone}
-                      className="w-full text-center text-xs font-semibold text-muted hover:text-yellow-400 transition-colors py-2"
+                      className="h-auto w-full rounded-lg px-2 py-2 text-center text-xs font-semibold text-muted transition-colors hover:bg-transparent hover:text-yellow-400"
                     >
                       Change phone number
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>
             </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </AuthGate>

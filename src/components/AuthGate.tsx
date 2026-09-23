@@ -12,6 +12,12 @@ const roleHome: Record<UserRole, string> = {
   ADMIN: "/dashboard",
 };
 
+const roleLogin: Record<UserRole, string> = {
+  CUSTOMER: "/login",
+  STAFF: "/staff-login",
+  ADMIN: "/admin-login",
+};
+
 type AuthGateProps = {
   role?: UserRole;
   children: React.ReactNode;
@@ -42,9 +48,9 @@ export function AuthGate({ role, children }: AuthGateProps) {
   useEffect(() => {
     if (!hydrated) return;
 
-    if (!user) {
+if (!user) {
       if (role && pathname !== "/login" && pathname !== "/signup") {
-        router.replace("/login");
+        router.replace(roleLogin[role]);
       }
       return;
     }

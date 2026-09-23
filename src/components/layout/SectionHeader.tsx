@@ -1,8 +1,6 @@
-"use client";
+﻿"use client";
 
 import { ReactNode } from "react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { LucideIcon } from "lucide-react";
 
 interface SectionHeaderProps {
@@ -23,7 +21,6 @@ export function SectionHeader({
   icon: Icon,
   action,
   badge,
-  className,
 }: SectionHeaderProps) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -44,7 +41,7 @@ export function SectionHeader({
                   ? "bg-destructive/10 text-destructive border-destructive/20"
                   : badge.variant === "outline"
                   ? "border border-border"
-                  : "bg-muted text-muted-foreground"
+                  : "bg-muted-bg text-muted-foreground"
               }`}
             >
               {badge.label}

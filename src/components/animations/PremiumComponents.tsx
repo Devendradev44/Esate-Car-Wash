@@ -1,6 +1,6 @@
 "use client";
 import { motion, useMotionValue, useTransform, useSpring } from "motion/react";
-import { forwardRef, ReactNode, ButtonHTMLAttributes, useRef, useState, useEffect } from "react";
+import { forwardRef, ReactNode, useRef, useState, useEffect } from "react";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 interface MagneticButtonProps {
@@ -13,7 +13,7 @@ interface MagneticButtonProps {
 }
 
 export const MagneticButton = forwardRef<HTMLButtonElement, MagneticButtonProps>(
-  ({ children, className = "", strength = 0.4, ease = "spring", ...props }, ref) => {
+  ({ children, className = "", strength = 0.4, ...props }, ref) => {
     const x = useMotionValue(0);
     const y = useMotionValue(0);
     const isHovered = useMotionValue(0);
@@ -86,7 +86,7 @@ interface SpotlightCardProps {
   intensity?: number;
 }
 
-export function SpotlightCard({ children, className = "", intensity = 1 }: SpotlightCardProps) {
+export function SpotlightCard({ children, className = "" }: SpotlightCardProps) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
@@ -100,9 +100,6 @@ export function SpotlightCard({ children, className = "", intensity = 1 }: Spotl
     x.set(0);
     y.set(0);
   };
-
-  const gradientX = useTransform(x, [-1, 1], [`-${intensity * 50}%`, `${intensity * 50}%`]);
-  const gradientY = useTransform(y, [-1, 1], [`-${intensity * 50}%`, `${intensity * 50}%`]);
 
   return (
     <motion.div
@@ -300,8 +297,6 @@ interface AnimatedCounterProps {
 export function AnimatedCounter({ 
   value, 
   className = "", 
-  duration = 1.5,
-  formatter = (v) => v.toLocaleString(),
   prefix = "",
   suffix = ""
 }: AnimatedCounterProps) {
@@ -366,6 +361,7 @@ export function NumberCounter({
     };
 
     animate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, duration, reducedMotion]);
 
   return (

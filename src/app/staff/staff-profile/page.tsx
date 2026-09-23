@@ -1,7 +1,9 @@
 "use client";
-import { User, LogOut, Phone, MapPin } from "lucide-react";
+import { User, LogOut, Phone, MapPin, KeyRound } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 export default function StaffProfilePage() {
   const router = useRouter();
@@ -12,11 +14,11 @@ export default function StaffProfilePage() {
 
 
   // Find this staff member's details
-  const myStaffDetails = staff.find(s => s.name === mockUser?.name) || staff[0];
+  const myStaffDetails = staff.find(s => s.id === mockUser?.id) || staff[0];
 
   const handleLogout = () => {
     logoutMockUser();
-    router.replace("/login");
+    router.replace("/staff-login");
   };
 
   return (
@@ -26,15 +28,15 @@ export default function StaffProfilePage() {
       </div>
 
       <div className="flex-1 p-6 space-y-6">
-        <div className="flex flex-col items-center justify-center border border-hairline bg-surface-card p-8">
+        <Card className="gap-0 flex flex-col items-center justify-center rounded-none border border-hairline bg-surface-card p-8 ring-0">
           <div className="w-20 h-20 rounded-full bg-yellow-dark/20 flex items-center justify-center mb-4">
             <User size={32} className="text-yellow-dark" />
           </div>
           <h2 className="text-xl font-bold text-ink">{myStaffDetails?.name || "Staff Member"}</h2>
           <p className="text-sm font-light text-muted mt-1">Staff</p>
-        </div>
+        </Card>
 
-        <div className="border border-hairline bg-surface-card divide-y divide-hairline">
+        <Card className="gap-0 rounded-none border border-hairline bg-surface-card ring-0 divide-y divide-hairline">
           <div className="flex items-center p-4">
             <Phone size={16} className="text-muted mr-4" />
             <p className="text-sm font-light text-ink">{myStaffDetails?.phone || "N/A"}</p>
@@ -43,11 +45,15 @@ export default function StaffProfilePage() {
             <MapPin size={16} className="text-muted mr-4" />
             <p className="text-sm font-light text-ink">{myStaffDetails?.community || "N/A"}</p>
           </div>
-        </div>
+          <div className="flex items-center p-4">
+            <KeyRound size={16} className="text-muted mr-4" />
+            <p className="text-sm font-light text-ink">PIN: <span className="font-bold text-ink">{myStaffDetails?.pin || "N/A"}</span></p>
+          </div>
+        </Card>
 
-        <button onClick={handleLogout} className="flex w-full items-center justify-center gap-2 border border-m-red/50 text-m-red py-4 text-xs font-bold uppercase tracking-machined hover:bg-m-red hover:text-ink transition-colors">
+        <Button onClick={handleLogout} variant="outline" className="flex w-full h-auto items-center justify-center gap-2 rounded-none border border-m-red/50 bg-transparent py-4 text-xs font-bold uppercase tracking-machined text-m-red hover:bg-m-red hover:text-ink">
           <LogOut size={14} /> Logout
-        </button>
+        </Button>
       </div>
     </div>
   );

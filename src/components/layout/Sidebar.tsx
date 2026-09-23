@@ -35,7 +35,7 @@ export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  const handleItemClick = (href: string) => {
+  const handleItemClick = () => {
     if (window.innerWidth < 1024) {
       setIsMobileOpen(false);
     }
@@ -70,7 +70,7 @@ export function Sidebar() {
                   <Car size={20} />
                 </div>
                 <span className="font-semibold text-lg text-foreground">
-                  Estate Car Wash
+                  Estate Car Spa
                 </span>
               </Link>
             )}
@@ -102,7 +102,7 @@ export function Sidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => handleItemClick(item.href)}
+                  onClick={() => handleItemClick()}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                     isActive

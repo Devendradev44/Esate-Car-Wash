@@ -3,10 +3,13 @@ import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Plus, ChevronDown, ChevronRight, Trash2, Edit, X, Car, Sparkles, Download, Upload } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { Disclosure, Accordion } from "@/components/ui/Disclosure";
 import { StaggerContainer, StaggerItem } from "@/components/animations/PageTransition";
 import { AnimatedSelect } from "@/components/ui/AnimatedSelect";
 import { toCSV, downloadCSV, parseCSV } from "@/lib/csv";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const POPULAR_BRANDS = [
   "Maruti Suzuki", "Hyundai", "Tata", "Mahindra", "Toyota", "Honda", "Kia",
@@ -43,6 +46,8 @@ export default function VehiclesPage() {
   const [editLevel, setEditLevel] = useState<"CATEGORY" | "BRAND" | "MODEL">("CATEGORY");
   const [editName, setEditName] = useState("");
   const [editIds, setEditIds] = useState<{ catId?: string, brandId?: string, modelId?: string }>({});
+
+  const [pendingDelete, setPendingDelete] = useState<{ title: string; description: string; run: () => void } | null>(null);
 
   const handleExport = () => {
     const flat: Array<{ Category: string; Brand: string; Model: string }> = [];
@@ -160,7 +165,7 @@ export default function VehiclesPage() {
           <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-bold uppercase text-ink">Add Vehicle Item</h3>
-              <button onClick={() => setShowAddModal(false)} className="text-muted hover:text-ink"><X size={20} /></button>
+              <Button type="button" variant="ghost" size="icon-sm" onClick={() => setShowAddModal(false)} className="text-muted hover:text-ink" aria-label="Close add vehicle form"><X size={20} /></Button>
             </div>
             <div className="mb-4">
               <label className={labelClasses}>What are you adding?</label>
@@ -223,9 +228,9 @@ export default function VehiclesPage() {
 
             <div className="mb-8">
               <label className={labelClasses}>Name</label>
-              <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Fortuner" className={inputClasses} />
+              <Input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Fortuner" className={inputClasses} />
             </div>
-            <button onClick={handleAddItem} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">Save Item</button>
+            <Button type="button" onClick={handleAddItem} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">Save Item</Button>
           </div>
         </div>
       )}
@@ -236,13 +241,13 @@ export default function VehiclesPage() {
           <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-bold uppercase text-ink">Edit {editLevel}</h3>
-              <button onClick={() => setShowEditModal(false)} className="text-muted hover:text-ink"><X size={20} /></button>
+              <Button type="button" variant="ghost" size="icon-sm" onClick={() => setShowEditModal(false)} className="text-muted hover:text-ink" aria-label="Close edit vehicle form"><X size={20} /></Button>
             </div>
             <div className="mb-8">
               <label className={labelClasses}>Name</label>
-              <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className={inputClasses} />
+              <Input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className={inputClasses} />
             </div>
-            <button onClick={handleEditSave} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">Save Changes</button>
+            <Button type="button" onClick={handleEditSave} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">Save Changes</Button>
           </div>
         </div>
       )}
@@ -253,11 +258,11 @@ export default function VehiclesPage() {
           <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold uppercase text-ink">Import Vehicles</h3>
-              <button onClick={() => { setShowImportModal(false); setImportError(""); }} className="text-muted hover:text-ink"><X size={20} /></button>
+              <Button type="button" variant="ghost" size="icon-sm" onClick={() => { setShowImportModal(false); setImportError(""); }} className="text-muted hover:text-ink" aria-label="Close import form"><X size={20} /></Button>
             </div>
             <div className="space-y-4">
               <p className="text-xs font-light text-muted">Upload a CSV with columns: Category, Brand, Model.</p>
-              <input
+              <Input
                 type="file"
                 accept=".csv"
                 ref={fileRef}
@@ -279,15 +284,15 @@ export default function VehiclesPage() {
           <p className="mt-2 text-sm font-light text-body">Manage the 3-tier Category → Brand → Model hierarchy.</p>
         </div>
         <div className="flex gap-3">
-          <button onClick={handleExport} className="flex items-center justify-center gap-2 border border-hairline bg-surface-card px-4 py-3 text-xs font-bold uppercase tracking-machined text-body hover:text-ink hover:bg-surface-elevated transition-colors">
+          <Button type="button" variant="outline" onClick={handleExport} className="flex items-center justify-center gap-2 border border-hairline bg-surface-card px-4 py-3 text-xs font-bold uppercase tracking-machined text-body hover:text-ink hover:bg-surface-elevated transition-colors">
             <Download size={14} /> Export Vehicles
-          </button>
-          <button onClick={() => setShowImportModal(true)} className="flex items-center justify-center gap-2 border border-hairline bg-surface-card px-4 py-3 text-xs font-bold uppercase tracking-machined text-body hover:text-ink hover:bg-surface-elevated transition-colors">
+          </Button>
+          <Button type="button" variant="outline" onClick={() => setShowImportModal(true)} className="flex items-center justify-center gap-2 border border-hairline bg-surface-card px-4 py-3 text-xs font-bold uppercase tracking-machined text-body hover:text-ink hover:bg-surface-elevated transition-colors">
             <Upload size={14} /> Import Vehicles
-          </button>
-          <button onClick={() => setShowAddModal(true)} className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
+          </Button>
+          <Button type="button" onClick={() => setShowAddModal(true)} className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
             <Plus size={14} /> Add Item
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -304,9 +309,10 @@ export default function VehiclesPage() {
               className="border border-hairline bg-surface-card"
             >
               <div className="flex items-center justify-between p-4 w-full hover:bg-surface-elevated transition-colors">
-                <button
+                <Button
                   type="button"
-                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                  variant="ghost"
+                  className="flex min-w-0 flex-1 items-center justify-start gap-2 text-left p-0 hover:bg-transparent"
                   aria-expanded={isOpen[cat.id] ? "true" : "false"}
                   onClick={() => setIsOpen(prev => ({ ...prev, [cat.id]: !prev[cat.id] }))}
                 >
@@ -319,10 +325,10 @@ export default function VehiclesPage() {
                   >
                     {isOpen[cat.id] ? <ChevronDown size={16} className="text-ink" /> : <ChevronRight size={16} className="text-muted" />}
                   </motion.div>
-                </button>
+                </Button>
                 <div className="flex shrink-0 gap-3">
-                  <button type="button" onClick={() => openEditModal("CATEGORY", cat.name, { catId: cat.id })} className="text-muted hover:text-ink" aria-label={`Edit ${cat.name}`}><Edit size={16} /></button>
-                  <button type="button" onClick={() => deleteVehicleCategory(cat.id)} className="text-muted hover:text-m-red" aria-label={`Delete ${cat.name}`}><Trash2 size={16} /></button>
+                  <Button type="button" variant="ghost" size="icon-sm" onClick={() => openEditModal("CATEGORY", cat.name, { catId: cat.id })} className="text-muted hover:text-ink" aria-label={`Edit ${cat.name}`}><Edit size={16} /></Button>
+                  <Button type="button" variant="ghost" size="icon-sm" onClick={() => setPendingDelete({ title: "Delete Category", description: `Delete "${cat.name}" along with all its brands and models? This action cannot be undone.`, run: () => deleteVehicleCategory(cat.id) })} className="text-muted hover:text-m-red" aria-label={`Delete ${cat.name}`}><Trash2 size={16} /></Button>
                 </div>
               </div>
 
@@ -359,8 +365,8 @@ export default function VehiclesPage() {
                                 }
                                 actions={
                                   <div className="flex items-center gap-2">
-                                    <button type="button" onClick={() => openEditModal("BRAND", brand.name, { catId: cat.id, brandId: brand.id })} className="text-muted hover:text-ink" aria-label={`Edit ${brand.name}`}><Edit size={14} /></button>
-                                    <button type="button" onClick={() => deleteVehicleBrand(cat.id, brand.id)} className="text-muted hover:text-m-red" aria-label={`Delete ${brand.name}`}><Trash2 size={14} /></button>
+                                    <Button type="button" variant="ghost" size="icon-xs" onClick={() => openEditModal("BRAND", brand.name, { catId: cat.id, brandId: brand.id })} className="text-muted hover:text-ink" aria-label={`Edit ${brand.name}`}><Edit size={14} /></Button>
+                                    <Button type="button" variant="ghost" size="icon-xs" onClick={() => setPendingDelete({ title: "Delete Brand", description: `Delete "${brand.name}" and all its models? This action cannot be undone.`, run: () => deleteVehicleBrand(cat.id, brand.id) })} className="text-muted hover:text-m-red" aria-label={`Delete ${brand.name}`}><Trash2 size={14} /></Button>
                                   </div>
                                 }
                                 content={
@@ -384,8 +390,8 @@ export default function VehiclesPage() {
                                           <div className="flex items-center justify-between p-2">
                                             <p className="text-xs font-light text-body">{model.name}</p>
                                             <div className="flex gap-3">
-                                              <button onClick={() => openEditModal("MODEL", model.name, { catId: cat.id, brandId: brand.id, modelId: model.id })} className="text-muted hover:text-ink"><Edit size={12} /></button>
-                                              <button onClick={() => deleteVehicleModel(cat.id, brand.id, model.id)} className="text-muted hover:text-m-red"><Trash2 size={12} /></button>
+                                              <Button type="button" variant="ghost" size="icon-xs" onClick={() => openEditModal("MODEL", model.name, { catId: cat.id, brandId: brand.id, modelId: model.id })} className="text-muted hover:text-ink" aria-label={`Edit ${model.name}`}><Edit size={12} /></Button>
+                                              <Button type="button" variant="ghost" size="icon-xs" onClick={() => setPendingDelete({ title: "Delete Model", description: `Delete "${model.name}"? This action cannot be undone.`, run: () => deleteVehicleModel(cat.id, brand.id, model.id) })} className="text-muted hover:text-m-red" aria-label={`Delete ${model.name}`}><Trash2 size={12} /></Button>
                                             </div>
                                           </div>
                                         </motion.div>
@@ -427,8 +433,8 @@ export default function VehiclesPage() {
               ),
               actions: (
                 <div className="flex gap-3">
-                  <button type="button" onClick={() => openEditModal("CATEGORY", cat.name, { catId: cat.id })} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${cat.name}`}><Edit size={16} /></button>
-                  <button type="button" onClick={() => deleteVehicleCategory(cat.id)} className="text-muted hover:text-m-red transition-colors" aria-label={`Delete ${cat.name}`}><Trash2 size={16} /></button>
+                  <Button type="button" variant="ghost" size="icon-sm" onClick={() => openEditModal("CATEGORY", cat.name, { catId: cat.id })} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${cat.name}`}><Edit size={16} /></Button>
+                  <Button type="button" variant="ghost" size="icon-sm" onClick={() => setPendingDelete({ title: "Delete Category", description: `Delete "${cat.name}" along with all its brands and models? This action cannot be undone.`, run: () => deleteVehicleCategory(cat.id) })} className="text-muted hover:text-m-red transition-colors" aria-label={`Delete ${cat.name}`}><Trash2 size={16} /></Button>
                 </div>
               ),
               content: (
@@ -455,8 +461,8 @@ export default function VehiclesPage() {
                               }
                               actions={
                                 <div className="flex items-center gap-2">
-                                  <button type="button" onClick={() => openEditModal("BRAND", brand.name, { catId: cat.id, brandId: brand.id })} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${brand.name}`}><Edit size={14} /></button>
-                                  <button type="button" onClick={() => deleteVehicleBrand(cat.id, brand.id)} className="text-muted hover:text-m-red transition-colors" aria-label={`Delete ${brand.name}`}><Trash2 size={14} /></button>
+                                  <Button type="button" variant="ghost" size="icon-xs" onClick={() => openEditModal("BRAND", brand.name, { catId: cat.id, brandId: brand.id })} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${brand.name}`}><Edit size={14} /></Button>
+                                  <Button type="button" variant="ghost" size="icon-xs" onClick={() => setPendingDelete({ title: "Delete Brand", description: `Delete "${brand.name}" and all its models? This action cannot be undone.`, run: () => deleteVehicleBrand(cat.id, brand.id) })} className="text-muted hover:text-m-red transition-colors" aria-label={`Delete ${brand.name}`}><Trash2 size={14} /></Button>
                                 </div>
                               }
                               content={
@@ -480,8 +486,8 @@ export default function VehiclesPage() {
                                         <div className="flex items-center justify-between p-2">
                                           <p className="text-xs font-light text-body">{model.name}</p>
                                           <div className="flex gap-3">
-                                            <button onClick={() => openEditModal("MODEL", model.name, { catId: cat.id, brandId: brand.id, modelId: model.id })} className="text-muted hover:text-ink transition-colors"><Edit size={12} /></button>
-                                            <button onClick={() => deleteVehicleModel(cat.id, brand.id, model.id)} className="text-muted hover:text-m-red transition-colors"><Trash2 size={12} /></button>
+                                            <Button type="button" variant="ghost" size="icon-xs" onClick={() => openEditModal("MODEL", model.name, { catId: cat.id, brandId: brand.id, modelId: model.id })} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${model.name}`}><Edit size={12} /></Button>
+                                            <Button type="button" variant="ghost" size="icon-xs" onClick={() => setPendingDelete({ title: "Delete Model", description: `Delete "${model.name}"? This action cannot be undone.`, run: () => deleteVehicleModel(cat.id, brand.id, model.id) })} className="text-muted hover:text-m-red transition-colors" aria-label={`Delete ${model.name}`}><Trash2 size={12} /></Button>
                                           </div>
                                         </div>
                                       </motion.div>
@@ -501,6 +507,20 @@ export default function VehiclesPage() {
           />
         </AnimatePresence>
       </div>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => setPendingDelete(open ? pendingDelete : null)}
+        title={pendingDelete?.title ?? "Delete"}
+        description={pendingDelete?.description ?? ""}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="destructive"
+        onConfirm={() => {
+          pendingDelete?.run();
+          setPendingDelete(null);
+        }}
+      />
     </div>
   );
 }

@@ -28,7 +28,7 @@ export const PasswordInput = forwardRef<PasswordInputRef, PasswordInputProps>(
     }), []);
 
     const inputClasses = "w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-3 text-sm font-normal focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400/50 transition-all rounded-lg appearance-none";
-    const labelClasses = "block text-[10px] font-bold text-zinc-500 mb-2";
+    const labelClasses = "block text-[10px] font-bold text-ink mb-2";
 
     return (
       <div className={className}>
@@ -48,7 +48,7 @@ export const PasswordInput = forwardRef<PasswordInputRef, PasswordInputProps>(
           <motion.button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 text-zinc-500 hover:text-yellow-400 transition-colors p-1 -ml-12"
+            className="absolute right-4 text-ink hover:text-yellow-400 transition-colors p-1 -ml-12"
             whileTap={{ scale: 0.9 }}
             aria-label={showPassword ? "Hide password" : "Show password"}
             aria-pressed={showPassword}

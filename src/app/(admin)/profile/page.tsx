@@ -1,6 +1,7 @@
 "use client";
 import { User, Mail, Shield } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { Card } from "@/components/ui/card";
 
 export default function AdminProfile() {
   const mockUser = useStore((state) => state.mockUser);
@@ -13,7 +14,7 @@ export default function AdminProfile() {
         <p className="mt-2 text-sm font-light text-body">Manage your administrator account.</p>
       </div>
 
-      <div className="max-w-md border border-hairline bg-surface-card p-8">
+      <Card className="max-w-md gap-0 border border-hairline bg-surface-card p-8">
         <div className="flex flex-col items-center justify-center mb-8">
           <div className="w-20 h-20 rounded-full bg-yellow-dark/20 flex items-center justify-center mb-4">
             <User size={32} className="text-yellow-dark" />
@@ -25,10 +26,10 @@ export default function AdminProfile() {
         <div className="border-t border-hairline pt-6 space-y-4">
           <div className="flex items-center gap-3">
             <Mail size={16} className="text-muted" />
-            <p className="text-sm font-light text-ink">{mockUser?.email || "admin@estatecarwash.com"}</p>
+            <p className="text-sm font-light text-ink">{mockUser?.email || "admin@estatecarspa.com"}</p>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

@@ -14,10 +14,10 @@ export default function NotFound() {
           404
         </h1>
         <div className="h-px w-24 bg-yellow-400 mx-auto mb-8"></div>
-        <h2 className="text-xl font-bold uppercase tracking-machined text-zinc-400 mb-6">
+        <h2 className="text-xl font-bold uppercase tracking-machined text-ink mb-6">
           Page Not Found
         </h2>
-        <p className="text-sm font-light text-zinc-500 mb-10 max-w-sm mx-auto">
+        <p className="text-sm font-light text-ink mb-10 max-w-sm mx-auto">
           The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.
         </p>
         <Link href="/" className="bg-yellow-400 px-8 py-4 text-xs font-bold uppercase tracking-machined text-black hover:bg-yellow-300 transition-colors">

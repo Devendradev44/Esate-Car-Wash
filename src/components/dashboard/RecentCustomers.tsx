@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { CalendarDays, Car, Building2 } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
@@ -28,12 +28,12 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-export function RecentCustomer({ customer, className }: RecentCustomerProps) {
+export function RecentCustomer({ customer }: RecentCustomerProps) {
   const lastBookingDate = new Date(customer.lastBookingDate);
   const daysAgo = Math.floor((Date.now() - lastBookingDate.getTime()) / (1000 * 60 * 60 * 24));
   
   return (
-    <div className="flex items-center justify-between py-3.5 transition-colors hover:bg-muted/40 border-b last:border-b-0">
+    <div className="flex items-center justify-between py-3.5 transition-colors hover:bg-muted-bg/40 border-b last:border-b-0">
       <div className="flex items-center gap-3 min-w-0">
         <Avatar className="h-8 w-8 shrink-0">
           <AvatarFallback className="text-xs font-medium">

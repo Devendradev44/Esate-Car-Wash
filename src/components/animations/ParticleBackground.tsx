@@ -1,5 +1,5 @@
 "use client";
-import { motion, useMotionValue, useTransform, useSpring } from "motion/react";
+import { motion } from "motion/react";
 import { useEffect, useRef } from "react";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
@@ -15,8 +15,6 @@ interface Particle {
 export function ParticleBackground({ 
   className = "", 
   particleCount = 30,
-  color = "yellow-400/30",
-  connectionColor = "yellow-400/10",
   maxDistance = 150
 }: {
   className?: string;

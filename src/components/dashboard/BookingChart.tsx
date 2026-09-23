@@ -1,8 +1,7 @@
-"use client";
+﻿"use client";
 
 import { useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 
 interface BookingData {
   id: string;
@@ -54,7 +53,7 @@ export function BookingChart({ data, className }: BookingChartProps) {
                   </div>
                   <span className="text-muted-foreground">{count} bookings</span>
                 </div>
-                <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                <div className="h-2 w-full rounded-full bg-muted-bg overflow-hidden">
                   <div 
                     className={`h-full ${statusColors[status as keyof typeof statusColors]} rounded-full transition-all duration-500 ease-in-out`}
                     style={{ width: `${percentage}%` }}

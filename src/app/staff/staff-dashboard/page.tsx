@@ -1,12 +1,18 @@
 "use client";
+import { useState } from "react";
 import { CheckCircle2, MapPin, Car, XCircle } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export default function StaffDashboard() {
 
   const bookings = useStore((state) => state.bookings);
   const completeBooking = useStore((state) => state.completeBooking);
   const cancelBooking = useStore((state) => state.cancelBooking);
+  const [cancelId, setCancelId] = useState<string | null>(null);
 
   
   const formatDate = (dateString: string) => {
@@ -16,8 +22,9 @@ export default function StaffDashboard() {
   };
 
 
-  // Show all bookings so you can see the updates instantly
-  const todaysBookings = bookings;
+  // Today's scheduled bookings only (matches the "Today's Schedule" header)
+  const today = new Date().toISOString().slice(0, 10);
+  const todaysBookings = bookings.filter(b => b.date === today);
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas pb-24">
@@ -32,18 +39,18 @@ export default function StaffDashboard() {
         )}
 
         {todaysBookings.map(b => (
-          <div key={b.id} className={`border ${b.bookingStatus === "COMPLETED" ? "border-success/30 bg-success/5" : "border-hairline bg-surface-card"} p-5`}>
+          <Card key={b.id} className={`gap-0 rounded-none border p-5 ring-0 ${b.bookingStatus === "COMPLETED" ? "border-success/30 bg-success/5" : "border-hairline bg-surface-card"}`}>
             <div className="flex justify-between items-start mb-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-machined text-yellow-dark mb-1">{b.time} | {formatDate(b.date)}</p>
                 <h3 className="text-lg font-bold text-ink">{b.customer}</h3>
                 <p className="text-xs font-light text-muted mt-1 flex items-center gap-1"><MapPin size={12}/> {b.flat}, {b.community}</p>
               </div>
-              <span className={`text-xs font-bold uppercase tracking-machined px-2 py-1 ${
-                b.bookingStatus === "COMPLETED" ? "bg-success/20 text-success" : "bg-warning/20 text-warning"
+              <Badge className={`h-auto rounded-none px-2 py-1 text-xs font-bold uppercase tracking-machined ${
+                b.bookingStatus === "COMPLETED" ? "bg-success/20 text-success" : b.bookingStatus === "CANCELLED" ? "bg-m-red/20 text-m-red" : "bg-warning/20 text-warning"
               }`}>
                 {b.bookingStatus}
-              </span>
+              </Badge>
             </div>
 
             <div className="space-y-2 mb-5 border-t border-hairline pt-4">
@@ -56,30 +63,45 @@ export default function StaffDashboard() {
             {b.bookingStatus === "BOOKED" && (
               <>
                 <div className="grid grid-cols-2 gap-2 mb-2">
-                  <button 
+                  <Button 
                     onClick={() => completeBooking(b.id, "CASH")}
-                    className="flex items-center justify-center gap-2 bg-success py-4 text-xs font-bold uppercase tracking-machined text-ink hover:brightness-110 transition-colors"
+                    className="flex h-auto items-center justify-center gap-2 rounded-none bg-success py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-success hover:brightness-110"
                   >
                     <CheckCircle2 size={14} /> Cash ₹{b.amount}
-                  </button>
-                  <button 
+                  </Button>
+                  <Button 
                     onClick={() => completeBooking(b.id, "UPI")}
-                    className="flex items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors"
+                    className="flex h-auto items-center justify-center gap-2 rounded-none bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light"
                   >
                     <CheckCircle2 size={14} /> UPI ₹{b.amount}
-                  </button>
+                  </Button>
                 </div>
-                <button 
-                  onClick={() => cancelBooking(b.id, "STAFF")}
-                  className="flex w-full items-center justify-center gap-2 border border-m-red/50 text-m-red py-3 text-xs font-bold uppercase tracking-machined hover:bg-m-red hover:text-ink transition-colors"
+                <Button 
+                  variant="outline"
+                  onClick={() => setCancelId(b.id)}
+                  className="flex w-full h-auto items-center justify-center gap-2 rounded-none border border-m-red/50 bg-transparent py-3 text-xs font-bold uppercase tracking-machined text-m-red hover:bg-m-red hover:text-ink"
                 >
                   <XCircle size={14} /> Cancel (No Show)
-                </button>
+                </Button>
               </>
             )}
-          </div>
+          </Card>
         ))}
       </div>
+
+      <ConfirmDialog
+        open={cancelId !== null}
+        onOpenChange={(open) => setCancelId(open ? cancelId : null)}
+        title="Cancel Booking"
+        description="Are you sure you want to cancel this booking as a no-show? This will update the booking status to CANCELLED."
+        confirmLabel="Cancel Booking"
+        cancelLabel="Back"
+        variant="destructive"
+        onConfirm={() => {
+          if (cancelId) cancelBooking(cancelId, "STAFF");
+          setCancelId(null);
+        }}
+      />
     </div>
   );
 }

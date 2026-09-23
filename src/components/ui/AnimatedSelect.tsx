@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectScrollUpButton, SelectScrollDownButton, SelectGroup } from "@/components/ui/select";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectScrollUpButton, SelectGroup } from "@/components/ui/select";
 import { cn } from "cn";
 
 interface AnimatedSelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
@@ -12,8 +12,8 @@ interface AnimatedSelectProps extends React.SelectHTMLAttributes<HTMLSelectEleme
   error?: string;
 }
 
-export const AnimatedSelect = React.forwardRef<HTMLSelectElement, AnimatedSelectProps>(
-  ({ options, placeholder, className, label, error, onChange, value, disabled, required, ...props }, ref) => {
+export function AnimatedSelect(props: AnimatedSelectProps) {
+  const { options, placeholder, className, label, error, onChange, value } = props;
     const initialValue = React.useMemo(() => {
       if (value === null || value === undefined) return null;
       if (typeof value === "string") return value;
@@ -23,7 +23,7 @@ export const AnimatedSelect = React.forwardRef<HTMLSelectElement, AnimatedSelect
     }, [value]);
 
     const [selectedValue, setSelectedValue] = React.useState<string | null>(initialValue);
-    const [isOpen, setIsOpen] = React.useState(false);
+    const [, setIsOpen] = React.useState(false);
 
     const handleValueChange = (newValue: string | null) => {
       setSelectedValue(newValue);
@@ -35,8 +35,6 @@ export const AnimatedSelect = React.forwardRef<HTMLSelectElement, AnimatedSelect
     const handleOpenChange = (open: boolean) => {
       setIsOpen(open);
     };
-
-    const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
 
     return (
       <div className={cn("w-full", className)}>
@@ -65,7 +63,4 @@ export const AnimatedSelect = React.forwardRef<HTMLSelectElement, AnimatedSelect
         )}
       </div>
     );
-  }
-);
-
-AnimatedSelect.displayName = "AnimatedSelect";
+}

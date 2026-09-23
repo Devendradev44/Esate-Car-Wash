@@ -23,7 +23,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
       <div className="hidden md:flex sticky top-0 z-40 border-b border-hairline bg-surface-soft py-4 px-8 justify-between items-center">
         <Link href="/customer/my-dashboard" className="cursor-pointer">
           <h1 className="text-lg font-bold tracking-machined text-ink">ESTATE</h1>
-          <p className="text-[10px] font-bold tracking-machined text-body">CAR WASH</p>
+          <p className="text-[10px] font-bold tracking-machined text-body">CAR SPA</p>
         </Link>
         <nav className="flex gap-8">
           {navItems.map((item) => (

@@ -7,6 +7,8 @@ import { useStore, getTimeSlotsForCommunity } from "@/lib/store";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 
 export default function BookService() {
   const router = useRouter();
@@ -48,12 +50,12 @@ export default function BookService() {
   
 
   // Cascading Logic for New Vehicle
-  const brandsForNewCat = vehicleHierarchy.find(c => c.id === newCat)?.brands || [];
-  const modelsForNewBrand = brandsForNewCat.find(b => b.id === newBrand)?.models || [];
+  const brandsForNewCat = vehicleHierarchy.find(c => c.name === newCat)?.brands || [];
+  const modelsForNewBrand = brandsForNewCat.find(b => b.name === newBrand)?.models || [];
 
   // Dynamic Pricing Logic - Bulletproof version
   const selectedVehicleObj = savedVehicles.find(v => v.id === selectedVehicleId);
-  const currentCategory = selectedVehicleObj?.category || vehicleHierarchy.find(c => c.id === newCat)?.name || "";
+  const currentCategory = selectedVehicleObj?.category || vehicleHierarchy.find(c => c.name === newCat)?.name || "";
 
   const getPrice = (service: typeof services[0]) => {
     if (!currentCategory) return 0;
@@ -108,9 +110,9 @@ export default function BookService() {
     return `${h.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
   };
 
-  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
+  const inputClasses = "w-full h-auto bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
   const labelClasses = "flex items-center gap-2 text-xs font-bold uppercase tracking-machined text-muted mb-4 mt-8";
-  const cardClasses = "w-full border p-4 text-left transition-colors";
+  const cardClasses = "w-full h-auto rounded-none border p-4 text-left transition-colors";
 
   const formatRegNumber = (value: string) => {
     return value.toUpperCase().replace(/[^A-Z0-9 ]/g, '');
@@ -141,10 +143,10 @@ export default function BookService() {
 
     addBooking({
       id: `b${crypto.randomUUID()}`,
-      bookingCode: `ECW-${1000 + useStore.getState().bookings.length + 1}`,
+      bookingCode: `BK-${1001 + useStore.getState().bookings.length}`,
       date: selectedDate,
       time: selectedTime,
-       customer: mockUser?.name || "Guest", // CHANGED FROM "Rahul Sharma(Mock data)" 
+      customer: mockUser?.name || "Guest", 
       flat: addressObj.flat || "Unknown",
       community: addressObj.community || "Unknown",
       vehicle: `${vehicleObj.brand} ${vehicleObj.model} (${vehicleObj.category})`,
@@ -168,7 +170,7 @@ export default function BookService() {
       <div className="flex-1 p-6 overflow-y-auto">
 
         {/* ================= SECTION 1: COMMUNITY & FLAT ================= */}
-        <label className={labelClasses}><MapPin size={14} /> Community & Flat</label>
+        <Label className={labelClasses}><MapPin size={14} /> Community & Flat</Label>
         
         {/* Community Dropdown */}
         <Select value={selectedCommunity} onValueChange={(v) => { setSelectedCommunity(v || ""); setSelectedFlat(""); setSelectedAddressId(""); }}>
@@ -198,11 +200,11 @@ export default function BookService() {
 
         {/* Add new address */}
         {!showAddAddress ? (
-          <button onClick={() => setShowAddAddress(true)} className="flex items-center gap-2 text-xs font-bold uppercase tracking-machined text-yellow-dark hover:text-yellow-light mb-8">
+          <Button variant="ghost" onClick={() => setShowAddAddress(true)} className="flex h-auto items-center gap-2 rounded-none mb-8 text-xs font-bold uppercase tracking-machined text-yellow-dark hover:bg-transparent hover:text-yellow-light">
             <Plus size={14} /> Add new address
-          </button>
+          </Button>
         ) : (
-          <div className="border border-hairline bg-surface-soft p-4 mb-8 space-y-3">
+          <Card className="gap-0 space-y-3 rounded-none border border-hairline bg-surface-soft p-4 mb-8 ring-0">
             <Select value={newCommunity} onValueChange={(v) => setNewCommunity(v || "")}>
               <SelectTrigger className={inputClasses}>
                 <SelectValue placeholder="Choose community" />
@@ -236,32 +238,32 @@ export default function BookService() {
                 setSelectedAddressId(newAddr.id);
                 setShowAddAddress(false);
               }}
-              className="bg-yellow-dark w-full py-3 text-xs font-bold uppercase tracking-machined text-ink"
+              className="w-full h-auto rounded-none bg-yellow-dark py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light"
             >
               Save Address
             </Button>
-          </div>
+          </Card>
         )}
 
         {/* ================= SECTION 2: VEHICLE ================= */}
-        <label className={labelClasses}><Car size={14} /> Vehicle</label>
+        <Label className={labelClasses}><Car size={14} /> Vehicle</Label>
 
         <div className="space-y-3 mb-4">
           {savedVehicles.map(v => (
-            <button key={v.id} onClick={() => { setSelectedVehicleId(v.id); setShowAddVehicle(false); }}
-              className={`${cardClasses} ${selectedVehicleId === v.id ? "border-yellow-dark bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body"}`}>
+            <Button key={v.id} variant="outline" onClick={() => { setSelectedVehicleId(v.id); setShowAddVehicle(false); }}
+              className={`${cardClasses} ${selectedVehicleId === v.id ? "border-yellow-dark bg-surface-elevated hover:bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body hover:bg-surface-card"}`}>
               <p className="text-sm font-bold text-ink">{v.brand} {v.model}</p>
               <p className="text-xs font-light text-muted mt-1">{v.reg} · {v.category}</p>
-            </button>
+            </Button>
           ))}
         </div>
 
         {!showAddVehicle ? (
-          <button onClick={() => setShowAddVehicle(true)} className="flex items-center gap-2 text-xs font-bold uppercase tracking-machined text-yellow-dark hover:text-yellow-light mb-8">
+          <Button variant="ghost" onClick={() => setShowAddVehicle(true)} className="flex h-auto items-center gap-2 rounded-none mb-8 text-xs font-bold uppercase tracking-machined text-yellow-dark hover:bg-transparent hover:text-yellow-light">
             <Plus size={14} /> Add new vehicle
-          </button>
+          </Button>
         ) : (
-          <div className="border border-hairline bg-surface-soft p-4 mb-8 space-y-3">
+          <Card className="gap-0 space-y-3 rounded-none border border-hairline bg-surface-soft p-4 mb-8 ring-0">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <Select value={newCat} onValueChange={(v) => { setNewCat(v || ""); setNewBrand(""); setNewModel(""); }}>
                 <SelectTrigger className={inputClasses}>
@@ -299,7 +301,7 @@ export default function BookService() {
                   </SelectContent>
                 </Select>
               )}
-              <input 
+              <Input 
                 type="text" 
                 value={newReg} 
                 onChange={handleRegChange} 
@@ -308,13 +310,13 @@ export default function BookService() {
                 className={inputClasses} 
               />
             </div>
-            <button onClick={() => { 
+            <Button onClick={() => { 
               const regRegex = /^[A-Z]{2}\s?\d{1,2}\s?[A-Z]{1,3}\s?\d{1,4}$/;
               if (!regRegex.test(newReg)) {
                 setError("Invalid reg format. Use: AP 12 SM 1234");
                 return;
               }
-              setError(""); // Clear error
+              setError("");
               
               const newVeh = { 
                 id: `v${Date.now()}`, 
@@ -327,24 +329,24 @@ export default function BookService() {
               addCustomerVehicle(newVeh);
               setSelectedVehicleId(newVeh.id); 
               setShowAddVehicle(false); 
-            }} className="bg-yellow-dark w-full py-3 text-xs font-bold uppercase tracking-machined text-ink">Save Vehicle</button>
-          </div>
+            }} className="w-full h-auto rounded-none bg-yellow-dark py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">Save Vehicle</Button>
+          </Card>
         )}
 
         {/* ================= SECTION 3: SERVICE ================= */}
-        <label className={labelClasses}><Wrench size={14} /> Service</label>
+        <Label className={labelClasses}><Wrench size={14} /> Service</Label>
         
         {selectedVehicleId ? (
           <div className="space-y-3 mb-8">
             <p className="text-xs font-light text-muted">Prices for: <span className="text-ink font-bold">{currentCategory || "New Vehicle"}</span></p>
             {services.map(s => (
-              <button key={s.id} onClick={() => setSelectedService(s.name)}
-                className={`${cardClasses} ${selectedService === s.name ? "border-yellow-dark bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body"}`}>
-                <div className="flex justify-between items-center">
+              <Button key={s.id} variant="outline" onClick={() => setSelectedService(s.name)}
+                className={`${cardClasses} ${selectedService === s.name ? "border-yellow-dark bg-surface-elevated hover:bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body hover:bg-surface-card"}`}>
+                <div className="flex justify-between items-center w-full">
                   <p className="text-sm font-bold text-ink">{s.name}</p>
                   <p className="text-xs font-bold text-yellow-dark">₹{getPrice(s)}</p>
                 </div>
-              </button>
+              </Button>
             ))}
           </div>
         ) : (
@@ -352,11 +354,11 @@ export default function BookService() {
         )}
 
         {/* ================= SECTION 4: SCHEDULE ================= */}
-        <label className={labelClasses}><Calendar size={14} /> Schedule</label>
+        <Label className={labelClasses}><Calendar size={14} /> Schedule</Label>
 
         <div className="mb-4">
           <p className="text-xs font-bold uppercase tracking-machined text-muted mb-2">Date</p>
-          <input 
+          <Input 
             type="date" 
             value={selectedDate} 
             onChange={(e) => setSelectedDate(e.target.value)} 
@@ -372,17 +374,18 @@ export default function BookService() {
             {[...scheduleTimeSlots].sort((a, b) => a.startTime.localeCompare(b.startTime)).map(t => {
               const isFull = isSlotDisabled(t.label);
               return (
-                <button 
+                <Button 
                   key={t.id} 
+                  variant="outline"
                   onClick={() => setSelectedTime(t.label)}
                   disabled={isFull} 
-                  className={`border p-3 text-center transition-colors ${
-                    selectedTime === t.label ? "border-yellow-dark bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body"
-                  } ${isFull ? "opacity-30 cursor-not-allowed hover:border-hairline" : ""}`}
+                  className={`h-auto rounded-none border p-3 text-center transition-colors ${
+                    selectedTime === t.label ? "border-yellow-dark bg-surface-elevated hover:bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body hover:bg-surface-card"
+                  } ${isFull ? "cursor-not-allowed disabled:opacity-30 hover:border-hairline" : ""}`}
                 >
                   <p className="text-xs font-bold text-ink">{t.label}</p>
                   {isFull && <p className="text-[9px] text-m-red mt-1">Fully Booked</p>}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -397,12 +400,12 @@ export default function BookService() {
             {error}
           </p>
         )}
-        <button 
+        <Button 
           onClick={handleReserve}
-          className="flex w-full items-center justify-center gap-2 bg-success py-5 text-sm font-bold uppercase tracking-machined text-ink transition-colors hover:brightness-110"
+          className="flex w-full h-auto items-center justify-center gap-2 rounded-none bg-success py-5 text-sm font-bold uppercase tracking-machined text-ink transition-colors hover:bg-success hover:brightness-110"
         >
           Reserve Service <Check size={16} />
-        </button>
+        </Button>
       </div>
     </div>
   );

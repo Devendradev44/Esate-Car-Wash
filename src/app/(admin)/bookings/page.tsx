@@ -3,25 +3,15 @@
 import { useState, useRef } from "react";
 import {
   Search,
-  CalendarDays,
   XCircle,
   CheckCircle2,
-  Banknote,
-  User,
-  Car,
-  Wrench,
   Download,
   Upload,
-  X,
-  FileText,
-  Clock,
   MoreHorizontal,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { toCSV, downloadCSV, parseCSV } from "@/lib/csv";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { StatCard } from "@/components/shared/StatCard";
-import { EmptyState } from "@/components/shared/EmptyState";
 import {
   Card,
   CardHeader,
@@ -76,7 +66,7 @@ export default function BookingsPage() {
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
     const [year, month, day] = dateString.split("-");
-    return `${day}-${month}-${year}`;
+    return `${day}-${String(month).padStart(2, "0")}-${year}`;
   };
 
   const filteredBookings = bookings.filter((b) => {
@@ -87,10 +77,6 @@ export default function BookingsPage() {
     const matchesFilter = activeFilter === "ALL" || b.bookingStatus === activeFilter;
     return matchesSearch && matchesFilter;
   });
-
-  const totalAmount = filteredBookings.reduce((s, b) => s + b.amount, 0);
-  const paidCount = filteredBookings.filter((b) => b.paymentStatus === "PAID").length;
-  const pendingCount = filteredBookings.filter((b) => b.paymentStatus === "PENDING").length;
 
   const handleExport = () => {
     const csv = toCSV(bookings, [
@@ -153,13 +139,6 @@ export default function BookingsPage() {
     }
   };
 
-  const statusFilters: { key: BookingStatusType; label: string }[] = [
-    { key: "ALL", label: "All" },
-    { key: "BOOKED", label: "Booked" },
-    { key: "COMPLETED", label: "Completed" },
-    { key: "CANCELLED", label: "Cancelled" },
-  ];
-
   return (
     <div className="p-6 md:p-12">
       <PageHeader
@@ -191,47 +170,19 @@ export default function BookingsPage() {
 
         <div className="flex border border-border bg-surface-card overflow-x-auto">
           {(["ALL", "BOOKED", "COMPLETED", "CANCELLED"] as BookingStatusType[]).map(filter => (
-            <button
+            <Button
               key={filter}
               onClick={() => setActiveFilter(filter)}
-              className={`flex-1 px-4 py-3 text-xs font-bold uppercase tracking-machined transition-colors ${
+              variant={activeFilter === filter ? "default" : "ghost"}
+              className={`h-auto flex-1 rounded-none px-4 py-3 text-xs font-bold uppercase tracking-machined transition-colors ${
                 activeFilter === filter ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {filter}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
-
-      <div className="mb-6 flex gap-3">
-        <Button variant="outline" onClick={handleExport} className="gap-2">
-          <Download size={14} /> Export Bookings
-        </Button>
-        <Button onClick={() => setShowImportModal(true)} className="gap-2">
-          <Upload size={14} /> Import Bookings
-        </Button>
-      </div>
-
-      <Dialog open={showImportModal} onOpenChange={setShowImportModal}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Import Bookings</DialogTitle>
-            <DialogDescription>Upload a CSV file with columns: Booking Code, Date, Customer, Community, Vehicle, Amount (required).</DialogDescription>
-          </DialogHeader>
-          <input
-            type="file"
-            accept=".csv"
-            ref={fileRef}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleImport(file);
-            }}
-            className="w-full text-sm text-muted-foreground file:mr-4 file:rounded-lg file:border-0 file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
-          />
-          {importError && <p className="mt-4 text-sm text-destructive">{importError}</p>}
-        </DialogContent>
-      </Dialog>
 
       <div className="mt-6">
         <Card>
@@ -299,10 +250,8 @@ export default function BookingsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                     <DropdownMenu>
-                      <DropdownMenuTrigger>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal size={16} className="text-muted-foreground" />
-                        </Button>
+                      <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-elevated hover:text-ink">
+                        <MoreHorizontal size={16} />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" side="bottom" className="w-40">
                         {b.bookingStatus === "BOOKED" && (
@@ -383,7 +332,7 @@ export default function BookingsPage() {
           </DialogHeader>
           <div className="mt-4 space-y-4">
             <p className="text-sm text-muted-foreground">Upload a CSV file with columns: Booking Code, Date, Customer, Community, Vehicle, Amount (required).</p>
-            <input
+            <Input
               type="file"
               accept=".csv"
               ref={fileRef}
@@ -391,7 +340,7 @@ export default function BookingsPage() {
                 const file = e.target.files?.[0];
                 if (file) handleImport(file);
               }}
-              className="w-full text-sm text-muted-foreground file:mr-4 file:rounded-lg file:border-0 file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
+              className="h-auto w-full text-sm text-muted-foreground file:mr-4 file:rounded-lg file:border-0 file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
             />
             {importError && <p className="text-sm text-destructive">{importError}</p>}
           </div>

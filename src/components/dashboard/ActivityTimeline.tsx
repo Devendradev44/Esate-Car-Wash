@@ -1,6 +1,7 @@
-"use client";
+﻿"use client";
 
 import { Clock, CalendarDays, CreditCard, Users, Car } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -14,25 +15,20 @@ interface ActivityItem {
   status: "success" | "pending" | "completed";
 }
 
-type ActivityIconComponent = React.ElementType;
-
-function getActivityIcon(type: string): ActivityIconComponent {
-  switch (type) {
-    case "booking": return CalendarDays;
-    case "payment": return CreditCard;
-    case "customer": return Users;
-    case "service": return Car;
-    case "vehicle": return Car;
-    default: return Clock;
-  }
-}
+const activityIcons: Record<string, LucideIcon> = {
+  booking: CalendarDays,
+  payment: CreditCard,
+  customer: Users,
+  service: Car,
+  vehicle: Car,
+};
 
 function getStatusColor(status: string): string {
   switch (status) {
     case "success": return "text-green-400 bg-green-400/10";
     case "pending": return "text-yellow-400 bg-yellow-400/10";
     case "completed": return "text-blue-400 bg-blue-400/10";
-    default: return "text-muted-foreground bg-muted/10";
+    default: return "text-muted-foreground bg-muted-bg/10";
   }
 }
 
@@ -43,7 +39,7 @@ function getActivityBgColor(type: string): string {
     case "customer": return "bg-purple-500/10";
     case "service": return "bg-orange-500/10";
     case "vehicle": return "bg-cyan-500/10";
-    default: return "bg-muted/10";
+    default: return "bg-muted-bg/10";
   }
 }
 
@@ -66,10 +62,10 @@ function formatTimeAgo(date: Date): string {
 }
 
 export function ActivityItem({ activity }: { activity: ActivityItem }) {
-  const Icon = getActivityIcon(activity.type);
+  const Icon = activityIcons[activity.type] ?? Clock;
   
   return (
-    <div className="flex items-start gap-4 py-3.5 transition-colors hover:bg-muted/40 border-b last:border-b-0">
+    <div className="flex items-start gap-4 py-3.5 transition-colors hover:bg-muted-bg/40 border-b last:border-b-0">
       <div className={`p-2 rounded-full ${getActivityBgColor(activity.type)}`}>
         <Icon size={16} className={getStatusColor(activity.status).split(' ')[0]} />
       </div>
@@ -83,9 +79,16 @@ export function ActivityItem({ activity }: { activity: ActivityItem }) {
             {formatTimeAgo(activity.timestamp)}
           </span>
         </div>
-        <p className="text-xs text-muted-foreground mt-1">
-          <span className="font-medium">by {activity.user}</span> - {activity.details}
-        </p>
+        <div className="flex items-center gap-2 mt-1">
+          <Avatar className="h-5 w-5 shrink-0">
+            <AvatarFallback className="text-[10px]">
+              {activity.user.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <p className="text-xs text-muted-foreground">
+            <span className="font-medium">by {activity.user}</span> - {activity.details}
+          </p>
+        </div>
       </div>
       
       <Badge 

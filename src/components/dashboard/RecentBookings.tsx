@@ -1,7 +1,6 @@
-"use client";
+﻿"use client";
 
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface BookingData {
   id: string;
@@ -43,9 +42,9 @@ function getStatusLabel(status: string): string {
   }
 }
 
-export function RecentBooking({ booking, className }: RecentBookingProps) {
+export function RecentBooking({ booking }: RecentBookingProps) {
   return (
-    <div className="flex items-center justify-between py-3.5 transition-colors hover:bg-muted/40 border-b last:border-b-0">
+    <div className="flex items-center justify-between py-3.5 transition-colors hover:bg-muted-bg/40 border-b last:border-b-0">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-3">
           <div className={`w-2 h-2 rounded-full ${getStatusColor(booking.status)}`} />
@@ -57,7 +56,7 @@ export function RecentBooking({ booking, className }: RecentBookingProps) {
           </Badge>
         </div>
         <p className="truncate text-xs text-muted-foreground mt-1">
-          {booking.service} · {booking.vehicle || "N/A"}
+          {booking.service} Â· {booking.vehicle || "N/A"}
         </p>
       </div>
       <div className="ml-4 text-right space-y-1">

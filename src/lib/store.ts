@@ -49,7 +49,9 @@ export const mockHash = (password: string) => `hash_${btoa(password).slice(0, 16
 export const verifyMockHash = (password: string, hash: string) => mockHash(password) === hash;
 
 // --- INITIAL MOCK DATA ---
+// Demo customers/communities/expenses removed — real data is created in-app (admin defines communities).
 const initialCommunities: Community[] = [];
+const initialExpenses: ExpenseItem[] = [];
 
 const formatTimeLabel = (minutes: number) => {
   const hours24 = Math.floor(minutes / 60);
@@ -79,11 +81,15 @@ const initialServices: ServiceItem[] = [
   { id: "s4", name: "Deep Cleaning", description: "Complete interior and exterior deep cleaning.", duration: 5, pricing: { Hatchback: 3000, Sedan: 3500, SUV: 4000, Luxury: 4000 } }
 ];
 
+const initialCustomers: Customer[] = [];
+
 const initialBookings: BookingItem[] = [];
 
-const initialExpenses: ExpenseItem[] = [];
-
-const initialStaff: StaffItem[] = [];
+const initialStaff: StaffItem[] = [
+  { id: "staff_1", name: "Vikram Singh", phone: "9911099110", community: "Estate Lakeside", pin: "1234", status: "ACTIVE", role: "STAFF" },
+  { id: "staff_2", name: "Manoj Patil", phone: "9922099220", community: "Vista Heights", pin: "5678", status: "ACTIVE", role: "STAFF" },
+  { id: "staff_3", name: "Sameer Khan", phone: "9933099330", community: "Estate Lakeside", pin: "9012", status: "DISABLED", role: "STAFF" },
+];
 
 // Default super admin - password: "Paddwird#1"
 const initialAdmins: AdminUser[] = [
@@ -254,7 +260,7 @@ updateMockUser: (data) => set((state) => {
 
       addresses: [],
       customerGarage: [],
-      customers: [],
+      customers: initialCustomers,
 
       // --- MUTATIONS ---
       // Community
@@ -387,8 +393,8 @@ updateMockUser: (data) => set((state) => {
       deleteStaff: (id) => set((state) => ({ staff: state.staff.filter(s => s.id !== id) })),
     }),
     {
-      name: "estate-car-wash-v13",
-      version: 13,
+      name: "estate-car-wash-v15",
+      version: 17,
       migrate: (persistedState) => {
         const state = persistedState && typeof persistedState === "object"
           ? persistedState as Partial<AppStore>
@@ -416,9 +422,23 @@ updateMockUser: (data) => set((state) => {
           const timeSlot = slot as Partial<TimeSlot>;
           return legacyRanges.has(`${timeSlot.startTime}|${timeSlot.endTime}`) || legacyLabels.has(timeSlot.label || "");
         });
+        // v17: keep real user-created data only — drop old demo-seeded records (bookings b1001-b1014, addr_*, veh_*, customers cust_1..cust_6, communities comm_1/comm_2, expenses exp_1..exp_5)
+        const demoCustomerIds = new Set(["cust_1", "cust_2", "cust_3", "cust_4", "cust_5", "cust_6"]);
+        const demoCommunityIds = new Set(["comm_1", "comm_2"]);
+        const demoExpenseIds = new Set(["exp_1", "exp_2", "exp_3", "exp_4", "exp_5"]);
+        const customers = (Array.isArray(state.customers) ? state.customers : []).filter((c) => !demoCustomerIds.has(String(c.id)));
+        const communities = (Array.isArray(state.communities) ? state.communities : []).filter((c) => !demoCommunityIds.has(String(c.id)));
         return {
           ...state,
-          communities: [],
+          communities,
+          customers,
+          // reset a stale demo-customer session once their account is gone
+          mockUser: state.mockUser && state.mockUser.role === "CUSTOMER" && demoCustomerIds.has(String(state.mockUser.id)) ? null : state.mockUser,
+          staff: Array.isArray(state.staff) ? state.staff : initialStaff,
+          expenses: (Array.isArray(state.expenses) ? state.expenses : []).filter((e) => !demoExpenseIds.has(String(e.id))),
+          bookings: (Array.isArray(state.bookings) ? state.bookings : []).filter((b) => !/^b10\d{2}$/i.test(String(b.id))),
+          addresses: (Array.isArray(state.addresses) ? state.addresses : []).filter((a) => !String(a.id).startsWith("addr_")),
+          customerGarage: (Array.isArray(state.customerGarage) ? state.customerGarage : []).filter((v) => !String(v.id).startsWith("veh_")),
           timeSlots: hasLegacyTimeSlots ? initialTimeSlots : (Array.isArray(state.timeSlots) ? state.timeSlots : initialTimeSlots),
         } as AppStore;
       },

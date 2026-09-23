@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { Car, Sparkles, Gauge, ShieldCheck } from "lucide-react";
 import { PageTransition, StaggerContainer, StaggerItem, SlideIn, FadeIn } from "@/components/animations/PageTransition";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
@@ -18,16 +19,23 @@ export default function Home() {
               <h1 className="text-base font-bold leading-none">
                 <span className="text-yellow-400">Estate</span> Car Spa
               </h1>
-              <p className="text-[10px] font-medium text-zinc-500 mt-1">Premium Car Care</p>
+              <p className="text-[10px] font-medium text-ink mt-1">Premium Car Care</p>
             </div>
           </div>
           <div className="flex items-center gap-2 md:gap-4">
-            <Link href="/login" className="text-xs font-semibold border text-zinc-400 hover:text-white transition-colors px-4 py-2 rounded-lg hover:bg-zinc-900">
+            <Button
+              variant="ghost"
+              render={<Link href="/login" />}
+              className="h-auto rounded-lg border border-current px-4 py-2 text-xs font-semibold text-ink transition-colors hover:bg-zinc-900 hover:text-white"
+            >
               Sign in
-            </Link>
-            <Link href="/signup" className="bg-yellow-400 px-4 py-2 text-xs font-bold text-black rounded-lg hover:bg-yellow-300 transition-all active:scale-95">
+            </Button>
+            <Button
+              render={<Link href="/signup" />}
+              className="h-auto rounded-lg bg-yellow-400 px-4 py-2 text-xs font-bold text-black transition-all hover:bg-yellow-300 active:scale-95"
+            >
               Get started
-            </Link>
+            </Button>
           </div>
         </SlideIn>
       </header>
@@ -41,17 +49,24 @@ export default function Home() {
             <h2 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight tracking-tight">
               The wash your <span className="text-yellow-400">estate</span> deserves.
             </h2>
-            <p className="text-sm md:text-base text-zinc-400 mb-10 max-w-md">
+            <p className="text-sm md:text-base text-ink mb-10 max-w-md">
               Estate Car Spa brings premium car care directly to your gated community. Book in seconds, track in real-time, and pay seamlessly.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/signup" className="bg-yellow-400 px-8 py-3 text-sm font-bold text-black rounded-lg hover:bg-yellow-300 transition-all text-center active:scale-95 hover:shadow-lg hover:shadow-yellow-400/20">
+              <Button
+                render={<Link href="/signup" />}
+                className="h-auto rounded-lg bg-yellow-400 px-8 py-3 text-center text-sm font-bold text-black transition-all hover:bg-yellow-300 hover:shadow-lg hover:shadow-yellow-400/20 active:scale-95"
+              >
                 Book your first wash
-              </Link>
-              <Link href="/login" className="border border-zinc-700 px-8 py-3 text-sm font-semibold text-zinc-300 rounded-lg hover:bg-zinc-900 hover:text-white transition-all text-center active:scale-95">
+              </Button>
+              <Button
+                variant="ghost"
+                render={<Link href="/login" />}
+                className="h-auto rounded-lg border border-zinc-700 px-8 py-3 text-center text-sm font-semibold text-ink transition-all hover:bg-zinc-900 hover:text-white active:scale-95"
+              >
                 I have an account
-              </Link>
+              </Button>
             </div>
           </SlideIn>
 
@@ -65,7 +80,7 @@ export default function Home() {
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-white mb-2">Clean Finish</h3>
-                    <p className="text-xs font-light text-zinc-400">Long-lasting protection and premium shine for every vehicle.</p>
+                    <p className="text-xs font-light text-ink">Long-lasting protection and premium shine for every vehicle.</p>
                   </div>
                 </div>
               </FadeIn>
@@ -79,7 +94,7 @@ export default function Home() {
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-white mb-2">Quick Turnaround</h3>
-                    <p className="text-xs font-light text-zinc-400">Book and forget. We handle the rest with zero downtime.</p>
+                    <p className="text-xs font-light text-ink">Book and forget. We handle the rest with zero downtime.</p>
                   </div>
                 </div>
               </FadeIn>
@@ -93,7 +108,7 @@ export default function Home() {
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-white mb-2">Fair Pricing Matrix</h3>
-                    <p className="text-xs font-light text-zinc-400">Price is set by service × vehicle category. No surprises.</p>
+                    <p className="text-xs font-light text-ink">Price is set by service × vehicle category. No surprises.</p>
                   </div>
                 </div>
               </FadeIn>

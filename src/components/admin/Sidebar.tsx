@@ -37,7 +37,7 @@ export function Sidebar() {
       {/* Logo / Brand - Clickable */}
       <Link href="/dashboard" className="px-6 py-8 cursor-pointer">
         <h1 className="text-xl font-bold tracking-machined text-ink">ESTATE</h1>
-        <p className="text-xs font-bold tracking-machined text-body">CAR WASH</p>
+        <p className="text-xs font-bold tracking-machined text-body">CAR SPA</p>
       </Link>
 
       <nav className="flex-1 space-y-1 px-4 overflow-y-auto">

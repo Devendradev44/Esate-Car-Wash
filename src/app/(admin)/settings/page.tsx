@@ -1,7 +1,14 @@
 "use client";
 import { useState } from "react";
-import { Trash2, X, UserPlus, Shield, Mail, Settings, ChevronDown, ChevronUp, Check, Trash, Clock } from "lucide-react";
+import { Trash2, X, UserPlus, Shield, Mail, Settings, ChevronDown, ChevronUp, Check, Clock } from "lucide-react";
 import { useStore, mockHash } from "@/lib/store";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 const ALL_PERMISSIONS = [
   { key: "bookings", label: "Bookings", icon: Shield },
@@ -42,6 +49,7 @@ export default function AdminManagement() {
   const [timeRangeStart, setTimeRangeStart] = useState("");
   const [timeRangeEnd, setTimeRangeEnd] = useState("");
   const [timeRangeError, setTimeRangeError] = useState("");
+  const [deleteAdminId, setDeleteAdminId] = useState<string | null>(null);
 
   const isSuperAdmin = (admin: typeof admins[0]) => admin.id === "admin_1";
   const currentUserId = currentUser?.id;
@@ -139,9 +147,7 @@ export default function AdminManagement() {
       setError("Cannot delete super admin.");
       return;
     }
-    if (confirm("Are you sure you want to delete this admin?")) {
-      deleteAdmin(id);
-    }
+    setDeleteAdminId(id);
   };
 
   const toggleExpand = (id: string) => {
@@ -158,14 +164,6 @@ export default function AdminManagement() {
     const [hours, minutes] = value.split(":").map(Number);
     if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
     return hours * 60 + minutes;
-  };
-
-  const formatTimeLabel = (value: string) => {
-    const [hoursValue, minutesValue] = value.split(":");
-    const hours = Number(hoursValue);
-    const modifier = hours >= 12 ? "PM" : "AM";
-    const displayHours = hours % 12 || 12;
-    return `${String(displayHours).padStart(2, "0")}:${minutesValue} ${modifier}`;
   };
 
   // Community Time Range Functions
@@ -228,7 +226,7 @@ export default function AdminManagement() {
             <div className="space-y-4 mb-8">
               <div>
                 <label className={labelClasses}>Email Address</label>
-                <input
+                <Input
                   type="email"
                   value={formEmail}
                   onChange={(e) => setFormEmail(e.target.value)}
@@ -241,7 +239,7 @@ export default function AdminManagement() {
 
               <div>
                 <label className={labelClasses}>Full Name</label>
-                <input
+                <Input
                   type="text"
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
@@ -252,7 +250,7 @@ export default function AdminManagement() {
 
               <div>
                 <label className={labelClasses}>{editMode ? "New Password" : "Password"}</label>
-                <input
+                <Input
                   type="password"
                   value={formPassword}
                   onChange={(e) => setFormPassword(e.target.value)}
@@ -263,10 +261,15 @@ export default function AdminManagement() {
 
               <div>
                 <label className={labelClasses}>Status</label>
-                <select value={formStatus} onChange={(e) => setFormStatus(e.target.value as "ACTIVE" | "DISABLED")} className={inputClasses}>
-                  <option value="ACTIVE">Active</option>
-                  <option value="DISABLED">Disabled</option>
-                </select>
+                <Select value={formStatus} onValueChange={(v) => setFormStatus(v as "ACTIVE" | "DISABLED")}>
+                  <SelectTrigger className={inputClasses}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ACTIVE">Active</SelectItem>
+                    <SelectItem value="DISABLED">Disabled</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -274,11 +277,9 @@ export default function AdminManagement() {
                 <div className="grid grid-cols-2 gap-2">
                   {ALL_PERMISSIONS.map(({ key, label, icon: Icon }) => (
                     <label key={key} className="flex items-center gap-2 cursor-pointer p-3 border border-hairline bg-surface-card rounded-lg hover:bg-surface-elevated transition-colors">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={formPermissions.includes(key)}
-                        onChange={() => handlePermissionToggle(key)}
-                        className="w-4 h-4 accent-yellow-400"
+                        onCheckedChange={() => handlePermissionToggle(key)}
                       />
                       <Icon size={14} className="text-muted" />
                       <span className="text-sm font-medium text-ink">{label}</span>
@@ -288,13 +289,13 @@ export default function AdminManagement() {
               </div>
             </div>
 
-            <button
+            <Button
               type="button"
               onClick={handleSave}
               className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors"
             >
               {editMode ? "Save Changes" : "Invite Admin"}
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -306,9 +307,9 @@ export default function AdminManagement() {
             <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-normal text-ink">Admin Management</h2>
             <p className="mt-2 text-sm font-light text-body">Manage administrator accounts and permissions.</p>
           </div>
-          <button onClick={openAddModal} className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
+          <Button onClick={openAddModal} className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
             <UserPlus size={14} /> Invite Admin
-          </button>
+          </Button>
         </div>
 
         {admins.length === 0 ? (
@@ -318,9 +319,9 @@ export default function AdminManagement() {
         ) : (
           <div className="space-y-4">
             {admins.map(admin => (
-              <div 
+              <Card 
                 key={admin.id} 
-                className={`border border-hairline bg-surface-card transition-all ${expandedAdmin === admin.id ? "bg-surface-elevated" : ""}`}
+                className={`border border-hairline bg-surface-card gap-0 rounded-none py-0 ring-0 ring-transparent transition-all ${expandedAdmin === admin.id ? "bg-surface-elevated" : ""}`}
               >
                 <div className="flex items-center justify-between p-6 cursor-pointer" onClick={() => toggleExpand(admin.id)}>
                   <div className="flex items-center gap-4">
@@ -331,36 +332,44 @@ export default function AdminManagement() {
                       <div className="flex items-center gap-3">
                         <p className="text-lg font-bold text-ink">{admin.name}</p>
                         {isSuperAdmin(admin) && (
-                          <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-machined bg-yellow-400/20 text-yellow-400 rounded">
+                          <Badge className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-machined bg-yellow-400/20 text-yellow-400 rounded-full">
                             Super Admin
-                          </span>
+                          </Badge>
                         )}
                       </div>
                       <p className="text-sm font-light text-muted">{admin.email}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-machined rounded-full ${
+                    <Badge className={`px-3 py-1 text-[10px] font-bold uppercase tracking-machined rounded-full ${
                       admin.status === "ACTIVE" 
                         ? "bg-green-500/20 text-green-400" 
                         : "bg-red-500/20 text-red-400"
                     }`}>
                       {admin.status}
-                    </span>
+                    </Badge>
                     <p className="text-xs font-light text-muted hidden sm:block">Last: {admin.lastLogin ? formatDate(admin.lastLogin) : "Never"}</p>
-                    <button 
+                    <Button 
+                      type="button"
+                      variant="ghost" 
+                      size="icon-sm"
                       onClick={(e) => { e.stopPropagation(); openEditModal(admin); }} 
                       className="text-muted hover:text-ink transition-colors p-1"
+                      aria-label={`Edit ${admin.name}`}
                     >
                       <Settings size={18} />
-                    </button>
+                    </Button>
                     {admin.id !== "admin_1" && canModify(admin) && (
-                      <button 
+                      <Button 
+                        type="button"
+                        variant="ghost" 
+                        size="icon-sm"
                         onClick={(e) => { e.stopPropagation(); handleDelete(admin.id); }} 
                         className="text-muted hover:text-m-red transition-colors p-1"
+                        aria-label={`Delete ${admin.name}`}
                       >
                         <Trash2 size={18} />
-                      </button>
+                      </Button>
                     )}
                     <div className="w-8 flex justify-center">
                       {expandedAdmin === admin.id ? <ChevronUp size={18} className="text-ink" /> : <ChevronDown size={18} className="text-muted" />}
@@ -393,8 +402,9 @@ export default function AdminManagement() {
                       <p className="text-xs font-bold uppercase tracking-machined text-muted mb-3">Permissions</p>
                       <div className="flex flex-wrap gap-2">
                         {ALL_PERMISSIONS.map(({ key, label, icon: Icon }) => (
-                          <span 
+                          <Badge 
                             key={key} 
+                            variant="outline"
                             className={`flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-full ${
                               admin.permissions.includes(key)
                                 ? "bg-yellow-400/20 text-yellow-400 border border-yellow-400/30"
@@ -404,13 +414,13 @@ export default function AdminManagement() {
                             <Icon size={10} />
                             {label}
                             {admin.permissions.includes(key) && <Check size={10} />}
-                          </span>
+                          </Badge>
                         ))}
                       </div>
                     </div>
                   </div>
                 )}
-              </div>
+              </Card>
             ))}
           </div>
         )}
@@ -432,8 +442,8 @@ export default function AdminManagement() {
         ) : (
           <div className="space-y-4">
             {communities.map(c => (
-              <div key={c.id} className="border border-hairline bg-surface-card p-6 transition-colors">
-                <div className="flex items-center justify-between">
+              <Card key={c.id} className="border border-hairline bg-surface-card p-6 gap-0 rounded-none ring-0 ring-transparent transition-colors">
+                <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-yellow-400/20 flex items-center justify-center">
                       <Clock size={20} className="text-yellow-400" />
@@ -447,15 +457,19 @@ export default function AdminManagement() {
                     <p className="text-sm font-bold text-yellow-dark">
                       {c.timeRange?.start ? `${c.timeRange.start} - ${c.timeRange.end}` : "Not set"}
                     </p>
-                    <button
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={() => openTimeRangeModal(c.id)}
                       className="text-muted hover:text-ink transition-colors p-1"
+                      aria-label={`Edit time range for ${c.name}`}
                     >
                       <Settings size={18} />
-                    </button>
+                    </Button>
                   </div>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}
@@ -466,12 +480,12 @@ export default function AdminManagement() {
             <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-xl font-bold uppercase text-ink">Edit Time Range</h3>
-                <button onClick={() => setShowTimeRangeModal(false)} className="text-muted hover:text-ink"><X size={20} /></button>
+                <Button type="button" variant="ghost" size="icon-sm" onClick={() => setShowTimeRangeModal(false)} className="text-muted hover:text-ink" aria-label="Close time range form"><X size={20} /></Button>
               </div>
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-machined text-muted mb-2">Start Time</label>
-                  <input
+                  <Input
                     type="time"
                     value={timeRangeStart}
                     onChange={(e) => setTimeRangeStart(e.target.value)}
@@ -480,7 +494,7 @@ export default function AdminManagement() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-machined text-muted mb-2">End Time</label>
-                  <input
+                  <Input
                     type="time"
                     value={timeRangeEnd}
                     onChange={(e) => setTimeRangeEnd(e.target.value)}
@@ -493,24 +507,41 @@ export default function AdminManagement() {
                   </p>
                 )}
                 <div className="flex gap-3 mt-4">
-                  <button
+                  <Button
+                    type="button"
+                    variant="outline"
                     onClick={() => setShowTimeRangeModal(false)}
                     className="flex-1 border border-hairline py-3 text-sm font-bold text-body hover:bg-surface-elevated transition-colors rounded-lg"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    type="button"
                     onClick={handleTimeRangeSave}
                     className="flex-1 bg-yellow-dark py-3 text-sm font-bold text-black hover:bg-yellow-light transition-colors rounded-lg"
                   >
                     Save Time Range
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={deleteAdminId !== null}
+        onOpenChange={(open) => setDeleteAdminId(open ? deleteAdminId : null)}
+        title="Delete Admin"
+        description="Are you sure you want to delete this admin account? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="destructive"
+        onConfirm={() => {
+          if (deleteAdminId) deleteAdmin(deleteAdminId);
+          setDeleteAdminId(null);
+        }}
+      />
     </div>
   );
 }

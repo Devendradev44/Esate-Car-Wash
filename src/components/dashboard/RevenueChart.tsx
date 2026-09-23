@@ -1,6 +1,5 @@
-"use client";
+﻿"use client";
 
-import { useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface RevenueData {
@@ -32,7 +31,7 @@ export function RevenueChart({ data, className }: RevenueChartProps) {
                   <span className="font-medium">{item.month}</span>
                   <span className="text-muted-foreground">${item.revenue.toLocaleString()}</span>
                 </div>
-                <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                <div className="h-2 w-full rounded-full bg-muted-bg overflow-hidden">
                   <div 
                     className="h-full bg-primary rounded-full transition-all duration-500 ease-in-out"
                     style={{ width: `${percentage}%` }}
