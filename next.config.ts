@@ -7,7 +7,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 
 const nextConfig: NextConfig = {
   turbopack: {
-    root: "C:/Users/HP/OneDrive/Desktop/users/carwash/estate-car-wash",
+    root: process.cwd(),
   },
   experimental: {
     optimizePackageImports: [
