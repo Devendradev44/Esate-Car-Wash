@@ -3,7 +3,6 @@ export { Topbar } from "./Topbar";
 export { AppShell } from "./AppShell";
 export { PageHeader } from "./PageHeader";
 export { Toolbar } from "./Toolbar";
-export { SearchBar } from "./SearchBar";
 export { FilterBar } from "./FilterBar";
 export { Breadcrumbs } from "./Breadcrumbs";
 export { PageContainer } from "./PageContainer";

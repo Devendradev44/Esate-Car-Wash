@@ -76,16 +76,16 @@ export default function CustomerDashboard() {
         <div>
           <h2 className="text-xs font-bold uppercase tracking-machined text-muted mb-4">Upcoming Bookings</h2>
           {upcomingBookings.length === 0 ? (
-            <Card className="gap-0 rounded-none border border-hairline bg-transparent p-6 text-center ring-0">
+            <Card className="gap-0 rounded-lg border border-hairline bg-transparent p-6 text-center ring-0">
               <p className="text-sm font-light text-muted">No upcoming bookings.</p>
             </Card>
           ) : (
             <div className="space-y-3">
               {upcomingBookings.map(b => (
-                <Card key={b.id} className="gap-0 rounded-none border border-hairline bg-surface-card p-5 ring-0">
+                <Card key={b.id} className="gap-0 rounded-lg border border-hairline bg-surface-card p-5 ring-0">
                   <div className="flex justify-between mb-2">
                     <p className="text-sm font-bold text-ink">{b.service}</p>
-                    <Badge variant="ghost" className="h-auto px-0 text-xs font-bold uppercase text-warning hover:bg-transparent hover:text-warning">{b.bookingStatus}</Badge>
+                    <Badge className="h-auto rounded-full px-2.5 py-1 text-[10px] font-bold uppercase bg-warning/20 text-warning">{b.bookingStatus}</Badge>
                   </div>
                   <div className="flex items-center gap-2 text-xs font-light text-muted mb-3">
                     <CalendarDays size={12} /> {formatDate(b.date)} · {b.time}
@@ -97,7 +97,7 @@ export default function CustomerDashboard() {
                   <Button
                     variant="outline"
                     onClick={() => setCancelModal({ booking: b, mode: 'confirm' })}
-                    className="flex w-full items-center justify-center gap-2 h-auto rounded-none border border-m-red/50 bg-transparent py-3 text-xs font-bold uppercase tracking-machined text-m-red hover:bg-m-red hover:text-ink"
+                    className="flex w-full items-center justify-center gap-2 h-auto rounded-lg border border-m-red/50 bg-transparent py-3 text-xs font-bold uppercase tracking-machined text-m-red hover:bg-m-red hover:text-ink"
                   >
                     <XCircle size={14} /> Cancel Booking
                   </Button>
@@ -111,16 +111,16 @@ export default function CustomerDashboard() {
         <div className="mt-8">
           <h2 className="text-xs font-bold uppercase tracking-machined text-muted mb-4">Booking History</h2>
           {pastBookings.length === 0 ? (
-            <Card className="gap-0 rounded-none border border-hairline bg-transparent p-6 text-center ring-0">
+            <Card className="gap-0 rounded-lg border border-hairline bg-transparent p-6 text-center ring-0">
               <p className="text-sm font-light text-muted">No past bookings.</p>
             </Card>
           ) : (
             <div className="space-y-3">
               {pastBookings.map(b => (
-                <Card key={b.id} className="gap-0 rounded-none border border-hairline bg-surface-card p-5 ring-0 opacity-80">
+                <Card key={b.id} className="gap-0 rounded-lg border border-hairline bg-surface-card p-5 ring-0 opacity-80">
                   <div className="flex justify-between mb-2">
                     <p className="text-sm font-bold text-ink">{b.service}</p>
-                    <Badge variant="ghost" className={`h-auto px-0 text-xs font-bold uppercase hover:bg-transparent ${b.bookingStatus === "COMPLETED" ? "text-success hover:text-success" : "text-m-red hover:text-m-red"}`}>
+                    <Badge className={`h-auto rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${b.bookingStatus === "COMPLETED" ? "bg-success/20 text-success" : "bg-m-red/20 text-m-red"}`}>
                       {b.bookingStatus}
                     </Badge>
                   </div>

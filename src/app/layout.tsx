@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ToastProvider } from "@/components/shared";
+import { Toaster } from "@/components/shared";
 
 // Use system fonts to avoid network issues during build
 const fontClass = "font-sans";
@@ -36,7 +36,7 @@ export default function RootLayout({
         <TooltipProvider>
           {children}
         </TooltipProvider>
-        <ToastProvider />
+        <Toaster />
       </body>
     </html>
   );

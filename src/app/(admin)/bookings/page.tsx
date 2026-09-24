@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import {
   Search,
+  X,
   XCircle,
   CheckCircle2,
   Download,
@@ -59,6 +60,7 @@ export default function BookingsPage() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [importError, setImportError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<BookingStatusType>("ALL");
@@ -70,13 +72,25 @@ export default function BookingsPage() {
   };
 
   const filteredBookings = bookings.filter((b) => {
+    const q = searchQuery.trim().toLowerCase();
     const matchesSearch =
-      b.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.bookingCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.regNumber.includes(searchQuery);
+      b.customer.toLowerCase().includes(q) ||
+      b.bookingCode.toLowerCase().includes(q) ||
+      b.vehicle.toLowerCase().includes(q) ||
+      b.regNumber.toLowerCase().includes(q) ||
+      b.service.toLowerCase().includes(q) ||
+      b.flat.toLowerCase().includes(q) ||
+      b.community.toLowerCase().includes(q);
     const matchesFilter = activeFilter === "ALL" || b.bookingStatus === activeFilter;
     return matchesSearch && matchesFilter;
   });
+
+  const displayCustomerName = (name: string) => (!name || name === "Unknown" ? "Guest" : name);
+
+  const displayAddress = (b: { flat: string; community: string }) => {
+    const parts = [b.flat, b.community].filter((v) => v && v !== "Unknown");
+    return parts.length > 0 ? parts.join(", ") : "Address not recorded";
+  };
 
   const handleExport = () => {
     const csv = toCSV(bookings, [
@@ -157,24 +171,46 @@ export default function BookingsPage() {
       />
 
       <div className="mb-6 flex flex-col md:flex-row gap-4">
-        <div className="flex-1 flex items-center gap-3 border border-border bg-surface-card p-3">
-          <Search size={16} className="text-muted-foreground" />
+        <div className="relative min-w-0 md:flex-1">
+          <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
-            type="text"
-            placeholder="Search by Code, Name, or Reg..."
+            ref={searchRef}
+            type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="border-none bg-transparent p-0 focus:outline-none"
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.preventDefault();
+                setSearchQuery("");
+                e.currentTarget.focus();
+              }
+            }}
+            placeholder="Search by booking code, customer, vehicle, or registration number..."
+            aria-label="Search bookings"
+            className="h-11 w-full rounded-lg border border-hairline bg-surface-card pl-11 pr-9 text-sm font-light text-ink transition-colors hover:border-body/50 focus-visible:border-yellow-dark/60 focus-visible:hover:border-yellow-dark/60 focus-visible:ring-2 focus-visible:ring-yellow-dark/25 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden [&::-webkit-search-results-button]:hidden"
           />
+          {searchQuery.length > 0 ? (
+            <button
+              type="button"
+              aria-label="Clear search"
+              onClick={() => {
+                setSearchQuery("");
+                searchRef.current?.focus();
+              }}
+              className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-elevated hover:text-ink"
+            >
+              <X size={14} />
+            </button>
+          ) : null}
         </div>
 
-        <div className="flex border border-border bg-surface-card overflow-x-auto">
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-card p-2">
           {(["ALL", "BOOKED", "COMPLETED", "CANCELLED"] as BookingStatusType[]).map(filter => (
             <Button
               key={filter}
               onClick={() => setActiveFilter(filter)}
               variant={activeFilter === filter ? "default" : "ghost"}
-              className={`h-auto flex-1 rounded-none px-4 py-3 text-xs font-bold uppercase tracking-machined transition-colors ${
+              className={`h-auto rounded-full px-4 py-2 text-xs font-bold uppercase tracking-machined transition-colors ${
                 activeFilter === filter ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -209,8 +245,11 @@ export default function BookingsPage() {
 <TableBody>
                   {filteredBookings.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                        No bookings found.
+                      <TableCell colSpan={9} className="py-10 text-center">
+                        <p className="text-sm font-semibold text-ink">No bookings found</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          No bookings match your search. Try a different booking code, customer, vehicle, or registration number.
+                        </p>
                       </TableCell>
                     </TableRow>
                   ) : filteredBookings.map((b) => (
@@ -221,8 +260,8 @@ export default function BookingsPage() {
                         <p className="text-xs text-muted-foreground">{b.time}</p>
                       </TableCell>
                       <TableCell>
-                        <p className="font-medium">{b.customer}</p>
-                        <p className="text-xs text-muted-foreground">{b.flat}, {b.community}</p>
+                        <p className="font-medium">{displayCustomerName(b.customer)}</p>
+                        <p className="text-xs text-muted-foreground">{displayAddress(b)}</p>
                       </TableCell>
                       <TableCell>
                         <p className="font-medium">{b.vehicle}</p>
@@ -231,11 +270,11 @@ export default function BookingsPage() {
                       <TableCell>{b.service}</TableCell>
                       <TableCell className="text-center font-semibold">{b.amount}</TableCell>
                       <TableCell className="text-center">
-                        <Badge variant={
-                          b.bookingStatus === "BOOKED" ? "default" :
-                          b.bookingStatus === "COMPLETED" ? "default" :
-                          "secondary"
-                        }>
+                        <Badge className={`h-auto rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${
+                          b.bookingStatus === "BOOKED" ? "bg-warning/20 text-warning" :
+                          b.bookingStatus === "COMPLETED" ? "bg-success/20 text-success" :
+                          "bg-m-red/20 text-m-red"
+                        }`}>
                           {b.bookingStatus}
                         </Badge>
                       </TableCell>

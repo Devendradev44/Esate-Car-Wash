@@ -211,7 +211,7 @@ export default function AdminManagement() {
     <div className="p-6 md:p-12">
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-bold uppercase text-ink">{editMode ? "Edit Admin" : "Invite New Admin"}</h3>
               <button type="button" onClick={() => { setShowModal(false); resetForm(); }} className="text-muted hover:text-ink" aria-label="Close admin form"><X size={20} /></button>
@@ -321,7 +321,7 @@ export default function AdminManagement() {
             {admins.map(admin => (
               <Card 
                 key={admin.id} 
-                className={`border border-hairline bg-surface-card gap-0 rounded-none py-0 ring-0 ring-transparent transition-all ${expandedAdmin === admin.id ? "bg-surface-elevated" : ""}`}
+                className={`border border-hairline bg-surface-card gap-0 rounded-lg py-0 ring-0 ring-transparent transition-all ${expandedAdmin === admin.id ? "bg-surface-elevated" : ""}`}
               >
                 <div className="flex items-center justify-between p-6 cursor-pointer" onClick={() => toggleExpand(admin.id)}>
                   <div className="flex items-center gap-4">
@@ -442,7 +442,7 @@ export default function AdminManagement() {
         ) : (
           <div className="space-y-4">
             {communities.map(c => (
-              <Card key={c.id} className="border border-hairline bg-surface-card p-6 gap-0 rounded-none ring-0 ring-transparent transition-colors">
+              <Card key={c.id} className="border border-hairline bg-surface-card p-6 gap-0 rounded-lg ring-0 ring-transparent transition-colors">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-yellow-400/20 flex items-center justify-center">
@@ -477,7 +477,7 @@ export default function AdminManagement() {
         {/* EDIT TIME RANGE MODAL */}
         {showTimeRangeModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-            <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
+            <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg border border-hairline bg-surface-soft p-8">
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-xl font-bold uppercase text-ink">Edit Time Range</h3>
                 <Button type="button" variant="ghost" size="icon-sm" onClick={() => setShowTimeRangeModal(false)} className="text-muted hover:text-ink" aria-label="Close time range form"><X size={20} /></Button>

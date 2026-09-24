@@ -1,4 +1,4 @@
-export { ToastProvider } from "./ToastProvider";
+export { ToastProvider, Toaster, toast } from "./ToastProvider";
 export { PageHeader } from "./PageHeader";
 export { StatCard } from "./StatCard";
 export { EmptyState } from "./EmptyState";

@@ -39,14 +39,14 @@ export default function StaffDashboard() {
         )}
 
         {todaysBookings.map(b => (
-          <Card key={b.id} className={`gap-0 rounded-none border p-5 ring-0 ${b.bookingStatus === "COMPLETED" ? "border-success/30 bg-success/5" : "border-hairline bg-surface-card"}`}>
+          <Card key={b.id} className={`gap-0 rounded-lg border p-5 ring-0 ${b.bookingStatus === "COMPLETED" ? "border-success/30 bg-success/5" : "border-hairline bg-surface-card"}`}>
             <div className="flex justify-between items-start mb-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-machined text-yellow-dark mb-1">{b.time} | {formatDate(b.date)}</p>
                 <h3 className="text-lg font-bold text-ink">{b.customer}</h3>
                 <p className="text-xs font-light text-muted mt-1 flex items-center gap-1"><MapPin size={12}/> {b.flat}, {b.community}</p>
               </div>
-              <Badge className={`h-auto rounded-none px-2 py-1 text-xs font-bold uppercase tracking-machined ${
+              <Badge className={`h-auto rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-machined ${
                 b.bookingStatus === "COMPLETED" ? "bg-success/20 text-success" : b.bookingStatus === "CANCELLED" ? "bg-m-red/20 text-m-red" : "bg-warning/20 text-warning"
               }`}>
                 {b.bookingStatus}
@@ -65,13 +65,13 @@ export default function StaffDashboard() {
                 <div className="grid grid-cols-2 gap-2 mb-2">
                   <Button 
                     onClick={() => completeBooking(b.id, "CASH")}
-                    className="flex h-auto items-center justify-center gap-2 rounded-none bg-success py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-success hover:brightness-110"
+                    className="flex h-auto items-center justify-center gap-2 rounded-lg bg-success py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-success hover:brightness-110"
                   >
                     <CheckCircle2 size={14} /> Cash ₹{b.amount}
                   </Button>
                   <Button 
                     onClick={() => completeBooking(b.id, "UPI")}
-                    className="flex h-auto items-center justify-center gap-2 rounded-none bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light"
+                    className="flex h-auto items-center justify-center gap-2 rounded-lg bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light"
                   >
                     <CheckCircle2 size={14} /> UPI ₹{b.amount}
                   </Button>
@@ -79,7 +79,7 @@ export default function StaffDashboard() {
                 <Button 
                   variant="outline"
                   onClick={() => setCancelId(b.id)}
-                  className="flex w-full h-auto items-center justify-center gap-2 rounded-none border border-m-red/50 bg-transparent py-3 text-xs font-bold uppercase tracking-machined text-m-red hover:bg-m-red hover:text-ink"
+                  className="flex w-full h-auto items-center justify-center gap-2 rounded-lg border border-m-red/50 bg-transparent py-3 text-xs font-bold uppercase tracking-machined text-m-red hover:bg-m-red hover:text-ink"
                 >
                   <XCircle size={14} /> Cancel (No Show)
                 </Button>

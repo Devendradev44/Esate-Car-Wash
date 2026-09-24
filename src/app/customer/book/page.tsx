@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Check, MapPin, Car, Wrench, Calendar } from "lucide-react";
-import { useStore, getTimeSlotsForCommunity } from "@/lib/store"; 
+import { useStore, getTimeSlotsForCommunity } from "@/lib/store";
+import { toast } from "@/components/ui/toast"; 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 export default function BookService() {
   const router = useRouter();
@@ -74,7 +75,10 @@ export default function BookService() {
   };
 
   // CAPACITY & PAST TIME LOGIC
-  const selectedCommunityName = savedAddresses.find(a => a.id === selectedAddressId)?.community || newCommunity;
+  const selectedCommunityName =
+    savedAddresses.find(a => a.id === selectedAddressId)?.community
+    || newCommunity
+    || selectedCommunity;
   const selectedCommunityObj = allCommunities.find(c => c.name === selectedCommunityName);
   const slotCapacity = selectedCommunityObj?.slotCapacity || 1;
   const scheduleTimeSlots = selectedCommunityObj ? getTimeSlotsForCommunity(selectedCommunityObj.id) : timeSlots;
@@ -112,7 +116,7 @@ export default function BookService() {
 
   const inputClasses = "w-full h-auto bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
   const labelClasses = "flex items-center gap-2 text-xs font-bold uppercase tracking-machined text-muted mb-4 mt-8";
-  const cardClasses = "w-full h-auto rounded-none border p-4 text-left transition-colors";
+  const cardClasses = "w-full h-auto rounded-lg border p-4 text-left transition-colors";
 
   const formatRegNumber = (value: string) => {
     return value.toUpperCase().replace(/[^A-Z0-9 ]/g, '');
@@ -133,7 +137,13 @@ export default function BookService() {
     const serviceObj = services.find(s => s.name === selectedService);
     if (!serviceObj) { setError("Please select a service."); return; }
 
-    const addressObj = savedAddresses.find(a => a.id === selectedAddressId) || { community: newCommunity, flat: newFlat };
+    const savedAddress =
+      savedAddresses.find(a => a.id === selectedAddressId) ||
+      savedAddresses.find(a => a.community === selectedCommunity && a.flat === selectedFlat);
+    const addressObj = savedAddress || {
+      community: newCommunity || selectedCommunity,
+      flat: newFlat || selectedFlat,
+    };
     const vehicleObj = savedVehicles.find(v => v.id === selectedVehicleId) || { 
       category: currentCategory, 
       brand: brandsForNewCat.find(b => b.id === newBrand)?.name || "", 
@@ -157,6 +167,12 @@ export default function BookService() {
       paymentStatus: "PENDING"
     });
 
+    toast.add({
+      type: "success",
+      title: "Booking confirmed",
+      description: `Your ${serviceObj.name} for ${vehicleObj.brand} ${vehicleObj.model} is booked on ${selectedDate} at ${selectedTime}.`,
+    });
+
     router.push("/customer/my-dashboard");
   };
 
@@ -173,59 +189,70 @@ export default function BookService() {
         <Label className={labelClasses}><MapPin size={14} /> Community & Flat</Label>
         
         {/* Community Dropdown */}
-        <Select value={selectedCommunity} onValueChange={(v) => { setSelectedCommunity(v || ""); setSelectedFlat(""); setSelectedAddressId(""); }}>
-          <SelectTrigger className={inputClasses}>
-            <SelectValue placeholder="Select Community" />
-          </SelectTrigger>
-          <SelectContent>
-            {activeCommunities.map(c => (
-              <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Flat Dropdown - shows flats for selected community */}
-        {selectedCommunity && (
-          <Select value={selectedFlat} onValueChange={(v) => { setSelectedFlat(v || ""); setSelectedAddressId(""); }}>
+        <div className="space-y-3 mb-4">
+          <Select value={selectedCommunity} onValueChange={(v) => { setSelectedCommunity(v || ""); setSelectedFlat(""); setSelectedAddressId(""); }}>
             <SelectTrigger className={inputClasses}>
-              <SelectValue placeholder="Select Flat" />
+              <SelectValue placeholder="Select Community" />
             </SelectTrigger>
             <SelectContent>
-              {savedAddresses.filter(a => a.community === selectedCommunity).map(a => (
-                <SelectItem key={a.flat} value={a.flat}>{a.flat}</SelectItem>
+              {activeCommunities.map(c => (
+                <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-        )}
 
-        {/* Add new address */}
-        {!showAddAddress ? (
-          <Button variant="ghost" onClick={() => setShowAddAddress(true)} className="flex h-auto items-center gap-2 rounded-none mb-8 text-xs font-bold uppercase tracking-machined text-yellow-dark hover:bg-transparent hover:text-yellow-light">
-            <Plus size={14} /> Add new address
-          </Button>
-        ) : (
-          <Card className="gap-0 space-y-3 rounded-none border border-hairline bg-surface-soft p-4 mb-8 ring-0">
-            <Select value={newCommunity} onValueChange={(v) => setNewCommunity(v || "")}>
+          {/* Flat Dropdown - shows flats for selected community */}
+          {selectedCommunity && (
+            <Select value={selectedFlat} onValueChange={(v) => { setSelectedFlat(v || ""); setSelectedAddressId(""); }}>
               <SelectTrigger className={inputClasses}>
-                <SelectValue placeholder="Choose community" />
+                <SelectValue placeholder="Select Flat" />
               </SelectTrigger>
               <SelectContent>
-                {activeCommunities.map(c => (
-                  <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
+                {savedAddresses.filter(a => a.community === selectedCommunity).map(a => (
+                  <SelectItem key={a.flat} value={a.flat}>{a.flat}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Input 
-              type="text" 
-              value={newFlat} 
-              onChange={(e) => {
-                const val = e.target.value.toUpperCase();
-                if (val.length <= 6) setNewFlat(val);
-              }} 
-              placeholder="Flat Number (e.g. M-39, M39, A-101)"
-              className={inputClasses}
-              maxLength={6}
-            />
+          )}
+        </div>
+
+        {/* Add new address */}
+        <Button variant="ghost" onClick={() => setShowAddAddress(true)} className="flex h-auto items-center gap-2 rounded-lg mb-8 text-xs font-bold uppercase tracking-machined text-yellow-dark hover:bg-transparent hover:text-yellow-light">
+          <Plus size={14} /> Add new address
+        </Button>
+
+        <Dialog open={showAddAddress} onOpenChange={setShowAddAddress}>
+          <DialogContent className="max-h-[90vh] overflow-y-auto gap-0 rounded-lg border border-hairline bg-surface-soft p-8 ring-0 sm:max-w-md">
+            <div className="flex items-center justify-between mb-8">
+              <DialogTitle className="text-xl font-bold uppercase text-ink">Add New Address</DialogTitle>
+            </div>
+            <div className="mb-4">
+              <Label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Community</Label>
+              <Select value={newCommunity} onValueChange={(v) => setNewCommunity(v || "")}>
+                <SelectTrigger className={inputClasses}>
+                  <SelectValue placeholder="Choose community" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeCommunities.map(c => (
+                    <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="mb-8">
+              <Label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Flat Number</Label>
+              <Input
+                type="text"
+                value={newFlat}
+                onChange={(e) => {
+                  const val = e.target.value.toUpperCase();
+                  if (val.length <= 6) setNewFlat(val);
+                }}
+                placeholder="e.g. M-39, M39, A-101"
+                className={inputClasses}
+                maxLength={6}
+              />
+            </div>
             <Button
               onClick={() => {
                 if (!newCommunity || !newFlat) return;
@@ -238,12 +265,12 @@ export default function BookService() {
                 setSelectedAddressId(newAddr.id);
                 setShowAddAddress(false);
               }}
-              className="w-full h-auto rounded-none bg-yellow-dark py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light"
+              className="w-full h-auto rounded-lg bg-yellow-dark py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light"
             >
               Save Address
             </Button>
-          </Card>
-        )}
+          </DialogContent>
+        </Dialog>
 
         {/* ================= SECTION 2: VEHICLE ================= */}
         <Label className={labelClasses}><Car size={14} /> Vehicle</Label>
@@ -251,64 +278,90 @@ export default function BookService() {
         <div className="space-y-3 mb-4">
           {savedVehicles.map(v => (
             <Button key={v.id} variant="outline" onClick={() => { setSelectedVehicleId(v.id); setShowAddVehicle(false); }}
-              className={`${cardClasses} ${selectedVehicleId === v.id ? "border-yellow-dark bg-surface-elevated hover:bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body hover:bg-surface-card"}`}>
-              <p className="text-sm font-bold text-ink">{v.brand} {v.model}</p>
-              <p className="text-xs font-light text-muted mt-1">{v.reg} · {v.category}</p>
+              className={`${cardClasses} flex items-center justify-between gap-3 ${
+                selectedVehicleId === v.id
+                  ? "border-yellow-dark bg-yellow-dark/10 ring-1 ring-yellow-dark/60 hover:bg-yellow-dark/10"
+                  : "border-hairline bg-surface-card hover:border-yellow-dark/60 hover:bg-surface-elevated"
+              }`}>
+              <span className="text-left">
+                <p className="text-sm font-bold text-ink">{v.brand} {v.model}</p>
+                <p className="text-xs font-light text-muted mt-1">{v.reg} · {v.category}</p>
+              </span>
+              {selectedVehicleId === v.id && (
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-yellow-dark text-ink">
+                  <Check size={12} />
+                </span>
+              )}
             </Button>
           ))}
         </div>
 
-        {!showAddVehicle ? (
-          <Button variant="ghost" onClick={() => setShowAddVehicle(true)} className="flex h-auto items-center gap-2 rounded-none mb-8 text-xs font-bold uppercase tracking-machined text-yellow-dark hover:bg-transparent hover:text-yellow-light">
-            <Plus size={14} /> Add new vehicle
-          </Button>
-        ) : (
-          <Card className="gap-0 space-y-3 rounded-none border border-hairline bg-surface-soft p-4 mb-8 ring-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Select value={newCat} onValueChange={(v) => { setNewCat(v || ""); setNewBrand(""); setNewModel(""); }}>
-                <SelectTrigger className={inputClasses}>
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {vehicleHierarchy.map(c => (
-                    <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <Button variant="ghost" onClick={() => setShowAddVehicle(true)} className="flex h-auto items-center gap-2 rounded-lg mb-8 text-xs font-bold uppercase tracking-machined text-yellow-dark hover:bg-transparent hover:text-yellow-light">
+          <Plus size={14} /> Add new vehicle
+        </Button>
 
-              {newCat && (
-                <Select value={newBrand} onValueChange={(v) => { setNewBrand(v || ""); setNewModel(""); }}>
+        <Dialog open={showAddVehicle} onOpenChange={setShowAddVehicle}>
+          <DialogContent className="max-h-[90vh] overflow-y-auto gap-0 rounded-lg border border-hairline bg-surface-soft p-8 ring-0 sm:max-w-md">
+            <div className="flex items-center justify-between mb-8">
+              <DialogTitle className="text-xl font-bold uppercase text-ink">Add New Vehicle</DialogTitle>
+            </div>
+            <div className="space-y-4 mb-8">
+              <div>
+                <Label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Category</Label>
+                <Select value={newCat} onValueChange={(v) => { setNewCat(v || ""); setNewBrand(""); setNewModel(""); }}>
                   <SelectTrigger className={inputClasses}>
-                    <SelectValue placeholder="Brand" />
+                    <SelectValue placeholder="Category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {brandsForNewCat.map(b => (
-                      <SelectItem key={b.name} value={b.name}>{b.name}</SelectItem>
+                    {vehicleHierarchy.map(c => (
+                      <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              {newCat && (
+                <div>
+                  <Label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Brand</Label>
+                  <Select value={newBrand} onValueChange={(v) => { setNewBrand(v || ""); setNewModel(""); }}>
+                    <SelectTrigger className={inputClasses}>
+                      <SelectValue placeholder="Brand" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {brandsForNewCat.map(b => (
+                        <SelectItem key={b.name} value={b.name}>{b.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
 
               {newBrand && (
-                <Select value={newModel} onValueChange={(v) => setNewModel(v || "")}>
-                  <SelectTrigger className={inputClasses}>
-                    <SelectValue placeholder="Model" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {modelsForNewBrand.map(m => (
-                      <SelectItem key={m.name} value={m.name}>{m.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div>
+                  <Label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Model</Label>
+                  <Select value={newModel} onValueChange={(v) => setNewModel(v || "")}>
+                    <SelectTrigger className={inputClasses}>
+                      <SelectValue placeholder="Model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {modelsForNewBrand.map(m => (
+                        <SelectItem key={m.name} value={m.name}>{m.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
-              <Input 
-                type="text" 
-                value={newReg} 
-                onChange={handleRegChange} 
-                placeholder="AP 12 SM 1234" 
-                maxLength={14}
-                className={inputClasses} 
-              />
+              <div>
+                <Label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Registration Number</Label>
+                <Input
+                  type="text"
+                  value={newReg}
+                  onChange={handleRegChange}
+                  placeholder="AP 12 SM 1234"
+                  maxLength={14}
+                  className={inputClasses}
+                />
+              </div>
             </div>
             <Button onClick={() => { 
               const regRegex = /^[A-Z]{2}\s?\d{1,2}\s?[A-Z]{1,3}\s?\d{1,4}$/;
@@ -329,9 +382,9 @@ export default function BookService() {
               addCustomerVehicle(newVeh);
               setSelectedVehicleId(newVeh.id); 
               setShowAddVehicle(false); 
-            }} className="w-full h-auto rounded-none bg-yellow-dark py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">Save Vehicle</Button>
-          </Card>
-        )}
+            }} className="w-full h-auto rounded-lg bg-yellow-dark py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">Save Vehicle</Button>
+          </DialogContent>
+        </Dialog>
 
         {/* ================= SECTION 3: SERVICE ================= */}
         <Label className={labelClasses}><Wrench size={14} /> Service</Label>
@@ -341,11 +394,20 @@ export default function BookService() {
             <p className="text-xs font-light text-muted">Prices for: <span className="text-ink font-bold">{currentCategory || "New Vehicle"}</span></p>
             {services.map(s => (
               <Button key={s.id} variant="outline" onClick={() => setSelectedService(s.name)}
-                className={`${cardClasses} ${selectedService === s.name ? "border-yellow-dark bg-surface-elevated hover:bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body hover:bg-surface-card"}`}>
-                <div className="flex justify-between items-center w-full">
-                  <p className="text-sm font-bold text-ink">{s.name}</p>
+                className={`${cardClasses} flex items-center justify-between gap-3 ${
+                  selectedService === s.name
+                    ? "border-yellow-dark bg-yellow-dark/10 ring-1 ring-yellow-dark/60 hover:bg-yellow-dark/10"
+                    : "border-hairline bg-surface-card hover:border-yellow-dark/60 hover:bg-surface-elevated"
+                }`}>
+                <p className="text-sm font-bold text-ink">{s.name}</p>
+                <span className="flex items-center gap-2">
                   <p className="text-xs font-bold text-yellow-dark">₹{getPrice(s)}</p>
-                </div>
+                  {selectedService === s.name && (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-yellow-dark text-ink">
+                      <Check size={12} />
+                    </span>
+                  )}
+                </span>
               </Button>
             ))}
           </div>
@@ -379,8 +441,8 @@ export default function BookService() {
                   variant="outline"
                   onClick={() => setSelectedTime(t.label)}
                   disabled={isFull} 
-                  className={`h-auto rounded-none border p-3 text-center transition-colors ${
-                    selectedTime === t.label ? "border-yellow-dark bg-surface-elevated hover:bg-surface-elevated" : "border-hairline bg-surface-card hover:border-body hover:bg-surface-card"
+                  className={`h-auto rounded-lg border p-3 text-center transition-colors ${
+                    selectedTime === t.label ? "border-yellow-dark bg-yellow-dark/10 ring-1 ring-yellow-dark/60 hover:bg-yellow-dark/10" : "border-hairline bg-surface-card hover:border-yellow-dark/60 hover:bg-surface-elevated"
                   } ${isFull ? "cursor-not-allowed disabled:opacity-30 hover:border-hairline" : ""}`}
                 >
                   <p className="text-xs font-bold text-ink">{t.label}</p>
@@ -402,7 +464,7 @@ export default function BookService() {
         )}
         <Button 
           onClick={handleReserve}
-          className="flex w-full h-auto items-center justify-center gap-2 rounded-none bg-success py-5 text-sm font-bold uppercase tracking-machined text-ink transition-colors hover:bg-success hover:brightness-110"
+          className="flex w-full h-auto items-center justify-center gap-2 rounded-lg bg-success py-5 text-sm font-bold uppercase tracking-machined text-ink transition-colors hover:bg-success hover:brightness-110"
         >
           Reserve Service <Check size={16} />
         </Button>

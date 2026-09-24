@@ -6,7 +6,7 @@ import { useStore } from "@/lib/store";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { Disclosure, Accordion } from "@/components/ui/Disclosure";
 import { StaggerContainer, StaggerItem } from "@/components/animations/PageTransition";
-import { AnimatedSelect } from "@/components/ui/AnimatedSelect";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toCSV, downloadCSV, parseCSV } from "@/lib/csv";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -162,38 +162,38 @@ export default function VehiclesPage() {
       {/* ADD MODAL */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-bold uppercase text-ink">Add Vehicle Item</h3>
               <Button type="button" variant="ghost" size="icon-sm" onClick={() => setShowAddModal(false)} className="text-muted hover:text-ink" aria-label="Close add vehicle form"><X size={20} /></Button>
             </div>
             <div className="mb-4">
               <label className={labelClasses}>What are you adding?</label>
-              <AnimatedSelect
-                value={addLevel}
-                onChange={(e) => { setAddLevel(e.target.value); setNewName(""); setSelectedParentCat(""); setSelectedParentBrand(""); }}
-                label="What are you adding?"
-                placeholder="Select level"
-                options={[
-                  { value: "CATEGORY", label: "Category (e.g. SUV)" },
-                  { value: "BRAND", label: "Brand (e.g. Toyota)" },
-                  { value: "MODEL", label: "Model (e.g. Fortuner)" }
-                ]}
-                className={inputClasses}
-              />
+              <Select value={addLevel} onValueChange={(v) => { setAddLevel(v || ""); setNewName(""); setSelectedParentCat(""); setSelectedParentBrand(""); }}>
+                <SelectTrigger className={inputClasses}>
+                  <SelectValue placeholder="Select level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CATEGORY">Category (e.g. SUV)</SelectItem>
+                  <SelectItem value="BRAND">Brand (e.g. Toyota)</SelectItem>
+                  <SelectItem value="MODEL">Model (e.g. Fortuner)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {addLevel === "BRAND" && (
               <div className="mb-4">
                 <label className={labelClasses}>Under which Category?</label>
-                <AnimatedSelect
-                  value={selectedParentCat}
-                  onChange={(e) => setSelectedParentCat(e.target.value)}
-                  label="Under which Category?"
-                  placeholder="Select category"
-                  options={hierarchy.map(c => ({ value: c.id, label: c.name }))}
-                  className={inputClasses}
-                />
+                <Select value={selectedParentCat} onValueChange={(v) => setSelectedParentCat(v || "")}>
+                  <SelectTrigger className={inputClasses}>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {hierarchy.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
 
@@ -201,26 +201,30 @@ export default function VehiclesPage() {
               <>
                 <div className="mb-4">
                   <label className={labelClasses}>Under which Category?</label>
-                  <AnimatedSelect
-                    value={selectedParentCat}
-                    onChange={(e) => { setSelectedParentCat(e.target.value); setSelectedParentBrand(""); }}
-                    label="Under which Category?"
-                    placeholder="Select category"
-                    options={hierarchy.map(c => ({ value: c.id, label: c.name }))}
-                    className={inputClasses}
-                  />
+                  <Select value={selectedParentCat} onValueChange={(v) => { setSelectedParentCat(v || ""); setSelectedParentBrand(""); }}>
+                    <SelectTrigger className={inputClasses}>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {hierarchy.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 {selectedParentCat && (
                   <div className="mb-4">
                     <label className={labelClasses}>Under which Brand?</label>
-                    <AnimatedSelect
-                      value={selectedParentBrand}
-                      onChange={(e) => setSelectedParentBrand(e.target.value)}
-                      label="Under which Brand?"
-                      placeholder="Select brand"
-                      options={[...new Set([...POPULAR_BRANDS, ...hierarchy.find(c => c.id === selectedParentCat)?.brands.map(b => b.name) || []])].sort().map(b => ({ value: b, label: b }))}
-                      className={inputClasses}
-                    />
+                    <Select value={selectedParentBrand} onValueChange={(v) => setSelectedParentBrand(v || "")}>
+                      <SelectTrigger className={inputClasses}>
+                        <SelectValue placeholder="Select brand" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[...new Set([...POPULAR_BRANDS, ...hierarchy.find(c => c.id === selectedParentCat)?.brands.map(b => b.name) || []])].sort().map(b => (
+                          <SelectItem key={b} value={b}>{b}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
               </>
@@ -238,7 +242,7 @@ export default function VehiclesPage() {
       {/* EDIT MODAL */}
       {showEditModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-bold uppercase text-ink">Edit {editLevel}</h3>
               <Button type="button" variant="ghost" size="icon-sm" onClick={() => setShowEditModal(false)} className="text-muted hover:text-ink" aria-label="Close edit vehicle form"><X size={20} /></Button>
@@ -255,7 +259,7 @@ export default function VehiclesPage() {
       {/* IMPORT MODAL */}
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold uppercase text-ink">Import Vehicles</h3>
               <Button type="button" variant="ghost" size="icon-sm" onClick={() => { setShowImportModal(false); setImportError(""); }} className="text-muted hover:text-ink" aria-label="Close import form"><X size={20} /></Button>
@@ -306,7 +310,7 @@ export default function VehiclesPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
-              className="border border-hairline bg-surface-card"
+              className="rounded-lg border border-hairline bg-surface-card"
             >
               <div className="flex items-center justify-between p-4 w-full hover:bg-surface-elevated transition-colors">
                 <Button
@@ -354,7 +358,7 @@ export default function VehiclesPage() {
                               animate={{ opacity: 1, x: 0 }}
                               exit={{ opacity: 0, x: 20 }}
                               transition={{ duration: 0.2 }}
-                              className="border border-hairline bg-surface-card p-3"
+                              className="rounded-lg border border-hairline bg-surface-card p-3"
                             >
                               <Disclosure
                                 trigger={
@@ -414,7 +418,7 @@ export default function VehiclesPage() {
       </div>
 
       {/* DESKTOP TREE TABLE */}
-      <div className="hidden md:block border border-hairline bg-surface-card">
+      <div className="hidden md:block rounded-lg border border-hairline bg-surface-card">
         <AnimatePresence mode="popLayout">
           <Accordion
             items={hierarchy.map((cat, index) => ({

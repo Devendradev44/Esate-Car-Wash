@@ -92,9 +92,19 @@ export default function AdminDashboard() {
   const kpis = useMemo(() => {
     const today = new Date();
     const todayLocalStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayLocalStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+    const pct = (num: number, den: number) => den <= 0 ? (num > 0 ? 100 : 0) : Math.round(((num - den) / den) * 100);
+    const share = (num: number, den: number) => den <= 0 ? 0 : Math.round((num / den) * 100);
     
     const todayBookings = bookings.filter(
-      (b) => b.date === todayLocalStr && b.bookingStatus === "BOOKED" && (communityFilter === "ALL" || b.community === communityFilter)
+      (b) => b.date === todayLocalStr && (communityFilter === "ALL" || b.community === communityFilter)
+    ).length;
+    const yesterdayBookings = bookings.filter(
+      (b) => b.date === yesterdayLocalStr && b.bookingStatus === "BOOKED" && (communityFilter === "ALL" || b.community === communityFilter)
     ).length;
     const inProgress = filteredBookings.filter((b) => b.bookingStatus === "BOOKED").length;
     const completed = filteredBookings.filter((b) => b.bookingStatus === "COMPLETED").length;
@@ -112,24 +122,36 @@ export default function AdminDashboard() {
           (communityFilter === "ALL" || b.community === communityFilter)
       )
       .reduce((sum, b) => sum + b.amount, 0);
+    const yesterdayRevenue = bookings
+      .filter(
+        (b) =>
+          b.date === yesterdayLocalStr &&
+          b.paymentStatus === "PAID" &&
+          (communityFilter === "ALL" || b.community === communityFilter)
+      )
+      .reduce((sum, b) => sum + b.amount, 0);
     const todayExpense = expenses
       .filter((e) => e.date === todayLocalStr)
       .reduce((sum, e) => sum + e.amount, 0);
+    const yesterdayExpense = expenses
+      .filter((e) => e.date === yesterdayLocalStr)
+      .reduce((sum, e) => sum + e.amount, 0);
     const totalRevenue = bookings
-      .filter((b) => b.paymentStatus === "PAID")
+      .filter((b) => b.paymentStatus === "PAID" && (communityFilter === "ALL" || b.community === communityFilter))
       .reduce((sum, b) => sum + b.amount, 0);
+    // Expenses have no community field (company-wide), so they stay unfiltered.
     const totalExpense = expenses.reduce((sum, e) => sum + e.amount, 0);
     const netProfit = totalRevenue - totalExpense;
 
     return [
-      { title: "Today's Bookings", value: todayBookings, icon: CalendarDays, trend: { value: 0, label: "today" } },
-      { title: "In Progress", value: inProgress, icon: Clock, trend: { value: 0, label: "pending" } },
-      { title: "Completed", value: completed, icon: CheckCircle2, trend: { value: 0, label: "done" } },
-      { title: "Upcoming", value: upcoming, icon: ArrowUpRight, trend: { value: 0, label: "scheduled" } },
-      { title: "Today's Revenue", value: `Rs.${todayRevenue.toLocaleString("en-IN")}`, icon: IndianRupee, trend: { value: 0, label: "collected" } },
-      { title: "Today's Expense", value: `Rs.${todayExpense.toLocaleString("en-IN")}`, icon: ArrowDownRight, trend: { value: 0, label: "spent" } },
-      { title: "Total Revenue", value: `Rs.${totalRevenue.toLocaleString("en-IN")}`, icon: Wallet, trend: { value: 0, label: "all-time" } },
-      { title: "Net Profit", value: `Rs.${netProfit.toLocaleString("en-IN")}`, icon: netProfit >= 0 ? TrendingUp : TrendingDown, trend: { value: 0, label: "net" } },
+      { title: "Today's Bookings", value: todayBookings, icon: CalendarDays, trend: { value: pct(todayBookings, yesterdayBookings), label: "vs yesterday" } },
+      { title: "In Progress", value: inProgress, icon: Clock, trend: filteredBookings.length > 0 ? { value: share(inProgress, filteredBookings.length), label: "of filtered" } : undefined },
+      { title: "Completed", value: completed, icon: CheckCircle2, trend: filteredBookings.length > 0 ? { value: share(completed, filteredBookings.length), label: "of filtered" } : undefined },
+      { title: "Upcoming", value: upcoming, icon: ArrowUpRight },
+      { title: "Today's Revenue", value: `Rs.${todayRevenue.toLocaleString("en-IN")}`, icon: IndianRupee, trend: { value: pct(todayRevenue, yesterdayRevenue), label: "vs yesterday" } },
+      { title: "Today's Expense", value: `Rs.${todayExpense.toLocaleString("en-IN")}`, icon: ArrowDownRight, trend: { value: pct(todayExpense, yesterdayExpense), label: "vs yesterday" } },
+      { title: "Total Revenue", value: `Rs.${totalRevenue.toLocaleString("en-IN")}`, icon: Wallet },
+      { title: "Net Profit", value: `Rs.${netProfit.toLocaleString("en-IN")}`, icon: netProfit >= 0 ? TrendingUp : TrendingDown, trend: { value: share(netProfit, totalRevenue), label: "margin" } },
     ];
   }, [bookings, expenses, filteredBookings, communityFilter]);
 
@@ -138,6 +160,17 @@ export default function AdminDashboard() {
       .sort((a, b) => b.date.localeCompare(a.date))
       .slice(0, 5);
   }, [bookings]);
+
+  const communityOptions = useMemo(() => {
+    const names = new Set<string>();
+    communities.forEach((c) => {
+      if (c.name && c.name.trim() && c.name !== "Unknown") names.add(c.name);
+    });
+    bookings.forEach((b) => {
+      if (b.community && b.community.trim() && b.community !== "Unknown") names.add(b.community);
+    });
+    return [...names].sort((a, b) => a.localeCompare(b));
+  }, [communities, bookings]);
 
   const filterOptions: { key: DateFilter; label: string }[] = [
     { key: "TODAY", label: "Today" },
@@ -185,8 +218,8 @@ export default function AdminDashboard() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All Communities</SelectItem>
-                {communities.map((c) => (
-                  <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                {communityOptions.map((name) => (
+                  <SelectItem key={name} value={name}>{name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -228,8 +261,11 @@ export default function AdminDashboard() {
                       <p className="text-sm font-bold text-foreground">Rs.{b.amount}</p>
                       <div className="mt-1 flex items-center justify-end gap-1.5">
                         <Badge
-                          variant={b.bookingStatus === "COMPLETED" ? "default" : b.bookingStatus === "CANCELLED" ? "destructive" : "secondary"}
-                          className="text-[10px] font-semibold uppercase"
+                          className={`h-auto rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${
+                            b.bookingStatus === "BOOKED" ? "bg-warning/20 text-warning" :
+                            b.bookingStatus === "COMPLETED" ? "bg-success/20 text-success" :
+                            "bg-m-red/20 text-m-red"
+                          }`}
                         >
                           {b.bookingStatus}
                         </Badge>

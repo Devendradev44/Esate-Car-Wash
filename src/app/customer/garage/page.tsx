@@ -4,7 +4,7 @@ import { Plus, Trash2, Edit } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { toast } from "@/components/ui/toast";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { AnimatedSelect } from "@/components/ui/AnimatedSelect";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -100,8 +100,8 @@ export default function GaragePage() {
           <h1 className="text-2xl font-bold uppercase text-ink">My Garage</h1>
           <p className="mt-1 text-sm font-light text-body">Manage your saved vehicles.</p>
         </div>
-        <Button onClick={() => setShowAddModal(true)} className="p-3 border border-yellow-dark text-yellow-dark hover:bg-yellow-dark hover:text-ink transition-colors">
-          <Plus size={20} />
+        <Button onClick={() => setShowAddModal(true)} className="flex h-auto items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
+          <Plus size={14} /> Add Vehicle
         </Button>
       </div>
 
@@ -122,7 +122,7 @@ export default function GaragePage() {
           />
         ) : (
           customerGarage.map(v => (
-            <Card key={v.id} className="gap-0 rounded-none border border-hairline bg-surface-card p-5 ring-0">
+            <Card key={v.id} className="gap-0 rounded-lg border border-hairline bg-surface-card p-5 ring-0">
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-lg font-bold text-ink">{v.brand} {v.model}</p>
@@ -139,41 +139,56 @@ export default function GaragePage() {
       </div>
 
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto gap-0 rounded-none border border-hairline bg-surface-soft p-8 ring-0 sm:max-w-md">
+        <DialogContent className="max-h-[90vh] overflow-y-auto gap-0 rounded-lg border border-hairline bg-surface-soft p-8 ring-0 sm:max-w-md">
           <div className="flex items-center justify-between mb-8">
             <DialogTitle className="text-xl font-bold uppercase text-ink">Add Vehicle</DialogTitle>
           </div>
           
           <div className="space-y-4 mb-8">
-            <AnimatedSelect
-              value={newCat}
-              onChange={(e) => { setNewCat(e.target.value); setNewBrand(""); setNewModel(""); }}
-              label="Category"
-              placeholder="Category"
-              options={vehicleHierarchy.map(c => ({ value: c.id, label: c.name }))}
-              className={inputClasses}
-            />
-            
+            <div>
+              <Label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Category</Label>
+              <Select value={newCat} onValueChange={(v) => { setNewCat(v || ""); setNewBrand(""); setNewModel(""); }}>
+                <SelectTrigger className={inputClasses}>
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {vehicleHierarchy.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {newCat && (
-              <AnimatedSelect
-                value={newBrand}
-                onChange={(e) => { setNewBrand(e.target.value); setNewModel(""); }}
-                label="Brand"
-                placeholder="Brand"
-                options={brandsForNewCat.map(b => ({ value: b.id, label: b.name }))}
-                className={inputClasses}
-              />
+              <div>
+                <Label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Brand</Label>
+                <Select value={newBrand} onValueChange={(v) => { setNewBrand(v || ""); setNewModel(""); }}>
+                  <SelectTrigger className={inputClasses}>
+                    <SelectValue placeholder="Brand" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {brandsForNewCat.map(b => (
+                      <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
 
             {newBrand && (
-              <AnimatedSelect
-                value={newModel}
-                onChange={(e) => setNewModel(e.target.value)}
-                label="Model"
-                placeholder="Model"
-                options={modelsForNewBrand.map(m => ({ value: m.id, label: m.name }))}
-                className={inputClasses}
-              />
+              <div>
+                <Label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Model</Label>
+                <Select value={newModel} onValueChange={(v) => setNewModel(v || "")}>
+                  <SelectTrigger className={inputClasses}>
+                    <SelectValue placeholder="Model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {modelsForNewBrand.map(m => (
+                      <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
 
             {newModel && (
@@ -198,7 +213,7 @@ export default function GaragePage() {
               handleSaveVehicle();
             }}
             disabled={!newModel || !newReg}
-            className="flex h-auto w-full items-center justify-center gap-2 rounded-none bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light disabled:opacity-50"
+            className="flex h-auto w-full items-center justify-center gap-2 rounded-lg bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light disabled:opacity-50"
           >
             Save Vehicle
           </Button>
@@ -206,7 +221,7 @@ export default function GaragePage() {
       </Dialog>
 
       <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto gap-0 rounded-none border border-hairline bg-surface-soft p-8 ring-0 sm:max-w-md">
+        <DialogContent className="max-h-[90vh] overflow-y-auto gap-0 rounded-lg border border-hairline bg-surface-soft p-8 ring-0 sm:max-w-md">
           <div className="flex items-center justify-between mb-8">
             <DialogTitle className="text-xl font-bold uppercase text-ink">Edit Registration</DialogTitle>
           </div>
@@ -220,7 +235,7 @@ export default function GaragePage() {
               className={inputClasses}
             />
          </div>
-          <Button onClick={handleEditSave} className="flex h-auto w-full items-center justify-center gap-2 rounded-none bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">
+          <Button onClick={handleEditSave} className="flex h-auto w-full items-center justify-center gap-2 rounded-lg bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">
             Save Changes
           </Button>
         </DialogContent>

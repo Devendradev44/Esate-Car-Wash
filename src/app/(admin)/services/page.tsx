@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Plus, Search, Edit, Trash2, X, Wrench } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -18,6 +18,7 @@ export default function ServicesPage() {
   const deleteService = useStore((state) => state.deleteService);
 
   const [searchQuery, setSearchQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState("");
@@ -30,9 +31,13 @@ export default function ServicesPage() {
   });
 
 
-  const filteredServices = services.filter(s => 
-    s.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredServices = services.filter((s) => {
+    const q = searchQuery.trim().toLowerCase();
+    return (
+      s.name.toLowerCase().includes(q) ||
+      (s.description || "").toLowerCase().includes(q)
+    );
+  });
 
   const openAddModal = () => {
     setIsEditing(false);
@@ -97,7 +102,7 @@ export default function ServicesPage() {
             <label className={labelClasses}>Pricing by Vehicle Category (₹)</label>
             <div className="grid grid-cols-2 gap-4 mb-8">
               {vehicleCategories.map(cat => (
-                <Card key={cat} className="border border-hairline bg-surface-card p-4 gap-1 rounded-none ring-0 ring-transparent">
+                <Card key={cat} className="border border-hairline bg-surface-card p-4 gap-1 rounded-lg ring-0 ring-transparent">
                   <p className="text-xs font-bold uppercase tracking-machined text-ink mb-2">{cat}</p>
                   <Input type="number" min="0" value={pricing[cat]} onChange={(e) => handlePricingChange(cat, e.target.value)} placeholder="0" className={inputClasses + " text-center"} />
                 </Card>
@@ -121,15 +126,56 @@ export default function ServicesPage() {
         </Button>
       </div>
 
-      <div className="mb-6 flex items-center gap-3 border border-hairline bg-surface-card p-3">
-        <Search size={16} className="text-muted" />
-        <Input type="text" placeholder="Search services..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={inputClasses + " border-none bg-transparent p-0 focus:outline-none"} />
+      <div className="relative mb-6">
+        <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          ref={searchRef}
+          type="search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              e.preventDefault();
+              setSearchQuery("");
+              e.currentTarget.focus();
+            }
+          }}
+          placeholder="Search by service name or description..."
+          aria-label="Search services"
+          className="h-11 w-full rounded-lg border border-hairline bg-surface-card pl-11 pr-9 text-sm font-light text-ink transition-colors hover:border-body/50 focus-visible:border-yellow-dark/60 focus-visible:hover:border-yellow-dark/60 focus-visible:ring-2 focus-visible:ring-yellow-dark/25 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden [&::-webkit-search-results-button]:hidden"
+        />
+        {searchQuery.length > 0 ? (
+          <button
+            type="button"
+            aria-label="Clear search"
+            onClick={() => {
+              setSearchQuery("");
+              searchRef.current?.focus();
+            }}
+            className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-elevated hover:text-ink"
+          >
+            <X size={14} />
+          </button>
+        ) : null}
       </div>
 
+      <p className="mb-4 text-sm font-light text-body">
+        Showing {filteredServices.length} of {services.length} services
+      </p>
+
+      {filteredServices.length === 0 ? (
+        <div className="py-10 text-center">
+          <p className="text-sm font-semibold text-ink">No services found</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            No services match your search. Try a different service name or description.
+          </p>
+        </div>
+      ) : (
+        <>
       {/* MOBILE CARDS */}
       <div className="md:hidden space-y-4">
         {filteredServices.map(s => (
-          <Card key={s.id} className="border border-hairline bg-surface-card p-4 gap-3 rounded-none ring-0 ring-transparent">
+          <Card key={s.id} className="border border-hairline bg-surface-card p-4 gap-3 rounded-lg ring-0 ring-transparent">
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-lg font-bold text-ink flex items-center gap-2"><Wrench size={14} className="text-muted" /> {s.name}</p>
@@ -153,7 +199,7 @@ export default function ServicesPage() {
       </div>
 
       {/* DESKTOP TABLE */}
-      <div className="hidden md:block border border-hairline overflow-x-auto bg-surface-card">
+      <div className="hidden md:block border border-hairline overflow-x-auto rounded-lg bg-surface-card">
         <Table className="w-full min-w-[800px]">
           <TableHeader className="border-b border-hairline bg-surface-soft">
             <TableRow>
@@ -184,6 +230,8 @@ export default function ServicesPage() {
           </TableBody>
         </Table>
       </div>
+        </>
+      )}
 
       <ConfirmDialog
         open={deleteId !== null}

@@ -64,6 +64,7 @@ export default function ProfilePage() {
   const displayFirstName = mockUser?.name?.split(" ")[0] || "";
   const displayLastName = mockUser?.name?.split(" ").slice(1).join(" ") || "";
   const displayEmail = mockUser?.email || "";
+  const profileInitials = ((displayFirstName[0] || "") + (displayLastName[0] || "")).toUpperCase();
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas pb-24">
@@ -78,15 +79,19 @@ export default function ProfilePage() {
       </div>
 
       <div className="flex-1 p-6 space-y-6">
-<Card className="gap-0 flex flex-col items-center justify-center rounded-none border border-hairline bg-surface-card p-8 ring-0">
+<Card className="gap-0 flex flex-col items-center justify-center rounded-lg border border-hairline bg-surface-card p-8 ring-0">
             <div className="w-20 h-20 rounded-full bg-yellow-dark/20 flex items-center justify-center mb-4">
-              <User size={32} className="text-yellow-dark" />
+              {profileInitials ? (
+                <span className="text-2xl font-bold text-yellow-dark">{profileInitials}</span>
+              ) : (
+                <User size={32} className="text-yellow-dark" />
+              )}
             </div>
             <h2 className="text-xl font-bold text-ink">{displayFirstName} {displayLastName}</h2>
             <p className="text-sm font-light text-muted mt-1">Customer</p>
           </Card>
 
-<Card className="gap-0 rounded-none border border-hairline bg-surface-card ring-0 divide-y divide-hairline">
+<Card className="gap-0 rounded-lg border border-hairline bg-surface-card ring-0 divide-y divide-hairline">
           <div className="flex items-center p-4">
             <User size={16} className="text-muted mr-4" />
             {isEditing && draft ? (

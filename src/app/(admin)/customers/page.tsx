@@ -1,9 +1,10 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Plus,
   Search,
+  X,
   Edit,
   Trash2,
   User,
@@ -62,6 +63,7 @@ export default function CustomersPage() {
   const deleteCustomer = useStore((state) => state.deleteCustomer);
 
   const [searchQuery, setSearchQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState("");
@@ -74,12 +76,12 @@ export default function CustomersPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const filteredCustomers = customers.filter((c) => {
-    const q = searchQuery.toLowerCase();
+const filteredCustomers = customers.filter((c) => {
+    const q = searchQuery.trim().toLowerCase();
     return (
       c.name.toLowerCase().includes(q) ||
       (c.email || "").toLowerCase().includes(q) ||
-      (c.phone || "").includes(q)
+      (c.phone || "").toLowerCase().includes(q)
     );
   });
 
@@ -217,16 +219,38 @@ const activeCount = customers.filter((c) => c.phone).length;
           <StatCard title="Showing" value={filteredCustomers.length} icon={Search} trend={{ value: 0, label: "filtered" }} />
         </div>
 
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative flex-1">
-            <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+<div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative min-w-0 sm:flex-1">
+            <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
-              type="text"
-              placeholder="Search by name, email, or phone..."
+              ref={searchRef}
+              type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  setSearchQuery("");
+                  e.currentTarget.focus();
+                }
+              }}
+              placeholder="Search by name, email, or phone..."
+              aria-label="Search customers"
+              className="h-11 w-full rounded-lg border border-hairline bg-surface-card pl-11 pr-9 text-sm font-light text-ink transition-colors hover:border-body/50 focus-visible:border-yellow-dark/60 focus-visible:hover:border-yellow-dark/60 focus-visible:ring-2 focus-visible:ring-yellow-dark/25 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden [&::-webkit-search-results-button]:hidden"
             />
+            {searchQuery.length > 0 ? (
+              <button
+                type="button"
+                aria-label="Clear search"
+                onClick={() => {
+                  setSearchQuery("");
+                  searchRef.current?.focus();
+                }}
+                className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-elevated hover:text-ink"
+              >
+                <X size={14} />
+              </button>
+            ) : null}
           </div>
           <Button variant="outline" className="shrink-0">
             <UsersIcon size={16} /> {customers.length} total
@@ -240,7 +264,7 @@ const activeCount = customers.filter((c) => c.phone).length;
               <CardDescription>A list of all registered customers.</CardDescription>
             </div>
             <div className="hidden text-sm text-muted-foreground sm:block">
-              {filteredCustomers.length} of {customers.length}
+              {filteredCustomers.length} of {customers.length} customers
             </div>
           </CardHeader>
           <CardContent className="p-0">
@@ -264,10 +288,10 @@ const activeCount = customers.filter((c) => c.phone).length;
                     }
                   />
                 ) : (
-                  <EmptyState
+<EmptyState
                     icon={Search}
                     title="No customers found"
-                    description="Try adjusting your search query."
+                    description="No customers match your search. Try a different name, email, or phone."
                   />
                 )}
               </div>

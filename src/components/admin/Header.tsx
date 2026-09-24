@@ -44,18 +44,18 @@ export function Header() {
         />
         <DropdownMenuContent align="end" className="w-44">
           <DropdownMenuGroup>
-            <DropdownMenuItem onSelect={() => router.push("/profile")}>
+            <DropdownMenuItem onClick={() => router.push("/profile")}>
               <User />
               Profile
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => router.push("/settings")}>
+            <DropdownMenuItem onClick={() => router.push("/settings")}>
               <Settings />
               Settings
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem variant="destructive" onSelect={handleLogout}>
+            <DropdownMenuItem variant="destructive" onClick={handleLogout}>
               <LogOut />
               Log out
             </DropdownMenuItem>

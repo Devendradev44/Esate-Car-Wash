@@ -113,17 +113,17 @@ export function Topbar() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => router.push("/profile")}>
+              <DropdownMenuItem onClick={() => router.push("/profile")}>
                 <User size={14} className="mr-2 h-4 w-4" />
                 Profile
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => router.push("/settings")}>
+              <DropdownMenuItem onClick={() => router.push("/settings")}>
                 <Settings size={14} className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onSelect={() => {
+                onClick={() => {
                   logoutMockUser();
                   router.push("/login");
                 }}

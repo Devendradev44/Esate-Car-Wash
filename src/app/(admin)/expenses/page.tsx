@@ -3,7 +3,7 @@ import { useState, useRef } from "react";
 import { Plus, Search, Trash2, X, Edit, Receipt, Tag, Download, Upload } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { AnimatedSelect } from "@/components/ui/AnimatedSelect";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toCSV, downloadCSV, parseCSV } from "@/lib/csv";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,7 @@ export default function ExpensesPage() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [importError, setImportError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const [date, setDate] = useState("");
   const [name, setName] = useState("");
@@ -41,9 +42,13 @@ export default function ExpensesPage() {
   const [notes, setNotes] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const filteredExpenses = expenses.filter(e =>
-    e.name.toLowerCase().includes(searchQuery.toLowerCase()) || e.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredExpenses = expenses.filter(e => {
+    const q = searchQuery.trim().toLowerCase();
+    return (
+      e.name.toLowerCase().includes(q) ||
+      e.category.toLowerCase().includes(q)
+    );
+  });
 
   const handleExport = () => {
     const csv = toCSV(expenses, [
@@ -148,7 +153,7 @@ export default function ExpensesPage() {
       {/* EXPENSE MODAL */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 overflow-y-auto py-10 p-4">
-          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-bold uppercase text-ink">{isEditing ? "Edit Expense" : "Add Expense"}</h3>
               <Button type="button" variant="ghost" size="icon-sm" onClick={() => setShowModal(false)} className="text-muted hover:text-ink" aria-label="Close expense form"><X size={20} /></Button>
@@ -157,25 +162,29 @@ export default function ExpensesPage() {
               <div><label className={labelClasses}>Date</label><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClasses + " [color-scheme:dark]"} /></div>
               <div><label className={labelClasses}>Expense Name</label><Input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Monthly Rent" className={inputClasses} /></div>
               <div><label className={labelClasses}>Category</label>
-                <AnimatedSelect
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  label="Category"
-                  placeholder="Select category"
-                  options={expenseCategories.map(c => ({ value: c, label: c }))}
-                  className={inputClasses}
-                />
+                <Select value={category} onValueChange={(v) => setCategory(v || "")}>
+                  <SelectTrigger className={inputClasses}>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {expenseCategories.map(c => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div><label className={labelClasses}>Amount (₹)</label><Input type="number" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" className={inputClasses} /></div>
               <div><label className={labelClasses}>Payment Type</label>
-                <AnimatedSelect
-                  value={paymentType}
-                  onChange={(e) => setPaymentType(e.target.value)}
-                  label="Payment Type"
-                  placeholder="Select payment type"
-                  options={expensePaymentMethods.map(p => ({ value: p, label: p }))}
-                  className={inputClasses}
-                />
+                <Select value={paymentType} onValueChange={(v) => setPaymentType(v || "")}>
+                  <SelectTrigger className={inputClasses}>
+                    <SelectValue placeholder="Select payment type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {expensePaymentMethods.map(p => (
+                      <SelectItem key={p} value={p}>{p}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div><label className={labelClasses}>Notes (Optional)</label><Input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any details..." className={inputClasses} /></div>
             </div>
@@ -189,7 +198,7 @@ export default function ExpensesPage() {
       {/* CATEGORY MODAL */}
       {showCatModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-sm max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
+          <div className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-lg border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-bold uppercase text-ink">Add Category</h3>
               <Button type="button" variant="ghost" size="icon-sm" onClick={() => { setShowCatModal(false); setCatError(""); }} className="text-muted hover:text-ink" aria-label="Close category form"><X size={18} /></Button>
@@ -218,7 +227,7 @@ export default function ExpensesPage() {
       {/* IMPORT MODAL */}
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-hairline bg-surface-soft p-8">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold uppercase text-ink">Import Expenses</h3>
               <Button type="button" variant="ghost" size="icon-sm" onClick={() => { setShowImportModal(false); setImportError(""); }} className="text-muted hover:text-ink" aria-label="Close import form"><X size={20} /></Button>
@@ -262,9 +271,37 @@ export default function ExpensesPage() {
         </div>
       </div>
 
-      <div className="mb-6 flex items-center gap-3 border border-hairline bg-surface-card p-3">
-        <Search size={16} className="text-muted" />
-        <Input type="text" placeholder="Search by name or category..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={inputClasses + " border-none bg-transparent p-0 focus:outline-none"} />
+      <div className="relative mb-6">
+        <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          ref={searchRef}
+          type="search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              e.preventDefault();
+              setSearchQuery("");
+              e.currentTarget.focus();
+            }
+          }}
+          placeholder="Search by name or category..."
+          aria-label="Search expenses"
+          className="h-11 w-full rounded-lg border border-hairline bg-surface-card pl-11 pr-9 text-sm font-light text-ink transition-colors hover:border-body/50 focus-visible:border-yellow-dark/60 focus-visible:hover:border-yellow-dark/60 focus-visible:ring-2 focus-visible:ring-yellow-dark/25 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden [&::-webkit-search-results-button]:hidden"
+        />
+        {searchQuery.length > 0 ? (
+          <button
+            type="button"
+            aria-label="Clear search"
+            onClick={() => {
+              setSearchQuery("");
+              searchRef.current?.focus();
+            }}
+            className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-elevated hover:text-ink"
+          >
+            <X size={14} />
+          </button>
+        ) : null}
       </div>
 
       {/* CATEGORY CHIPS */}
@@ -287,7 +324,7 @@ export default function ExpensesPage() {
           <p className="text-center text-muted text-sm font-light py-10">No expenses found.</p>
         ) : (
           filteredExpenses.map(e => (
-            <Card key={e.id} className="border border-hairline bg-surface-card p-4 gap-3 rounded-none ring-0 ring-transparent">
+            <Card key={e.id} className="border border-hairline bg-surface-card p-4 gap-3 rounded-lg ring-0 ring-transparent">
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-lg font-bold text-ink flex items-center gap-2"><Receipt size={14} className="text-muted" /> {e.name}</p>
@@ -309,7 +346,7 @@ export default function ExpensesPage() {
       </div>
 
       {/* DESKTOP TABLE */}
-      <div className="hidden md:block border border-hairline overflow-x-auto bg-surface-card">
+      <div className="hidden md:block border border-hairline overflow-x-auto rounded-lg bg-surface-card">
         <Table className="w-full min-w-[800px]">
           <TableHeader className="border-b border-hairline bg-surface-soft">
             <TableRow>

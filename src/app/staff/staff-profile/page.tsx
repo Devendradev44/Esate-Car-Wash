@@ -15,6 +15,8 @@ export default function StaffProfilePage() {
 
   // Find this staff member's details
   const myStaffDetails = staff.find(s => s.id === mockUser?.id) || staff[0];
+  const staffName = myStaffDetails?.name || "";
+  const staffInitials = staffName.split(" ").map(p => p[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
 
   const handleLogout = () => {
     logoutMockUser();
@@ -28,15 +30,19 @@ export default function StaffProfilePage() {
       </div>
 
       <div className="flex-1 p-6 space-y-6">
-        <Card className="gap-0 flex flex-col items-center justify-center rounded-none border border-hairline bg-surface-card p-8 ring-0">
+        <Card className="gap-0 flex flex-col items-center justify-center rounded-lg border border-hairline bg-surface-card p-8 ring-0">
           <div className="w-20 h-20 rounded-full bg-yellow-dark/20 flex items-center justify-center mb-4">
-            <User size={32} className="text-yellow-dark" />
+            {staffInitials ? (
+              <span className="text-2xl font-bold text-yellow-dark">{staffInitials}</span>
+            ) : (
+              <User size={32} className="text-yellow-dark" />
+            )}
           </div>
           <h2 className="text-xl font-bold text-ink">{myStaffDetails?.name || "Staff Member"}</h2>
           <p className="text-sm font-light text-muted mt-1">Staff</p>
         </Card>
 
-        <Card className="gap-0 rounded-none border border-hairline bg-surface-card ring-0 divide-y divide-hairline">
+        <Card className="gap-0 rounded-lg border border-hairline bg-surface-card ring-0 divide-y divide-hairline">
           <div className="flex items-center p-4">
             <Phone size={16} className="text-muted mr-4" />
             <p className="text-sm font-light text-ink">{myStaffDetails?.phone || "N/A"}</p>
@@ -51,7 +57,7 @@ export default function StaffProfilePage() {
           </div>
         </Card>
 
-        <Button onClick={handleLogout} variant="outline" className="flex w-full h-auto items-center justify-center gap-2 rounded-none border border-m-red/50 bg-transparent py-4 text-xs font-bold uppercase tracking-machined text-m-red hover:bg-m-red hover:text-ink">
+        <Button onClick={handleLogout} variant="outline" className="flex w-full h-auto items-center justify-center gap-2 rounded-lg border border-m-red/50 bg-transparent py-4 text-xs font-bold uppercase tracking-machined text-m-red hover:bg-m-red hover:text-ink">
           <LogOut size={14} /> Logout
         </Button>
       </div>

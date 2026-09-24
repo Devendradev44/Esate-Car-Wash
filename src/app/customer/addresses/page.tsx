@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Plus, MapPin, Trash2, Edit } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { toast } from "@/components/ui/toast";
-import { AnimatedSelect } from "@/components/ui/AnimatedSelect";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -87,9 +87,9 @@ export default function AddressesPage() {
         </div>
         <Button
           onClick={openAddModal}
-          className="p-3 border border-yellow-dark text-yellow-dark hover:bg-yellow-dark hover:text-ink transition-colors"
+          className="flex h-auto items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors"
         >
-          <Plus size={20} />
+          <Plus size={14} /> Add Address
         </Button>
       </div>
 
@@ -110,7 +110,7 @@ export default function AddressesPage() {
           />
         ) : (
           addresses.map(a => (
-            <Card key={a.id} className="gap-0 rounded-none border border-hairline bg-surface-card p-5 ring-0">
+            <Card key={a.id} className="gap-0 rounded-lg border border-hairline bg-surface-card p-5 ring-0">
               <div className="flex justify-between items-start">
                 <div className="flex items-start gap-3">
                   <MapPin size={20} className="text-yellow-dark mt-1" />
@@ -144,7 +144,7 @@ export default function AddressesPage() {
       </div>
 
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto gap-0 rounded-none border border-hairline bg-surface-soft p-8 ring-0 sm:max-w-md">
+        <DialogContent className="max-h-[90vh] overflow-y-auto gap-0 rounded-lg border border-hairline bg-surface-soft p-8 ring-0 sm:max-w-md">
           <div className="flex items-center justify-between mb-8">
             <DialogTitle className="text-xl font-bold uppercase text-ink">
               {isEditing ? "Edit Address" : "Add Address"}
@@ -153,14 +153,16 @@ export default function AddressesPage() {
 
             <div className="mb-4">
               <Label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Community</Label>
-              <AnimatedSelect
-                value={community}
-                onChange={(e) => setCommunity(e.target.value)}
-                label="Community"
-                placeholder="Select community"
-                options={communities.map(c => ({ value: c.name, label: c.name }))}
-                className={inputClasses}
-              />
+              <Select value={community} onValueChange={(v) => setCommunity(v || "")}>
+                <SelectTrigger className={inputClasses}>
+                  <SelectValue placeholder="Select community" />
+                </SelectTrigger>
+                <SelectContent>
+                  {communities.map(c => (
+                    <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="mb-8">
               <Label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Flat Number</Label>
@@ -175,7 +177,7 @@ export default function AddressesPage() {
 
             <Button
               onClick={handleSaveAddress}
-              className="flex h-auto w-full items-center justify-center gap-2 rounded-none bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light"
+              className="flex h-auto w-full items-center justify-center gap-2 rounded-lg bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light"
             >
               {isEditing ? "Save Changes" : "Save Address"}
             </Button>

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Plus, Trash2, X, User, Phone, KeyRound, Edit } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { AnimatedSelect } from "@/components/ui/AnimatedSelect";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -59,7 +59,7 @@ export default function StaffPage() {
     <div className="p-6 md:p-12 relative">
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md border border-hairline bg-surface-soft p-8">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-bold uppercase text-ink">{isEditing ? "Edit Staff Member" : "Add Staff Member"}</h3>
               <Button type="button" variant="ghost" size="icon-sm" onClick={() => setShowModal(false)} className="text-muted hover:text-ink" aria-label="Close staff form"><X size={20} /></Button>
@@ -74,14 +74,16 @@ export default function StaffPage() {
             </div>
             <div className="mb-8">
               <label className={labelClasses}>Assign Community</label>
-              <AnimatedSelect
-              value={community}
-              onChange={(e) => setCommunity(e.target.value)}
-              label="Assign Community"
-              placeholder="Select community"
-              options={communities.map(c => ({ value: c.name, label: c.name }))}
-              className={inputClasses}
-            />
+              <Select value={community} onValueChange={(v) => setCommunity(v || "")}>
+                <SelectTrigger className={inputClasses}>
+                  <SelectValue placeholder="Select community" />
+                </SelectTrigger>
+                <SelectContent>
+                  {communities.map(c => (
+                    <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <Button type="button" onClick={handleSaveStaff} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">
               {isEditing ? "Save Changes" : "Generate PIN & Save"}
@@ -103,7 +105,7 @@ export default function StaffPage() {
       {/* MOBILE CARDS */}
       <div className="md:hidden space-y-4">
         {staff.map(s => (
-          <Card key={s.id} className="border border-hairline bg-surface-card p-4 gap-3 rounded-none ring-0 ring-transparent">
+          <Card key={s.id} className="border border-hairline bg-surface-card p-4 gap-3 rounded-lg ring-0 ring-transparent">
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-lg font-bold text-ink flex items-center gap-2"><User size={14} className="text-muted" /> {s.name}</p>
@@ -126,7 +128,7 @@ export default function StaffPage() {
       </div>
 
       {/* DESKTOP TABLE */}
-      <div className="hidden md:block border border-hairline overflow-x-auto bg-surface-card">
+      <div className="hidden md:block border border-hairline overflow-x-auto rounded-lg bg-surface-card">
         <Table className="w-full min-w-[800px]">
           <TableHeader className="border-b border-hairline bg-surface-soft">
             <TableRow>
