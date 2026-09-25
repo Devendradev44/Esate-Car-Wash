@@ -1,16 +1,20 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo } from "react";
 import {
   CalendarDays,
   Clock,
   CheckCircle2,
+  XCircle,
   ArrowUpRight,
   ArrowDownRight,
+  ArrowDownLeft,
   IndianRupee,
   Wallet,
   TrendingUp,
   TrendingDown,
+  Smartphone,
+  Banknote,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -27,44 +31,72 @@ import { SectionHeader } from "@/components/layout/SectionHeader";
 
 type DateFilter = "TODAY" | "YESTERDAY" | "MONTH" | "YEAR" | "CUSTOM";
 
+const pad = (n: number) => String(n).padStart(2, "0");
+
+// Normalize any stored booking date into a comparable "YYYY-MM-DD" key.
+// Handles "2026-09-24", "2026-09-24T10:00", "24/09/2026", "9/24/2026", etc.
+function toDateKey(value: string): string {
+  if (!value) return "";
+  const v = value.trim();
+  const iso = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const parts = v.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
+  if (parts) {
+    const a = Number(parts[1]);
+    const b = Number(parts[2]);
+    if (a <= 31 && b <= 12) return `${parts[3]}-${pad(b)}-${pad(a)}`;
+    if (a <= 12 && b <= 31) return `${parts[3]}-${pad(a)}-${pad(b)}`;
+  }
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? v : `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function dateToKey(d: Date) {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// Booking communities may carry stray whitespace/case — compare normalized.
+const norm = (v: string) => v.trim().toLowerCase();
+
+const matchesCommunityFilter = (b: { community: string }, communityFilter: string) =>
+  communityFilter === "ALL" || norm(b.community) === norm(communityFilter);
+
+// Company-wide (no community) expenses count for every community filter; community expenses count only for their own.
+const matchesExpenseFilter = (e: { community?: string }, communityFilter: string) =>
+  communityFilter === "ALL" || !e.community || norm(e.community) === norm(communityFilter);
+
 function getDateRange(filter: DateFilter, customDate?: string) {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  let start = today;
-  let end = new Date(today.getTime() + 86400000 - 1);
+  let startKey = dateToKey(today);
+  let endKey = startKey;
 
   switch (filter) {
-    case "TODAY":
-      start = today;
-      end = new Date(today.getTime() + 86400000 - 1);
+    case "YESTERDAY":
+      startKey = dateToKey(new Date(today.getTime() - 86400000));
+      endKey = startKey;
       break;
-    case "YESTERDAY": {
-      const yesterday = new Date(today.getTime() - 86400000);
-      start = yesterday;
-      end = new Date(yesterday.getTime() + 86400000 - 1);
-      break;
-    }
     case "MONTH":
-      start = new Date(now.getFullYear(), now.getMonth(), 1);
-      end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+      startKey = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`;
+      endKey = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate())}`;
       break;
     case "YEAR":
-      start = new Date(now.getFullYear(), 0, 1);
-      end = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+      startKey = `${now.getFullYear()}-01-01`;
+      endKey = `${now.getFullYear()}-12-31`;
       break;
     case "CUSTOM":
       if (customDate) {
-        start = new Date(customDate);
-        end = new Date(customDate);
+        startKey = toDateKey(customDate);
+        endKey = startKey;
       }
       break;
   }
-  return { start, end };
+  return { startKey, endKey };
 }
 
-function isWithinRange(dateStr: string, start: Date, end: Date): boolean {
-  const d = new Date(dateStr);
-  return d >= start && d <= end;
+function isWithinRange(dateStr: string, startKey: string, endKey: string): boolean {
+  const dk = toDateKey(dateStr);
+  return dk.length === 10 && dk >= startKey && dk <= endKey;
 }
 
 export default function AdminDashboard() {
@@ -76,18 +108,18 @@ export default function AdminDashboard() {
   const [customDate, setCustomDate] = useState("");
   const [communityFilter, setCommunityFilter] = useState("ALL");
 
-  const { start, end } = useMemo(
+  const { startKey, endKey } = useMemo(
     () => getDateRange(dateFilter, customDate || undefined),
     [dateFilter, customDate]
   );
 
   const filteredBookings = useMemo(() => {
     return bookings.filter((b) => {
-      if (!isWithinRange(b.date, start, end)) return false;
-      if (communityFilter !== "ALL" && b.community !== communityFilter) return false;
+      if (!isWithinRange(b.date, startKey, endKey)) return false;
+      if (!matchesCommunityFilter(b, communityFilter)) return false;
       return true;
     });
-  }, [bookings, start, end, communityFilter]);
+  }, [bookings, startKey, endKey, communityFilter]);
 
   const kpis = useMemo(() => {
     const today = new Date();
@@ -101,65 +133,87 @@ export default function AdminDashboard() {
     const share = (num: number, den: number) => den <= 0 ? 0 : Math.round((num / den) * 100);
     
     const todayBookings = bookings.filter(
-      (b) => b.date === todayLocalStr && (communityFilter === "ALL" || b.community === communityFilter)
+      (b) => toDateKey(b.date) === todayLocalStr && matchesCommunityFilter(b, communityFilter)
     ).length;
     const yesterdayBookings = bookings.filter(
-      (b) => b.date === yesterdayLocalStr && b.bookingStatus === "BOOKED" && (communityFilter === "ALL" || b.community === communityFilter)
+      (b) => toDateKey(b.date) === yesterdayLocalStr && b.bookingStatus === "BOOKED" && matchesCommunityFilter(b, communityFilter)
     ).length;
     const inProgress = filteredBookings.filter((b) => b.bookingStatus === "BOOKED").length;
     const completed = filteredBookings.filter((b) => b.bookingStatus === "COMPLETED").length;
+    const cancelled = filteredBookings.filter((b) => b.bookingStatus === "CANCELLED").length;
   const upcoming = bookings.filter(
       (b) =>
-        b.date > todayLocalStr &&
+        toDateKey(b.date) > todayLocalStr &&
         b.bookingStatus === "BOOKED" &&
-        (communityFilter === "ALL" || b.community === communityFilter)
+        matchesCommunityFilter(b, communityFilter)
     ).length;
   const todayRevenue = bookings
       .filter(
         (b) =>
-          b.date === todayLocalStr &&
+          toDateKey(b.date) === todayLocalStr &&
           b.paymentStatus === "PAID" &&
-          (communityFilter === "ALL" || b.community === communityFilter)
+          matchesCommunityFilter(b, communityFilter)
       )
       .reduce((sum, b) => sum + b.amount, 0);
     const yesterdayRevenue = bookings
       .filter(
         (b) =>
-          b.date === yesterdayLocalStr &&
+          toDateKey(b.date) === yesterdayLocalStr &&
           b.paymentStatus === "PAID" &&
-          (communityFilter === "ALL" || b.community === communityFilter)
+          matchesCommunityFilter(b, communityFilter)
       )
       .reduce((sum, b) => sum + b.amount, 0);
     const todayExpense = expenses
-      .filter((e) => e.date === todayLocalStr)
+      .filter((e) => toDateKey(e.date) === todayLocalStr && matchesExpenseFilter(e, communityFilter))
       .reduce((sum, e) => sum + e.amount, 0);
     const yesterdayExpense = expenses
-      .filter((e) => e.date === yesterdayLocalStr)
+      .filter((e) => toDateKey(e.date) === yesterdayLocalStr && matchesExpenseFilter(e, communityFilter))
       .reduce((sum, e) => sum + e.amount, 0);
-    const totalRevenue = bookings
-      .filter((b) => b.paymentStatus === "PAID" && (communityFilter === "ALL" || b.community === communityFilter))
+    const todayUpi = bookings
+      .filter(
+        (b) =>
+          toDateKey(b.date) === todayLocalStr &&
+          b.paymentStatus === "PAID" &&
+          b.paymentMethod === "UPI" &&
+          matchesCommunityFilter(b, communityFilter)
+      )
       .reduce((sum, b) => sum + b.amount, 0);
-    // Expenses have no community field (company-wide), so they stay unfiltered.
-    const totalExpense = expenses.reduce((sum, e) => sum + e.amount, 0);
+    const todayCash = bookings
+      .filter(
+        (b) =>
+          toDateKey(b.date) === todayLocalStr &&
+          b.paymentStatus === "PAID" &&
+          b.paymentMethod === "CASH" &&
+          matchesCommunityFilter(b, communityFilter)
+      )
+      .reduce((sum, b) => sum + b.amount, 0);
+    const totalRevenue = bookings
+      .filter((b) => b.paymentStatus === "PAID" && matchesCommunityFilter(b, communityFilter))
+      .reduce((sum, b) => sum + b.amount, 0);
+    const totalExpense = expenses.filter((e) => matchesExpenseFilter(e, communityFilter)).reduce((sum, e) => sum + e.amount, 0);
     const netProfit = totalRevenue - totalExpense;
 
     return [
-      { title: "Today's Bookings", value: todayBookings, icon: CalendarDays, trend: { value: pct(todayBookings, yesterdayBookings), label: "vs yesterday" } },
+      { title: "Upcoming", value: upcoming, icon: ArrowUpRight },
       { title: "In Progress", value: inProgress, icon: Clock, trend: filteredBookings.length > 0 ? { value: share(inProgress, filteredBookings.length), label: "of filtered" } : undefined },
       { title: "Completed", value: completed, icon: CheckCircle2, trend: filteredBookings.length > 0 ? { value: share(completed, filteredBookings.length), label: "of filtered" } : undefined },
-      { title: "Upcoming", value: upcoming, icon: ArrowUpRight },
+      { title: "Cancelled", value: cancelled, icon: XCircle, trend: filteredBookings.length > 0 ? { value: share(cancelled, filteredBookings.length), label: "of filtered" } : undefined },
+      { title: "Today's Bookings", value: todayBookings, icon: CalendarDays, trend: { value: pct(todayBookings, yesterdayBookings), label: "vs yesterday" } },
       { title: "Today's Revenue", value: `Rs.${todayRevenue.toLocaleString("en-IN")}`, icon: IndianRupee, trend: { value: pct(todayRevenue, yesterdayRevenue), label: "vs yesterday" } },
       { title: "Today's Expense", value: `Rs.${todayExpense.toLocaleString("en-IN")}`, icon: ArrowDownRight, trend: { value: pct(todayExpense, yesterdayExpense), label: "vs yesterday" } },
       { title: "Total Revenue", value: `Rs.${totalRevenue.toLocaleString("en-IN")}`, icon: Wallet },
+      { title: "Total Expense", value: `Rs.${totalExpense.toLocaleString("en-IN")}`, icon: ArrowDownLeft },
       { title: "Net Profit", value: `Rs.${netProfit.toLocaleString("en-IN")}`, icon: netProfit >= 0 ? TrendingUp : TrendingDown, trend: { value: share(netProfit, totalRevenue), label: "margin" } },
+      { title: "Today's Payment UPI", value: `Rs.${todayUpi.toLocaleString("en-IN")}`, icon: Smartphone },
+      { title: "Today's Payment Cash", value: `Rs.${todayCash.toLocaleString("en-IN")}`, icon: Banknote },
     ];
   }, [bookings, expenses, filteredBookings, communityFilter]);
 
   const recentBookings = useMemo(() => {
-    return [...bookings]
-      .sort((a, b) => b.date.localeCompare(a.date))
+    return [...filteredBookings]
+      .sort((a, b) => toDateKey(b.date).localeCompare(toDateKey(a.date)))
       .slice(0, 5);
-  }, [bookings]);
+  }, [filteredBookings]);
 
   const communityOptions = useMemo(() => {
     const names = new Set<string>();
@@ -238,7 +292,12 @@ export default function AdminDashboard() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
               <CardTitle className="text-lg font-semibold">Recent Bookings</CardTitle>
-              <CardDescription>Latest 5 bookings across all communities.</CardDescription>
+              <CardDescription>
+                {communityFilter === "ALL"
+                  ? "Latest 5 bookings across all communities."
+                  : `Latest 5 bookings in ${communityFilter}.`}{" "}
+                ({startKey === endKey ? startKey : `${startKey} to ${endKey}`})
+              </CardDescription>
             </div>
             <Badge variant="secondary" className="text-xs">
               {recentBookings.length} records
@@ -246,7 +305,15 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             {recentBookings.length === 0 ? (
-              <EmptyState icon={CalendarDays} title="No bookings yet" description="Bookings will appear here once they are created." />
+              <EmptyState
+                icon={CalendarDays}
+                title={bookings.length === 0 ? "No bookings yet" : "No bookings in this view"}
+                description={
+                  bookings.length === 0
+                    ? "Bookings will appear here once they are created."
+                    : "No bookings match the selected community and date range. Try a wider range (Month / Year) or All Communities."
+                }
+              />
             ) : (
               <div className="divide-y divide-border">
                 {recentBookings.map((b) => (

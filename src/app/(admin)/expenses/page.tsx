@@ -21,6 +21,7 @@ export default function ExpensesPage() {
   const expenseCategories = useStore((state) => state.expenseCategories);
   const addExpenseCategory = useStore((state) => state.addExpenseCategory);
   const removeExpenseCategory = useStore((state) => state.removeExpenseCategory);
+  const communities = useStore((state) => state.communities);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -39,6 +40,7 @@ export default function ExpensesPage() {
   const [category, setCategory] = useState(expenseCategories[0] || "");
   const [amount, setAmount] = useState("");
   const [paymentType, setPaymentType] = useState(expensePaymentMethods[0]);
+  const [expenseCommunity, setExpenseCommunity] = useState("");
   const [notes, setNotes] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -46,7 +48,8 @@ export default function ExpensesPage() {
     const q = searchQuery.trim().toLowerCase();
     return (
       e.name.toLowerCase().includes(q) ||
-      e.category.toLowerCase().includes(q)
+      e.category.toLowerCase().includes(q) ||
+      ((e.community || "").toLowerCase().includes(q))
     );
   });
 
@@ -57,6 +60,7 @@ export default function ExpensesPage() {
       { key: "category", header: "Category" },
       { key: "amount", header: "Amount" },
       { key: "paymentType", header: "Payment Type" },
+      { key: "community", header: "Community" },
       { key: "notes", header: "Notes" },
     ]);
     downloadCSV(`expenses_${new Date().toISOString().slice(0, 10)}.csv`, csv);
@@ -77,6 +81,7 @@ export default function ExpensesPage() {
       const amountIdx = header.indexOf("AMOUNT");
       const paymentIdx = header.indexOf("PAYMENT TYPE");
       const notesIdx = header.indexOf("NOTES");
+      const communityIdx = header.indexOf("COMMUNITY");
 
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
@@ -95,6 +100,7 @@ export default function ExpensesPage() {
             ? (row[paymentIdx].trim().toUpperCase() as "CASH" | "UPI" | "CHEQUE" | "ACCOUNT_TRANSFER")
             : "CASH",
           notes: notesIdx >= 0 ? row[notesIdx]?.trim() || "" : "",
+          community: communityIdx >= 0 && row[communityIdx]?.trim() ? row[communityIdx].trim() : undefined,
         });
       }
       setShowImportModal(false);
@@ -107,27 +113,27 @@ export default function ExpensesPage() {
   const openAddModal = () => {
     setIsEditing(false);
     setDate(""); setName(""); setAmount(""); setNotes("");
-    setCategory(expenseCategories[0] || ""); setPaymentType(expensePaymentMethods[0]);
+    setCategory(expenseCategories[0] || ""); setPaymentType(expensePaymentMethods[0]); setExpenseCommunity("");
     setShowModal(true);
   };
 
-  const openEditModal = (e: { id: string; date: string; name: string; category: string; amount: number; paymentType: string; notes: string }) => {
+  const openEditModal = (e: { id: string; date: string; name: string; category: string; amount: number; paymentType: string; notes: string; community?: string }) => {
     setIsEditing(true);
     setCurrentId(e.id);
     setDate(e.date); setName(e.name); setAmount(e.amount.toString());
-    setCategory(e.category); setPaymentType(e.paymentType); setNotes(e.notes);
+    setCategory(e.category); setPaymentType(e.paymentType); setNotes(e.notes); setExpenseCommunity(e.community || "");
     setShowModal(true);
   };
 
   const handleSaveExpense = () => {
     if (!name || !amount || !date || !category) return;
     if (isEditing) {
-      updateExpense(currentId, date, name, Number(amount), category, paymentType, notes);
+      updateExpense(currentId, date, name, Number(amount), category, paymentType, notes, expenseCommunity || undefined);
     } else {
-      addExpense({ id: `e${Date.now()}`, date, name, category, amount: Number(amount), paymentType, notes });
+      addExpense({ id: `e${Date.now()}`, date, name, category, amount: Number(amount), paymentType, notes, community: expenseCommunity || undefined });
     }
     setDate(""); setName(""); setAmount(""); setNotes("");
-    setCategory(expenseCategories[0] || ""); setPaymentType(expensePaymentMethods[0]);
+    setCategory(expenseCategories[0] || ""); setPaymentType(expensePaymentMethods[0]); setExpenseCommunity("");
     setShowModal(false);
   };
 
@@ -186,6 +192,20 @@ export default function ExpensesPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div><label className={labelClasses}>Community (Optional)</label>
+                <Select value={expenseCommunity || "Company-wide"} onValueChange={(v) => setExpenseCommunity(v === "Company-wide" ? "" : v || "")}>
+                  <SelectTrigger className={inputClasses}>
+                    <SelectValue placeholder="Company-wide" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Company-wide">Company-wide</SelectItem>
+                    {communities.map(c => (
+                      <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="mt-2 text-[10px] font-light text-muted">Leave as Company-wide for business-level expenses (e.g. bonuses). Pick a community for salaries, equipment, or machines tied to one community.</p>
+              </div>
               <div><label className={labelClasses}>Notes (Optional)</label><Input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any details..." className={inputClasses} /></div>
             </div>
             <Button type="button" onClick={handleSaveExpense} className="mt-6 flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">
@@ -233,7 +253,7 @@ export default function ExpensesPage() {
               <Button type="button" variant="ghost" size="icon-sm" onClick={() => { setShowImportModal(false); setImportError(""); }} className="text-muted hover:text-ink" aria-label="Close import form"><X size={20} /></Button>
             </div>
             <div className="space-y-4">
-              <p className="text-xs font-light text-muted">Upload a CSV with columns: Date, Name, Category, Amount (required).</p>
+              <p className="text-xs font-light text-muted">Upload a CSV with columns: Date, Name, Category, Amount (required). Optional: Payment Type, Notes, Community.</p>
               <Input
                 type="file"
                 accept=".csv"
@@ -335,6 +355,11 @@ export default function ExpensesPage() {
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-bold uppercase tracking-machined bg-surface-elevated text-body px-2 py-1">{e.category}</span>
                 <span className="text-[10px] font-bold uppercase tracking-machined bg-surface-elevated text-muted px-2 py-1">{e.paymentType}</span>
+                {e.community ? (
+                  <span className="text-[10px] font-bold uppercase tracking-machined bg-yellow-dark/10 text-yellow-dark px-2 py-1">{e.community}</span>
+                ) : (
+                  <span className="text-[10px] font-bold uppercase tracking-machined bg-surface-elevated text-muted px-2 py-1">Company-wide</span>
+                )}
               </div>
               <div className="flex items-center justify-end gap-4 border-t border-hairline pt-3">
                 <Button type="button" variant="ghost" size="icon-sm" onClick={() => openEditModal(e)} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${e.name}`}><Edit size={16} /></Button>
@@ -353,6 +378,7 @@ export default function ExpensesPage() {
               <TableHead className="py-4 px-6 text-left text-xs font-bold uppercase tracking-machined text-muted">Date</TableHead>
               <TableHead className="py-4 px-6 text-left text-xs font-bold uppercase tracking-machined text-muted">Name</TableHead>
               <TableHead className="py-4 px-6 text-left text-xs font-bold uppercase tracking-machined text-muted">Category</TableHead>
+              <TableHead className="py-4 px-6 text-left text-xs font-bold uppercase tracking-machined text-muted">Community</TableHead>
               <TableHead className="py-4 px-6 text-right text-xs font-bold uppercase tracking-machined text-muted">Amount</TableHead>
               <TableHead className="py-4 px-6 text-left text-xs font-bold uppercase tracking-machined text-muted">Payment</TableHead>
               <TableHead className="py-4 px-6 text-right text-xs font-bold uppercase tracking-machined text-muted">Actions</TableHead>
@@ -364,6 +390,13 @@ export default function ExpensesPage() {
                 <TableCell className="py-4 px-6 text-sm font-light text-ink">{e.date}</TableCell>
                 <TableCell className="py-4 px-6"><p className="text-sm font-bold text-ink">{e.name}</p>{e.notes && <p className="text-xs font-light text-muted mt-1">{e.notes}</p>}</TableCell>
                 <TableCell className="py-4 px-6 text-xs font-bold uppercase tracking-machined text-body">{e.category}</TableCell>
+                <TableCell className="py-4 px-6">
+                  {e.community ? (
+                    <span className="text-[10px] font-bold uppercase tracking-machined bg-yellow-dark/10 text-yellow-dark px-2 py-1 rounded-full">{e.community}</span>
+                  ) : (
+                    <span className="text-[10px] font-bold uppercase tracking-machined bg-surface-elevated text-muted px-2 py-1 rounded-full">Company-wide</span>
+                  )}
+                </TableCell>
                 <TableCell className="py-4 px-6 text-sm font-bold text-m-red text-right">₹{e.amount.toLocaleString()}</TableCell>
                 <TableCell className="py-4 px-6 text-xs font-bold uppercase tracking-machined text-muted">{e.paymentType}</TableCell>
                 <TableCell className="py-4 px-6 text-right">

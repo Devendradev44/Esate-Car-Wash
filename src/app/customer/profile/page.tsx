@@ -3,7 +3,7 @@ import { useState } from "react";
 import { User, Mail, Phone, LogOut } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -41,11 +41,11 @@ export default function ProfilePage() {
   const handleSave = () => {
     if (!draft) return;
     if (draft.phone.length !== 10) {
-      toast.add({ type: "error", title: "Invalid phone", description: "Phone number must be exactly 10 digits." });
+      toast.error("Invalid phone", { description: "Phone number must be exactly 10 digits." });
       return;
     }
     if (!draft.firstName.trim()) {
-      toast.add({ type: "error", title: "Invalid name", description: "First name cannot be empty." });
+      toast.error("Invalid name", { description: "First name cannot be empty." });
       return;
     }
     const fullName = `${draft.firstName.trim()} ${draft.lastName.trim()}`.trim();
@@ -53,7 +53,7 @@ export default function ProfilePage() {
     updateMockUser({ name: fullName, phone: draft.phone, email: draft.email });
     setDraft(null);
     setIsEditing(false);
-    toast.add({ type: "success", title: "Profile updated", description: "Your changes have been saved." });
+    toast.success("Profile updated", { description: "Your changes have been saved." });
   };
 
   const handleLogout = () => {

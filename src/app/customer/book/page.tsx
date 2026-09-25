@@ -4,12 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Check, MapPin, Car, Wrench, Calendar } from "lucide-react";
 import { useStore, getTimeSlotsForCommunity } from "@/lib/store";
-import { toast } from "@/components/ui/toast"; 
+import { toast } from "sonner"; 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export default function BookService() {
   const router = useRouter();
@@ -83,6 +83,21 @@ export default function BookService() {
   const slotCapacity = selectedCommunityObj?.slotCapacity || 1;
   const scheduleTimeSlots = selectedCommunityObj ? getTimeSlotsForCommunity(selectedCommunityObj.id) : timeSlots;
 
+  // Community availability & discount logic
+  const selectedCommunitySettings = selectedCommunityObj?.serviceSettings || [];
+  const communitySettingFor = (serviceName: string) =>
+    selectedCommunityObj
+      ? (selectedCommunitySettings.find(st => st.serviceName === serviceName) || { enabled: true, discountPct: 0 })
+      : { enabled: true, discountPct: 0 };
+  const getDiscountPct = (serviceName: string) => Math.max(0, Math.min(100, communitySettingFor(serviceName).discountPct || 0));
+  const getFinalPrice = (service: typeof services[0]) => {
+    const base = getPrice(service);
+    const pct = getDiscountPct(service.name);
+    return pct > 0 ? Math.round(base * (1 - pct / 100)) : base;
+  };
+  const isServiceVisibleToCommunity = (serviceName: string) =>
+    !selectedCommunityObj || communitySettingFor(serviceName).enabled !== false;
+
   const isSlotDisabled = (slotLabel: string) => {
     // 1. Check past time
     if (selectedDate === getTodayDate()) {
@@ -117,6 +132,9 @@ export default function BookService() {
   const inputClasses = "w-full h-auto bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
   const labelClasses = "flex items-center gap-2 text-xs font-bold uppercase tracking-machined text-muted mb-4 mt-8";
   const cardClasses = "w-full h-auto rounded-lg border p-4 text-left transition-colors";
+  const fieldLabelClasses = "block text-[11px] font-bold uppercase tracking-machined text-muted mb-2.5";
+  const stepClasses = "inline-flex items-center gap-1.5 rounded-full bg-yellow-dark/10 px-3 py-1 text-[10px] font-bold uppercase tracking-machined text-yellow-dark";
+  const dialogInputClasses = "w-full h-auto rounded-xl border border-hairline bg-surface-card px-4 py-4 text-sm font-light text-ink placeholder:text-muted focus:border-yellow-dark focus:outline-none focus:ring-2 focus:ring-yellow-dark/20 transition-all appearance-none";
 
   const formatRegNumber = (value: string) => {
     return value.toUpperCase().replace(/[^A-Z0-9 ]/g, '');
@@ -146,8 +164,8 @@ export default function BookService() {
     };
     const vehicleObj = savedVehicles.find(v => v.id === selectedVehicleId) || { 
       category: currentCategory, 
-      brand: brandsForNewCat.find(b => b.id === newBrand)?.name || "", 
-      model: modelsForNewBrand.find(m => m.id === newModel)?.name || "", 
+      brand: brandsForNewCat.find(b => b.name === newBrand)?.name || "", 
+      model: modelsForNewBrand.find(m => m.name === newModel)?.name || "", 
       reg: newReg 
     };
 
@@ -162,14 +180,12 @@ export default function BookService() {
       vehicle: `${vehicleObj.brand} ${vehicleObj.model} (${vehicleObj.category})`,
       regNumber: vehicleObj.reg || "Unknown",
       service: serviceObj.name,
-      amount: getPrice(serviceObj),
+      amount: getFinalPrice(serviceObj),
       bookingStatus: "BOOKED",
       paymentStatus: "PENDING"
     });
 
-    toast.add({
-      type: "success",
-      title: "Booking confirmed",
+    toast.success("Booking created", {
       description: `Your ${serviceObj.name} for ${vehicleObj.brand} ${vehicleObj.model} is booked on ${selectedDate} at ${selectedTime}.`,
     });
 
@@ -222,36 +238,43 @@ export default function BookService() {
         </Button>
 
         <Dialog open={showAddAddress} onOpenChange={setShowAddAddress}>
-          <DialogContent className="max-h-[90vh] overflow-y-auto gap-0 rounded-lg border border-hairline bg-surface-soft p-8 ring-0 sm:max-w-md">
-            <div className="flex items-center justify-between mb-8">
-              <DialogTitle className="text-xl font-bold uppercase text-ink">Add New Address</DialogTitle>
+          <DialogContent showCloseButton className="max-h-[92vh] overflow-y-auto gap-0 rounded-2xl border border-hairline bg-surface-soft p-8 ring-0 sm:max-w-[480px]">
+            <span className={stepClasses}><MapPin size={11} /> Add address</span>
+            <div className="mt-3 mb-8">
+              <DialogTitle className="text-2xl font-bold tracking-normal text-ink">Where should we wash?</DialogTitle>
+              <DialogDescription className="mt-1.5 text-sm font-light text-muted">
+                Tell us your community and flat so we can come to you.
+              </DialogDescription>
             </div>
-            <div className="mb-4">
-              <Label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Community</Label>
-              <Select value={newCommunity} onValueChange={(v) => setNewCommunity(v || "")}>
-                <SelectTrigger className={inputClasses}>
-                  <SelectValue placeholder="Choose community" />
-                </SelectTrigger>
-                <SelectContent>
-                  {activeCommunities.map(c => (
-                    <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="mb-8">
-              <Label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Flat Number</Label>
-              <Input
-                type="text"
-                value={newFlat}
-                onChange={(e) => {
-                  const val = e.target.value.toUpperCase();
-                  if (val.length <= 6) setNewFlat(val);
-                }}
-                placeholder="e.g. M-39, M39, A-101"
-                className={inputClasses}
-                maxLength={6}
-              />
+            <div className="space-y-6">
+              <div>
+                <Label className={fieldLabelClasses}>Community</Label>
+                <Select value={newCommunity} onValueChange={(v) => setNewCommunity(v || "")}>
+                  <SelectTrigger className={dialogInputClasses}>
+                    <SelectValue placeholder="Choose community" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeCommunities.map(c => (
+                      <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className={fieldLabelClasses}>Flat Number</Label>
+                <Input
+                  type="text"
+                  value={newFlat}
+                  onChange={(e) => {
+                    const val = e.target.value.toUpperCase();
+                    if (val.length <= 6) setNewFlat(val);
+                  }}
+                  placeholder="e.g. M-39, M39, A-101"
+                  className={`${dialogInputClasses} max-w-[40%]`}
+                  maxLength={6}
+                />
+                <p className="mt-2 text-xs font-light text-muted">Use format like &quot;M-39&quot; or &quot;A-101&quot;.</p>
+              </div>
             </div>
             <Button
               onClick={() => {
@@ -265,7 +288,7 @@ export default function BookService() {
                 setSelectedAddressId(newAddr.id);
                 setShowAddAddress(false);
               }}
-              className="w-full h-auto rounded-lg bg-yellow-dark py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light"
+              className="mt-8 flex h-auto w-full items-center justify-center gap-2 rounded-xl bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-all"
             >
               Save Address
             </Button>
@@ -301,16 +324,21 @@ export default function BookService() {
         </Button>
 
         <Dialog open={showAddVehicle} onOpenChange={setShowAddVehicle}>
-          <DialogContent className="max-h-[90vh] overflow-y-auto gap-0 rounded-lg border border-hairline bg-surface-soft p-8 ring-0 sm:max-w-md">
-            <div className="flex items-center justify-between mb-8">
-              <DialogTitle className="text-xl font-bold uppercase text-ink">Add New Vehicle</DialogTitle>
+          <DialogContent showCloseButton className="max-h-[92vh] overflow-y-auto gap-0 rounded-2xl border border-hairline bg-surface-soft p-8 ring-0 sm:max-w-[520px]">
+            <span className={stepClasses}><Plus size={11} /> Add vehicle</span>
+            <div className="mt-3 mb-8">
+              <DialogTitle className="text-2xl font-bold tracking-normal text-ink">Tell us what you drive</DialogTitle>
+              <DialogDescription className="mt-1.5 text-sm font-light text-muted">
+                Pick your vehicle details and registration number. Pricing adapts automatically.
+              </DialogDescription>
             </div>
-            <div className="space-y-4 mb-8">
+
+            <div className="space-y-6">
               <div>
-                <Label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Category</Label>
+                <Label className={fieldLabelClasses}>Vehicle Category <span className="text-m-red" aria-hidden="true">*</span></Label>
                 <Select value={newCat} onValueChange={(v) => { setNewCat(v || ""); setNewBrand(""); setNewModel(""); }}>
-                  <SelectTrigger className={inputClasses}>
-                    <SelectValue placeholder="Category" />
+                  <SelectTrigger className={dialogInputClasses}>
+                    <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
                     {vehicleHierarchy.map(c => (
@@ -320,69 +348,78 @@ export default function BookService() {
                 </Select>
               </div>
 
-              {newCat && (
-                <div>
-                  <Label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Brand</Label>
-                  <Select value={newBrand} onValueChange={(v) => { setNewBrand(v || ""); setNewModel(""); }}>
-                    <SelectTrigger className={inputClasses}>
-                      <SelectValue placeholder="Brand" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {brandsForNewCat.map(b => (
-                        <SelectItem key={b.name} value={b.name}>{b.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {newBrand && (
-                <div>
-                  <Label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Model</Label>
-                  <Select value={newModel} onValueChange={(v) => setNewModel(v || "")}>
-                    <SelectTrigger className={inputClasses}>
-                      <SelectValue placeholder="Model" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {modelsForNewBrand.map(m => (
-                        <SelectItem key={m.name} value={m.name}>{m.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
               <div>
-                <Label className="block text-xs font-bold uppercase tracking-machined text-muted mb-3">Registration Number</Label>
+                <Label className={fieldLabelClasses}>Brand <span className="text-m-red" aria-hidden="true">*</span></Label>
+                <Select value={newBrand} onValueChange={(v) => { setNewBrand(v || ""); setNewModel(""); }}>
+                  <SelectTrigger className={dialogInputClasses}>
+                    <SelectValue placeholder="Select brand" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {brandsForNewCat.map(b => (
+                      <SelectItem key={b.name} value={b.name}>{b.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className={fieldLabelClasses}>Model <span className="text-m-red" aria-hidden="true">*</span></Label>
+                <Select value={newModel} onValueChange={(v) => setNewModel(v || "")}>
+                  <SelectTrigger className={dialogInputClasses}>
+                    <SelectValue placeholder="Select model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {modelsForNewBrand.map(m => (
+                      <SelectItem key={m.name} value={m.name}>{m.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className={fieldLabelClasses}>Registration Number <span className="text-m-red" aria-hidden="true">*</span></Label>
                 <Input
                   type="text"
                   value={newReg}
                   onChange={handleRegChange}
                   placeholder="AP 12 SM 1234"
                   maxLength={14}
-                  className={inputClasses}
+                  aria-required
+                  aria-describedby="book-reg-helper"
+                  className={`${dialogInputClasses} font-mono tracking-wider`}
                 />
+                <p id="book-reg-helper" className="mt-2 text-xs font-light text-muted">Format: &quot;AP 12 SM 1234&quot; — upper case letters and numbers only.</p>
               </div>
             </div>
-            <Button onClick={() => { 
+
+            <Button onClick={() => {
               const regRegex = /^[A-Z]{2}\s?\d{1,2}\s?[A-Z]{1,3}\s?\d{1,4}$/;
+              if (!newCat || !newBrand || !newModel) {
+                setError("Please select category, brand and model.");
+                return;
+              }
               if (!regRegex.test(newReg)) {
                 setError("Invalid reg format. Use: AP 12 SM 1234");
                 return;
               }
               setError("");
-              
-              const newVeh = { 
-                id: `v${Date.now()}`, 
-                category: newCat, 
-                brand: newBrand, 
-                model: newModel, 
-                reg: newReg, 
-                isDefault: false 
+
+              const newVeh = {
+                id: `v${crypto.randomUUID()}`,
+                category: newCat,
+                brand: newBrand,
+                model: newModel,
+                reg: newReg,
+                isDefault: savedVehicles.length === 0,
               };
               addCustomerVehicle(newVeh);
-              setSelectedVehicleId(newVeh.id); 
-              setShowAddVehicle(false); 
-            }} className="w-full h-auto rounded-lg bg-yellow-dark py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">Save Vehicle</Button>
+              setSelectedVehicleId(newVeh.id);
+              setNewCat(""); setNewBrand(""); setNewModel(""); setNewReg("");
+              setShowAddVehicle(false);
+              toast.success("Vehicle added", { description: `${newBrand} ${newModel} saved to your garage.` });
+            }} className="mt-8 flex h-auto w-full items-center justify-center gap-2 rounded-xl bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-all">
+              Save Vehicle
+            </Button>
           </DialogContent>
         </Dialog>
 
@@ -391,25 +428,47 @@ export default function BookService() {
         
         {selectedVehicleId ? (
           <div className="space-y-3 mb-8">
-            <p className="text-xs font-light text-muted">Prices for: <span className="text-ink font-bold">{currentCategory || "New Vehicle"}</span></p>
-            {services.map(s => (
-              <Button key={s.id} variant="outline" onClick={() => setSelectedService(s.name)}
-                className={`${cardClasses} flex items-center justify-between gap-3 ${
-                  selectedService === s.name
-                    ? "border-yellow-dark bg-yellow-dark/10 ring-1 ring-yellow-dark/60 hover:bg-yellow-dark/10"
-                    : "border-hairline bg-surface-card hover:border-yellow-dark/60 hover:bg-surface-elevated"
-                }`}>
-                <p className="text-sm font-bold text-ink">{s.name}</p>
-                <span className="flex items-center gap-2">
-                  <p className="text-xs font-bold text-yellow-dark">₹{getPrice(s)}</p>
-                  {selectedService === s.name && (
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-yellow-dark text-ink">
-                      <Check size={12} />
+            <p className="text-xs font-light text-muted">Prices for: <span className="text-ink font-bold">{currentCategory || "New Vehicle"}</span>
+              {selectedCommunityObj ? <span className="ml-1 text-muted">· {selectedCommunityObj.name}</span> : null}
+            </p>
+            {services.filter(s => s.active !== false && isServiceVisibleToCommunity(s.name)).map(s => {
+              const base = getPrice(s);
+              const pct = getDiscountPct(s.name);
+              const final = getFinalPrice(s);
+              return (
+                <Button key={s.id} variant="outline" onClick={() => setSelectedService(s.name)}
+                  className={`${cardClasses} flex items-center justify-between gap-3 ${
+                    selectedService === s.name
+                      ? "border-yellow-dark bg-yellow-dark/10 ring-1 ring-yellow-dark/60 hover:bg-yellow-dark/10"
+                      : "border-hairline bg-surface-card hover:border-yellow-dark/60 hover:bg-surface-elevated"
+                  }`}>
+                  <span className="flex flex-col items-start gap-0.5">
+                    <span className="text-sm font-bold text-ink">{s.name}</span>
+                    {pct > 0 && base > 0 ? (
+                      <span className="rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-machined text-success">{pct}% off</span>
+                    ) : null}
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-yellow-dark">
+                      {pct > 0 && base > 0 ? <s className="mr-1 text-muted">₹{base}</s> : null}
+                      ₹{final}
                     </span>
-                  )}
-                </span>
-              </Button>
-            ))}
+                    {selectedService === s.name && (
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-yellow-dark text-ink">
+                        <Check size={12} />
+                      </span>
+                    )}
+                  </span>
+                </Button>
+              );
+            })}
+            {services.filter(s => s.active !== false && isServiceVisibleToCommunity(s.name)).length === 0 && (
+              <p className="text-xs font-light text-muted">
+                {selectedCommunityObj
+                  ? <>No services are currently available in <span className="text-ink font-bold">{selectedCommunityObj.name}</span>. Please try another community or check back later.</>
+                  : "No services are currently available. Please check back later."}
+              </p>
+            )}
           </div>
         ) : (
           <p className="text-xs font-light text-muted mb-8">Please select a vehicle above to see available services and pricing.</p>

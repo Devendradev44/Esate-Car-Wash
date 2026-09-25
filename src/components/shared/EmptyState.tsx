@@ -8,19 +8,20 @@ interface EmptyStateProps {
   title: string;
   description?: string;
   action?: ReactNode;
+  className?: string;
 }
 
-export function EmptyState({ icon: Icon, title, description, action }: EmptyStateProps) {
+export function EmptyState({ icon: Icon, title, description, action, className = "" }: EmptyStateProps) {
   return (
-    <div className="text-center py-12 px-4 border border-dashed border-hairline bg-surface-card rounded-lg">
+    <div className={`flex flex-col items-center justify-center rounded-2xl border border-dashed border-hairline bg-surface-card px-6 py-14 text-center ${className}`}>
       {Icon && (
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-surface-elevated mb-4">
-          <Icon size={24} className="text-muted" />
+        <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-yellow-dark/10 ring-1 ring-yellow-dark/20">
+          <Icon size={28} className="text-yellow-dark" />
         </div>
       )}
-      <p className="text-sm font-light text-muted mb-1">{title}</p>
+      <p className="mb-1.5 text-lg font-bold text-ink">{title}</p>
       {description && (
-        <p className="text-xs font-light text-muted mb-4">{description}</p>
+        <p className="mb-6 max-w-sm text-sm font-light leading-relaxed text-muted">{description}</p>
       )}
       {action}
     </div>

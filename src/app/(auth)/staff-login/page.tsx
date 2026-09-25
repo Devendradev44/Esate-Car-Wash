@@ -20,7 +20,7 @@ export default function StaffLoginPage() {
     setError("");
 
     if (phone.length !== 10) { setError("Please enter a valid 10-digit phone number."); return; }
-    if (pin.length !== 4) { setError("Please enter a valid 4-digit PIN."); return; }
+    if (pin.length !== 6) { setError("Please enter a valid 6-digit PIN."); return; }
 
     const state = useStore.getState();
     const staffMember = state.staff.find(s => s.phone === phone && s.pin === pin && s.status === "ACTIVE");
@@ -83,13 +83,13 @@ export default function StaffLoginPage() {
                   />
                 </div>
                 <div>
-                  <Label className="mb-2 block text-[10px] font-bold leading-normal text-muted">4-Digit PIN</Label>
+                  <Label className="mb-2 block text-[10px] font-bold leading-normal text-muted">6-Digit PIN</Label>
                   <Input
                     type="password"
                     value={pin}
                     onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-                    placeholder="****"
-                    maxLength={4}
+                    placeholder="******"
+                    maxLength={6}
                     className="text-center text-xl tracking-[0.5em]"
                   />
                 </div>

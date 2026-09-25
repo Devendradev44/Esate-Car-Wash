@@ -1,20 +1,33 @@
 "use client";
 import { useState, useRef } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Plus, ChevronDown, ChevronRight, Trash2, Edit, X, Car, Sparkles, Download, Upload } from "lucide-react";
+import { Tag, Layers, Boxes, Trash2, Edit, X, Download, Upload } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { Disclosure, Accordion } from "@/components/ui/Disclosure";
-import { StaggerContainer, StaggerItem } from "@/components/animations/PageTransition";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toCSV, downloadCSV, parseCSV } from "@/lib/csv";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 const POPULAR_BRANDS = [
   "Maruti Suzuki", "Hyundai", "Tata", "Mahindra", "Toyota", "Honda", "Kia",
   "Volkswagen", "Skoda", "Nissan", "BMW", "Mercedes-Benz", "Audi", "Renault", "Porsche"
 ];
+
+type AddLevel = "CATEGORY" | "BRAND" | "MODEL";
+
+type FlatRow = {
+  key: string;
+  catId: string;
+  brandId?: string;
+  modelId?: string;
+  category: string;
+  brand: string;
+  model: string;
+  dim: AddLevel;
+};
 
 export default function VehiclesPage() {
 
@@ -29,25 +42,44 @@ export default function VehiclesPage() {
   const updateVehicleBrand = useStore((state) => state.updateVehicleBrand);
   const updateVehicleModel = useStore((state) => state.updateVehicleModel);
 
-  const [isOpen, setIsOpen] = useState<Record<string, boolean>>({});
   const [showImportModal, setShowImportModal] = useState(false);
   const [importError, setImportError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Add Modal State
   const [showAddModal, setShowAddModal] = useState(false);
-  const [addLevel, setAddLevel] = useState("CATEGORY");
+  const [addLevel, setAddLevel] = useState<AddLevel>("CATEGORY");
   const [newName, setNewName] = useState("");
   const [selectedParentCat, setSelectedParentCat] = useState("");
   const [selectedParentBrand, setSelectedParentBrand] = useState("");
 
   // Edit Modal State
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editLevel, setEditLevel] = useState<"CATEGORY" | "BRAND" | "MODEL">("CATEGORY");
+  const [editLevel, setEditLevel] = useState<AddLevel>("CATEGORY");
   const [editName, setEditName] = useState("");
   const [editIds, setEditIds] = useState<{ catId?: string, brandId?: string, modelId?: string }>({});
 
   const [pendingDelete, setPendingDelete] = useState<{ title: string; description: string; run: () => void } | null>(null);
+
+  const rows: FlatRow[] = [];
+  hierarchy.forEach(cat => {
+    if (cat.brands.length === 0) {
+      rows.push({ key: cat.id, catId: cat.id, category: cat.name, brand: "—", model: "—", dim: "CATEGORY" });
+    } else {
+      cat.brands.forEach(brand => {
+        if (brand.models.length === 0) {
+          rows.push({ key: brand.id, catId: cat.id, brandId: brand.id, category: cat.name, brand: brand.name, model: "—", dim: "BRAND" });
+        } else {
+          brand.models.forEach(model => {
+            rows.push({ key: model.id, catId: cat.id, brandId: brand.id, modelId: model.id, category: cat.name, brand: brand.name, model: model.name, dim: "MODEL" });
+          });
+        }
+      });
+    }
+  });
+
+  const brandCount = hierarchy.reduce((n, c) => n + c.brands.length, 0);
+  const modelCount = hierarchy.reduce((n, c) => n + c.brands.reduce((m, b) => m + b.models.length, 0), 0);
 
   const handleExport = () => {
     const flat: Array<{ Category: string; Brand: string; Model: string }> = [];
@@ -123,23 +155,55 @@ export default function VehiclesPage() {
     }
   };
 
+  const openAddModal = (level: AddLevel) => {
+    setAddLevel(level);
+    setNewName("");
+    setSelectedParentCat("");
+    setSelectedParentBrand("");
+    setShowAddModal(true);
+  };
+
   const handleAddItem = () => {
     if (!newName.trim()) return;
     if (addLevel === "CATEGORY") {
       addVehicleCategory({ id: `cat_${Date.now()}`, name: newName, brands: [] });
     } else if (addLevel === "BRAND" && selectedParentCat) {
-      addVehicleBrand(selectedParentCat, { id: `brand_${Date.now()}`, name: newName, models: [] });
+      const parentCat = hierarchy.find(c => c.name === selectedParentCat);
+      if (parentCat) addVehicleBrand(parentCat.id, { id: `brand_${Date.now()}`, name: newName, models: [] });
     } else if (addLevel === "MODEL" && selectedParentCat && selectedParentBrand) {
-      addVehicleModel(selectedParentCat, selectedParentBrand, { id: `model_${Date.now()}`, name: newName });
+      const parentCat = hierarchy.find(c => c.name === selectedParentCat);
+      if (parentCat) addVehicleModel(parentCat.id, selectedParentBrand, { id: `model_${Date.now()}`, name: newName });
     }
     setNewName(""); setSelectedParentCat(""); setSelectedParentBrand(""); setShowAddModal(false);
   };
 
-  const openEditModal = (level: "CATEGORY" | "BRAND" | "MODEL", name: string, ids: { catId?: string, brandId?: string, modelId?: string }) => {
-    setEditLevel(level);
-    setEditName(name);
-    setEditIds(ids);
+  const openEditRow = (row: FlatRow) => {
+    setEditLevel(row.dim);
+    setEditName(row.dim === "MODEL" ? row.model : row.dim === "BRAND" ? row.brand : row.category);
+    setEditIds({ catId: row.catId, brandId: row.brandId, modelId: row.modelId });
     setShowEditModal(true);
+  };
+
+  const confirmDeleteRow = (row: FlatRow) => {
+    if (row.dim === "MODEL") {
+      setPendingDelete({
+        title: "Delete Model",
+        description: `Delete "${row.model}"? This action cannot be undone.`,
+        run: () => { if (row.brandId && row.modelId) deleteVehicleModel(row.catId, row.brandId, row.modelId); }
+      });
+    } else if (row.dim === "BRAND") {
+      setPendingDelete({
+        title: "Delete Brand",
+        description: `Delete "${row.brand}" and all its models? This action cannot be undone.`,
+        run: () => { if (row.brandId) deleteVehicleBrand(row.catId, row.brandId); }
+      });
+    } else {
+      setPendingDelete({
+        title: "Delete Category",
+        description: `Delete "${row.category}" along with all its brands and models? This action cannot be undone.`,
+        run: () => deleteVehicleCategory(row.catId)
+      });
+    }
   };
 
   const handleEditSave = () => {
@@ -154,8 +218,9 @@ export default function VehiclesPage() {
     setShowEditModal(false);
   };
 
-  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
+  const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none rounded-lg";
   const labelClasses = "block text-xs font-bold uppercase tracking-machined text-muted mb-3";
+  const levelLabel = addLevel === "CATEGORY" ? "Category" : addLevel === "BRAND" ? "Brand" : "Model";
 
   return (
     <div className="p-6 md:p-12 relative">
@@ -164,21 +229,8 @@ export default function VehiclesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
           <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-bold uppercase text-ink">Add Vehicle Item</h3>
-              <Button type="button" variant="ghost" size="icon-sm" onClick={() => setShowAddModal(false)} className="text-muted hover:text-ink" aria-label="Close add vehicle form"><X size={20} /></Button>
-            </div>
-            <div className="mb-4">
-              <label className={labelClasses}>What are you adding?</label>
-              <Select value={addLevel} onValueChange={(v) => { setAddLevel(v || ""); setNewName(""); setSelectedParentCat(""); setSelectedParentBrand(""); }}>
-                <SelectTrigger className={inputClasses}>
-                  <SelectValue placeholder="Select level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="CATEGORY">Category (e.g. SUV)</SelectItem>
-                  <SelectItem value="BRAND">Brand (e.g. Toyota)</SelectItem>
-                  <SelectItem value="MODEL">Model (e.g. Fortuner)</SelectItem>
-                </SelectContent>
-              </Select>
+              <h3 className="text-xl font-bold uppercase text-ink">Add {levelLabel}</h3>
+              <Button type="button" variant="ghost" size="icon-sm" onClick={() => setShowAddModal(false)} className="text-muted hover:text-ink" aria-label="Close add form"><X size={20} /></Button>
             </div>
 
             {addLevel === "BRAND" && (
@@ -190,7 +242,7 @@ export default function VehiclesPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {hierarchy.map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -207,7 +259,7 @@ export default function VehiclesPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {hierarchy.map(c => (
-                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                        <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -220,7 +272,7 @@ export default function VehiclesPage() {
                         <SelectValue placeholder="Select brand" />
                       </SelectTrigger>
                       <SelectContent>
-                        {[...new Set([...POPULAR_BRANDS, ...hierarchy.find(c => c.id === selectedParentCat)?.brands.map(b => b.name) || []])].sort().map(b => (
+                        {[...new Set([...POPULAR_BRANDS, ...hierarchy.find(c => c.name === selectedParentCat)?.brands.map(b => b.name) || []])].sort().map(b => (
                           <SelectItem key={b} value={b}>{b}</SelectItem>
                         ))}
                       </SelectContent>
@@ -232,9 +284,9 @@ export default function VehiclesPage() {
 
             <div className="mb-8">
               <label className={labelClasses}>Name</label>
-              <Input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Fortuner" className={inputClasses} />
+              <Input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={addLevel === "CATEGORY" ? "e.g. SUV" : addLevel === "BRAND" ? "e.g. Toyota" : "e.g. Fortuner"} className={inputClasses} />
             </div>
-            <Button type="button" onClick={handleAddItem} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">Save Item</Button>
+            <Button type="button" onClick={handleAddItem} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">Save {levelLabel}</Button>
           </div>
         </div>
       )}
@@ -244,8 +296,8 @@ export default function VehiclesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
           <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg border border-hairline bg-surface-soft p-8">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-bold uppercase text-ink">Edit {editLevel}</h3>
-              <Button type="button" variant="ghost" size="icon-sm" onClick={() => setShowEditModal(false)} className="text-muted hover:text-ink" aria-label="Close edit vehicle form"><X size={20} /></Button>
+              <h3 className="text-xl font-bold uppercase text-ink">Edit {editLevel === "CATEGORY" ? "Category" : editLevel === "BRAND" ? "Brand" : "Model"}</h3>
+              <Button type="button" variant="ghost" size="icon-sm" onClick={() => setShowEditModal(false)} className="text-muted hover:text-ink" aria-label="Close edit form"><X size={20} /></Button>
             </div>
             <div className="mb-8">
               <label className={labelClasses}>Name</label>
@@ -287,230 +339,74 @@ export default function VehiclesPage() {
           <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-normal text-ink">Vehicle Master</h2>
           <p className="mt-2 text-sm font-light text-body">Manage the 3-tier Category → Brand → Model hierarchy.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Button type="button" variant="outline" onClick={handleExport} className="flex items-center justify-center gap-2 border border-hairline bg-surface-card px-4 py-3 text-xs font-bold uppercase tracking-machined text-body hover:text-ink hover:bg-surface-elevated transition-colors">
-            <Download size={14} /> Export Vehicles
+            <Download size={14} /> Export
           </Button>
           <Button type="button" variant="outline" onClick={() => setShowImportModal(true)} className="flex items-center justify-center gap-2 border border-hairline bg-surface-card px-4 py-3 text-xs font-bold uppercase tracking-machined text-body hover:text-ink hover:bg-surface-elevated transition-colors">
-            <Upload size={14} /> Import Vehicles
+            <Upload size={14} /> Import
           </Button>
-          <Button type="button" onClick={() => setShowAddModal(true)} className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
-            <Plus size={14} /> Add Item
+          <Button type="button" onClick={() => openAddModal("CATEGORY")} className="flex items-center justify-center gap-2 bg-yellow-dark px-4 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
+            <Tag size={14} /> Add Category
+          </Button>
+          <Button type="button" onClick={() => openAddModal("BRAND")} className="flex items-center justify-center gap-2 bg-yellow-dark px-4 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
+            <Layers size={14} /> Add Brand
+          </Button>
+          <Button type="button" onClick={() => openAddModal("MODEL")} className="flex items-center justify-center gap-2 bg-yellow-dark px-4 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
+            <Boxes size={14} /> Add Model
           </Button>
         </div>
       </div>
 
-      {/* MOBILE ACCORDION CARDS */}
-      <div className="md:hidden space-y-4">
-        <AnimatePresence mode="popLayout">
-          {hierarchy.map((cat, index) => (
-            <motion.div
-              key={cat.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3, delay: index * 0.05 }}
-              className="rounded-lg border border-hairline bg-surface-card"
-            >
-              <div className="flex items-center justify-between p-4 w-full hover:bg-surface-elevated transition-colors">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="flex min-w-0 flex-1 items-center justify-start gap-2 text-left p-0 hover:bg-transparent"
-                  aria-expanded={isOpen[cat.id] ? "true" : "false"}
-                  onClick={() => setIsOpen(prev => ({ ...prev, [cat.id]: !prev[cat.id] }))}
-                >
-                  <Car size={18} className="text-yellow-400 shrink-0" />
-                  <p className="text-lg font-bold uppercase text-ink">{cat.name}</p>
-                  <motion.div
-                    animate={{ rotate: isOpen[cat.id] ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="shrink-0"
-                  >
-                    {isOpen[cat.id] ? <ChevronDown size={16} className="text-ink" /> : <ChevronRight size={16} className="text-muted" />}
-                  </motion.div>
-                </Button>
-                <div className="flex shrink-0 gap-3">
-                  <Button type="button" variant="ghost" size="icon-sm" onClick={() => openEditModal("CATEGORY", cat.name, { catId: cat.id })} className="text-muted hover:text-ink" aria-label={`Edit ${cat.name}`}><Edit size={16} /></Button>
-                  <Button type="button" variant="ghost" size="icon-sm" onClick={() => setPendingDelete({ title: "Delete Category", description: `Delete "${cat.name}" along with all its brands and models? This action cannot be undone.`, run: () => deleteVehicleCategory(cat.id) })} className="text-muted hover:text-m-red" aria-label={`Delete ${cat.name}`}><Trash2 size={16} /></Button>
-                </div>
-              </div>
-
-              <AnimatePresence>
-                {isOpen[cat.id] && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-                    style={{ overflow: "hidden" }}
-                    className="border-t border-hairline bg-surface-soft p-4 space-y-3"
-                  >
-                    {cat.brands.length === 0 ? (
-                      <p className="text-xs font-light text-muted text-center py-4">No brands added yet.</p>
-                    ) : (
-                      <StaggerContainer stagger={0.05} className="space-y-3">
-                        {cat.brands.map(brand => (
-                          <StaggerItem key={brand.id}>
-                            <motion.div
-                              layout
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              exit={{ opacity: 0, x: 20 }}
-                              transition={{ duration: 0.2 }}
-                              className="rounded-lg border border-hairline bg-surface-card p-3"
-                            >
-                              <Disclosure
-                                trigger={
-                                  <div className="flex min-w-0 items-center gap-2">
-                                    <Sparkles size={14} className="text-yellow-400/50 shrink-0" />
-                                    <p className="text-sm font-bold text-ink">{brand.name}</p>
-                                  </div>
-                                }
-                                actions={
-                                  <div className="flex items-center gap-2">
-                                    <Button type="button" variant="ghost" size="icon-xs" onClick={() => openEditModal("BRAND", brand.name, { catId: cat.id, brandId: brand.id })} className="text-muted hover:text-ink" aria-label={`Edit ${brand.name}`}><Edit size={14} /></Button>
-                                    <Button type="button" variant="ghost" size="icon-xs" onClick={() => setPendingDelete({ title: "Delete Brand", description: `Delete "${brand.name}" and all its models? This action cannot be undone.`, run: () => deleteVehicleBrand(cat.id, brand.id) })} className="text-muted hover:text-m-red" aria-label={`Delete ${brand.name}`}><Trash2 size={14} /></Button>
-                                  </div>
-                                }
-                                content={
-                                  <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: "auto" }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-                                    style={{ overflow: "hidden" }}
-                                  >
-                                    <div className="px-4 pb-3 space-y-2">
-                                      {brand.models.map((model, modelIndex) => (
-                                        <motion.div
-                                          key={model.id}
-                                          initial={{ opacity: 0, x: 20 }}
-                                          animate={{ opacity: 1, x: 0 }}
-                                          exit={{ opacity: 0, x: -20 }}
-                                          transition={{ duration: 0.2, delay: modelIndex * 0.03 }}
-                                          className="border-t border-hairline bg-surface-soft pl-8"
-                                        >
-                                          <div className="flex items-center justify-between p-2">
-                                            <p className="text-xs font-light text-body">{model.name}</p>
-                                            <div className="flex gap-3">
-                                              <Button type="button" variant="ghost" size="icon-xs" onClick={() => openEditModal("MODEL", model.name, { catId: cat.id, brandId: brand.id, modelId: model.id })} className="text-muted hover:text-ink" aria-label={`Edit ${model.name}`}><Edit size={12} /></Button>
-                                              <Button type="button" variant="ghost" size="icon-xs" onClick={() => setPendingDelete({ title: "Delete Model", description: `Delete "${model.name}"? This action cannot be undone.`, run: () => deleteVehicleModel(cat.id, brand.id, model.id) })} className="text-muted hover:text-m-red" aria-label={`Delete ${model.name}`}><Trash2 size={12} /></Button>
-                                            </div>
-                                          </div>
-                                        </motion.div>
-                                      ))}
-                                    </div>
-                                  </motion.div>
-                                }
-                              />
-                            </motion.div>
-                          </StaggerItem>
-                        ))}
-                      </StaggerContainer>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
-
-      {/* DESKTOP TREE TABLE */}
-      <div className="hidden md:block rounded-lg border border-hairline bg-surface-card">
-        <AnimatePresence mode="popLayout">
-          <Accordion
-            items={hierarchy.map((cat, index) => ({
-              key: cat.id,
-              title: (
-                <motion.div
-                  layout
-                  className="flex items-center gap-3"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                >
-                  <Car size={18} className="text-yellow-400" />
-                  <span className="text-lg font-bold uppercase text-ink">{cat.name}</span>
-                </motion.div>
-              ),
-              actions: (
-                <div className="flex gap-3">
-                  <Button type="button" variant="ghost" size="icon-sm" onClick={() => openEditModal("CATEGORY", cat.name, { catId: cat.id })} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${cat.name}`}><Edit size={16} /></Button>
-                  <Button type="button" variant="ghost" size="icon-sm" onClick={() => setPendingDelete({ title: "Delete Category", description: `Delete "${cat.name}" along with all its brands and models? This action cannot be undone.`, run: () => deleteVehicleCategory(cat.id) })} className="text-muted hover:text-m-red transition-colors" aria-label={`Delete ${cat.name}`}><Trash2 size={16} /></Button>
-                </div>
-              ),
-              content: (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="pl-4 space-y-3"
-                >
-                  {cat.brands.length === 0 ? (
-                    <p className="text-xs font-light text-muted py-4">No brands added yet.</p>
-                  ) : (
-                    <StaggerContainer stagger={0.05} delay={0.05}>
-                      {cat.brands.map(brand => (
-                        <StaggerItem key={brand.id} delay={0.02}>
-                          <div key={brand.id} className="border-t border-hairline bg-surface-soft first:border-none">
-                            <Disclosure
-                              trigger={
-                                <div className="flex min-w-0 items-center gap-2">
-                                  <Sparkles size={14} className="text-yellow-400/50 shrink-0" />
-                                  <span className="text-sm font-bold text-ink">{brand.name}</span>
-                                </div>
-                              }
-                              actions={
-                                <div className="flex items-center gap-2">
-                                  <Button type="button" variant="ghost" size="icon-xs" onClick={() => openEditModal("BRAND", brand.name, { catId: cat.id, brandId: brand.id })} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${brand.name}`}><Edit size={14} /></Button>
-                                  <Button type="button" variant="ghost" size="icon-xs" onClick={() => setPendingDelete({ title: "Delete Brand", description: `Delete "${brand.name}" and all its models? This action cannot be undone.`, run: () => deleteVehicleBrand(cat.id, brand.id) })} className="text-muted hover:text-m-red transition-colors" aria-label={`Delete ${brand.name}`}><Trash2 size={14} /></Button>
-                                </div>
-                              }
-                              content={
-                                <motion.div
-                                  initial={{ opacity: 0, height: 0 }}
-                                  animate={{ opacity: 1, height: "auto" }}
-                                  exit={{ opacity: 0, height: 0 }}
-                                  transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-                                  style={{ overflow: "hidden" }}
-                                >
-                                  <div className="px-4 pb-3 space-y-2">
-                                    {brand.models.map((model, modelIndex) => (
-                                      <motion.div
-                                        key={model.id}
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        transition={{ duration: 0.2, delay: modelIndex * 0.03 }}
-                                        className="border-t border-hairline bg-surface-soft pl-8"
-                                      >
-                                        <div className="flex items-center justify-between p-2">
-                                          <p className="text-xs font-light text-body">{model.name}</p>
-                                          <div className="flex gap-3">
-                                            <Button type="button" variant="ghost" size="icon-xs" onClick={() => openEditModal("MODEL", model.name, { catId: cat.id, brandId: brand.id, modelId: model.id })} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${model.name}`}><Edit size={12} /></Button>
-                                            <Button type="button" variant="ghost" size="icon-xs" onClick={() => setPendingDelete({ title: "Delete Model", description: `Delete "${model.name}"? This action cannot be undone.`, run: () => deleteVehicleModel(cat.id, brand.id, model.id) })} className="text-muted hover:text-m-red transition-colors" aria-label={`Delete ${model.name}`}><Trash2 size={12} /></Button>
-                                          </div>
-                                        </div>
-                                      </motion.div>
-                                    ))}
-                                  </div>
-                                </motion.div>
-                              }
-                            />
-                          </div>
-                        </StaggerItem>
-                      ))}
-                    </StaggerContainer>
-                  )}
-                </motion.div>
-              ),
-            }))}
-          />
-        </AnimatePresence>
-      </div>
+      <Card className="rounded-lg border border-hairline bg-surface-card">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div>
+            <CardTitle className="text-lg font-semibold">Vehicle Master</CardTitle>
+            <CardDescription>{hierarchy.length} categories · {brandCount} brands · {modelCount} models</CardDescription>
+          </div>
+          <Badge variant="secondary" className="text-xs">{rows.length} rows</Badge>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Brand</TableHead>
+                  <TableHead>Model</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="py-10 text-center">
+                      <p className="text-sm font-semibold text-ink">No vehicles added yet</p>
+                      <p className="mt-1 text-xs text-muted-foreground">Use Add Category, Add Brand, or Add Model to build the hierarchy.</p>
+                    </TableCell>
+                  </TableRow>
+                ) : rows.map((row) => (
+                  <TableRow key={row.key}>
+                    <TableCell className="font-semibold text-ink">{row.category}</TableCell>
+                    <TableCell className={row.brand === "—" ? "text-muted-foreground" : "text-ink"}>{row.brand}</TableCell>
+                    <TableCell className={row.model === "—" ? "text-muted-foreground" : "text-ink"}>{row.model}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button type="button" variant="ghost" size="icon-sm" onClick={() => openEditRow(row)} className="text-muted hover:text-ink" aria-label={`Edit ${row.dim === "MODEL" ? row.model : row.dim === "BRAND" ? row.brand : row.category}`}>
+                          <Edit size={14} />
+                        </Button>
+                        <Button type="button" variant="ghost" size="icon-sm" onClick={() => confirmDeleteRow(row)} className="text-muted hover:text-m-red" aria-label={`Delete ${row.dim === "MODEL" ? row.model : row.dim === "BRAND" ? row.brand : row.category}`}>
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
       <ConfirmDialog
         open={pendingDelete !== null}
@@ -528,4 +424,3 @@ export default function VehiclesPage() {
     </div>
   );
 }
-

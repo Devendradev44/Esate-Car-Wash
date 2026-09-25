@@ -24,32 +24,70 @@ export default function StaffPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [community, setCommunity] = useState("");
+  const [pin, setPin] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showShare, setShowShare] = useState(false);
+  const [sharedPin, setSharedPin] = useState("");
+  const [sharedName, setSharedName] = useState("");
+  const [copyLabel, setCopyLabel] = useState("Copy PIN");
+  const [formError, setFormError] = useState("");
 
+  const genPin = () => String(Math.floor(100000 + Math.random() * 900000));
+  const genUniquePin = () => {
+    const used = new Set(staff.map(s => s.pin));
+    let candidate = genPin();
+    let guard = 0;
+    while (used.has(candidate) && guard < 1000) {
+      candidate = genPin();
+      guard += 1;
+    }
+    return candidate;
+  };
 
   const openAddModal = () => {
     setIsEditing(false);
+    setFormError("");
     setName(""); setPhone(""); setCommunity("");
+    setPin(genUniquePin());
     setShowModal(true);
   };
 
   const openEditModal = (id: string, n: string, p: string, c: string) => {
     setIsEditing(true);
+    setFormError("");
     setCurrentId(id);
     setName(n); setPhone(p); setCommunity(c);
     setShowModal(true);
   };
 
   const handleSaveStaff = () => {
-    if (!name || !phone || !community) return;
+    setFormError("");
+    if (!name.trim()) { setFormError("Full name is required."); return; }
+    if (phone.length !== 10) { setFormError("Enter a valid 10-digit phone number."); return; }
+    if (!community) { setFormError("Assign the staff member to a community."); return; }
+    if (staff.some(s => s.phone === phone && s.id !== currentId)) { setFormError("Another staff member already uses this phone number."); return; }
     if (isEditing) {
-      updateStaff(currentId, { name, phone, community });
-    } else {
-      const pin = Math.floor(1000 + Math.random() * 9000).toString();
-      addStaff({ id: `st_${Date.now()}`, name, phone, community, pin, status: "ACTIVE", role: "STAFF" });
+      updateStaff(currentId, { name: name.trim(), phone, community });
+      setName(""); setPhone(""); setCommunity("");
+      setShowModal(false);
+      return;
     }
-    setName(""); setPhone(""); setCommunity("");
+    addStaff({ id: `st_${Date.now()}`, name: name.trim(), phone, community, pin, status: "ACTIVE", role: "STAFF" });
+    setSharedPin(pin);
+    setSharedName(name.trim());
+    setName(""); setPhone(""); setCommunity(""); setPin("");
     setShowModal(false);
+    setShowShare(true);
+  };
+
+  const copyPin = async () => {
+    try {
+      await navigator.clipboard.writeText(sharedPin);
+      setCopyLabel("Copied!");
+      setTimeout(() => setCopyLabel("Copy PIN"), 1500);
+    } catch {
+      setCopyLabel("Copy failed — select the PIN manually");
+    }
   };
 
   const inputClasses = "w-full bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
@@ -85,6 +123,21 @@ export default function StaffPage() {
                 </SelectContent>
               </Select>
             </div>
+            {!isEditing && (
+              <div className="mb-8">
+                <label className={labelClasses}>Generated PIN</label>
+                <div className="flex items-center gap-3">
+                  <span className="flex h-12 flex-1 items-center justify-center rounded-lg border border-dashed border-yellow-dark bg-yellow-dark/10 px-4 text-xl font-bold tracking-[0.4em] text-yellow-dark">
+                    {pin}
+                  </span>
+                  <Button type="button" variant="outline" onClick={() => setPin(genUniquePin())} className="h-12 rounded-lg border border-hairline bg-surface-card px-4 text-xs font-bold uppercase tracking-machined text-ink hover:border-yellow-dark hover:bg-surface-elevated transition-colors">
+                    Regenerate
+                  </Button>
+                </div>
+                <p className="mt-2 text-[10px] font-light text-muted">This is a unique 6-digit PIN. Share it with the staff member — they use it to sign in on the staff portal.</p>
+              </div>
+            )}
+            {formError && <p className="mb-6 text-xs font-semibold text-m-red bg-m-red/10 border border-m-red/20 py-2 rounded-lg text-center">{formError}</p>}
             <Button type="button" onClick={handleSaveStaff} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">
               {isEditing ? "Save Changes" : "Generate PIN & Save"}
             </Button>
@@ -163,6 +216,29 @@ export default function StaffPage() {
           </TableBody>
         </Table>
       </div>
+
+      {showShare && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4">
+          <div className="w-full max-w-sm rounded-lg border border-hairline bg-surface-soft p-8 text-center">
+            <div className="mb-4">
+              <h3 className="text-xl font-bold uppercase text-ink">Staff added</h3>
+              <p className="mt-1 text-sm font-light text-body">{sharedName || "Staff member"} can now sign in on the staff portal.</p>
+            </div>
+            <div className="mb-6">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-machined text-muted">Sign-in PIN</p>
+              <p className="rounded-lg border border-dashed border-yellow-dark bg-yellow-dark/10 py-3 text-2xl font-bold tracking-[0.4em] text-yellow-dark" data-testid="generated-pin">{sharedPin}</p>
+            </div>
+            <div className="flex gap-3">
+              <Button type="button" onClick={copyPin} className="flex flex-1 items-center justify-center gap-2 bg-yellow-dark py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
+                {copyLabel}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => { setShowShare(false); setCopyLabel("Copy PIN"); }} className="flex flex-1 items-center justify-center gap-2 border border-hairline bg-surface-card py-3 text-xs font-bold uppercase tracking-machined text-body hover:text-ink transition-colors">
+                Done
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ConfirmDialog
         open={deleteId !== null}

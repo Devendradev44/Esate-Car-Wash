@@ -5,10 +5,11 @@ import { useStore } from "@/lib/store";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
-
-const vehicleCategories = ["Hatchback", "Sedan", "SUV", "Luxury"];
+import { Switch } from "@/components/ui/switch";
+import { toast } from "@/components/ui/toast";
 
 export default function ServicesPage() {
 
@@ -16,6 +17,12 @@ export default function ServicesPage() {
   const addService = useStore((state) => state.addService);
   const updateService = useStore((state) => state.updateService);
   const deleteService = useStore((state) => state.deleteService);
+  const setServiceStatus = useStore((state) => state.setServiceStatus);
+  const communities = useStore((state) => state.communities);
+  const updateCommunityServices = useStore((state) => state.updateCommunityServices);
+  const vehicles = useStore((state) => state.vehicles);
+
+  const vehicleCategories = vehicles.map((v) => v.name);
 
   const [searchQuery, setSearchQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
@@ -26,9 +33,48 @@ export default function ServicesPage() {
   
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
-  const [pricing, setPricing] = useState<Record<string, string>>({
-    Hatchback: "", Sedan: "", SUV: "", Luxury: ""
-  });
+  const resetPricing = () =>
+    Object.fromEntries(vehicleCategories.map((cat) => [cat, ""])) as Record<string, string>;
+  const [pricing, setPricing] = useState<Record<string, string>>(resetPricing);
+
+  const [availCommunityId, setAvailCommunityId] = useState("");
+  const [draftAvail, setDraftAvail] = useState<Record<string, { enabled: boolean; discountPct: number }>>({});
+
+  const selectAvailCommunity = (id: string) => {
+    setAvailCommunityId(id || "");
+    if (!id) { setDraftAvail({}); return; }
+    const comm = communities.find((c) => c.name === id);
+    const settings = comm?.serviceSettings || [];
+    const draft: Record<string, { enabled: boolean; discountPct: number }> = {};
+    services.forEach((s) => {
+      const existing = settings.find((st) => st.serviceName === s.name);
+      draft[s.name] = { enabled: existing ? existing.enabled : true, discountPct: existing ? existing.discountPct : 0 };
+    });
+    setDraftAvail(draft);
+  };
+
+  const setAvailEnabled = (name: string, enabled: boolean) =>
+    setDraftAvail((prev) => ({ ...prev, [name]: { ...(prev[name] || { discountPct: 0 }), enabled } }));
+  const setAvailDiscount = (name: string, discountPct: number) =>
+    setDraftAvail((prev) => ({ ...prev, [name]: { ...(prev[name] || { enabled: true }), discountPct } }));
+
+  const saveAvailSettings = () => {
+    const comm = communities.find((c) => c.name === availCommunityId);
+    if (!comm) return;
+    updateCommunityServices(comm.id, Object.keys(draftAvail).map((serviceName) => ({
+      serviceName,
+      enabled: draftAvail[serviceName].enabled,
+      discountPct: Math.max(0, Math.min(100, Number(draftAvail[serviceName].discountPct) || 0)),
+    })));
+    toast.add({ type: "success", title: "Community settings saved", description: `Updated services & discounts for ${comm.name}.` });
+  };
+
+  const previewPrice = (service: { pricing: Record<string, number> }, discountPct: number) => {
+    const values = Object.values(service.pricing).filter((v): v is number => typeof v === "number" && v > 0);
+    const base = values.length > 0 ? Math.min(...values) : 0;
+    const final = Math.round(base * (1 - (Math.max(0, Math.min(100, discountPct || 0)) / 100)));
+    return { base, final };
+  };
 
 
   const filteredServices = services.filter((s) => {
@@ -42,7 +88,7 @@ export default function ServicesPage() {
   const openAddModal = () => {
     setIsEditing(false);
     setName(""); setDesc("");
-    setPricing({ Hatchback: "", Sedan: "", SUV: "", Luxury: "" });
+    setPricing(resetPricing());
     setShowModal(true);
   };
 
@@ -73,7 +119,7 @@ export default function ServicesPage() {
       addService({ id: `s${Date.now()}`, name, description: desc, duration: 1, pricing: numericPricing });
     }
     setName(""); setDesc("");
-    setPricing({ Hatchback: "", Sedan: "", SUV: "", Luxury: "" });
+    setPricing(resetPricing());
     setShowModal(false);
   };
 
@@ -84,7 +130,7 @@ export default function ServicesPage() {
     <div className="p-6 md:p-12 relative">
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 overflow-y-auto py-10 p-4">
-          <div className="w-full max-w-lg border border-hairline bg-surface-soft p-8">
+          <div className="w-full max-w-lg border border-hairline bg-surface-soft p-5 md:p-8">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-bold uppercase text-ink">{isEditing ? "Edit Service" : "Add Service & Pricing"}</h3>
               <Button type="button" variant="ghost" size="icon-sm" onClick={() => setShowModal(false)} className="text-muted hover:text-ink" aria-label="Close service form"><X size={20} /></Button>
@@ -100,7 +146,7 @@ export default function ServicesPage() {
             </div>
 
             <label className={labelClasses}>Pricing by Vehicle Category (₹)</label>
-            <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
               {vehicleCategories.map(cat => (
                 <Card key={cat} className="border border-hairline bg-surface-card p-4 gap-1 rounded-lg ring-0 ring-transparent">
                   <p className="text-xs font-bold uppercase tracking-machined text-ink mb-2">{cat}</p>
@@ -194,6 +240,13 @@ export default function ServicesPage() {
                 </div>
               ))}
             </div>
+            <div className="flex items-center justify-between border-t border-hairline pt-3">
+              <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-machined ${s.active === false ? "bg-surface-elevated text-muted" : "bg-success/10 text-success"}`}>{s.active === false ? "Inactive" : "Active"}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-light text-muted">{s.active === false ? "Set active" : "Set inactive"}</span>
+                <Switch size="sm" checked={s.active !== false} onCheckedChange={(v) => setServiceStatus(s.id, !!v)} aria-label={`Toggle ${s.name}`} />
+              </div>
+            </div>
           </Card>
         ))}
       </div>
@@ -208,6 +261,7 @@ export default function ServicesPage() {
               {vehicleCategories.map(cat => (
                 <TableHead key={cat} className="py-4 px-6 text-center text-xs font-bold uppercase tracking-machined text-muted">{cat} Price</TableHead>
               ))}
+              <TableHead className="py-4 px-6 text-center text-xs font-bold uppercase tracking-machined text-muted">Status</TableHead>
               <TableHead className="py-4 px-6 text-right text-xs font-bold uppercase tracking-machined text-muted">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -219,6 +273,12 @@ export default function ServicesPage() {
                 {vehicleCategories.map(cat => (
                   <TableCell key={cat} className="py-4 px-6 text-sm font-bold text-yellow-dark text-center">₹{s.pricing[cat] || 0}</TableCell>
                 ))}
+                <TableCell className="py-4 px-6 text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <span className={`text-[10px] font-bold uppercase tracking-machined ${s.active === false ? "text-muted" : "text-success"}`}>{s.active === false ? "Inactive" : "Active"}</span>
+                    <Switch size="sm" checked={s.active !== false} onCheckedChange={(v) => setServiceStatus(s.id, !!v)} aria-label={`Toggle ${s.name}`} />
+                  </div>
+                </TableCell>
                 <TableCell className="py-4 px-6 text-right">
                   <div className="flex items-center justify-end gap-3">
                     <Button type="button" variant="ghost" size="icon-sm" onClick={() => openEditModal(s.id, s.name, s.description, s.pricing)} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${s.name}`}><Edit size={16} /></Button>
@@ -232,6 +292,93 @@ export default function ServicesPage() {
       </div>
         </>
       )}
+
+      <Card className="mt-6 rounded-lg border border-hairline bg-surface-card">
+        <CardHeader className="gap-1 p-6 md:p-8">
+          <CardTitle className="text-lg font-bold uppercase tracking-normal text-ink">Community Availability & Discounts</CardTitle>
+          <CardDescription className="text-sm font-light text-body">{`Choose a community, toggle which services it can book, and set a discount % for each enabled service. Discounted prices are shown in the customer booking flow with the original price struck through.`}</CardDescription>
+        </CardHeader>
+        <CardContent className="p-6 md:p-8 pt-0">
+          {communities.length === 0 ? (
+            <p className="text-sm font-light text-body">Create a community first (Community Setup) to set per-community services & discounts.</p>
+          ) : (
+            <>
+              <Select value={availCommunityId} onValueChange={(v) => selectAvailCommunity(v || "")}>
+                <SelectTrigger className="w-full md:w-72" aria-label="Select community">
+                  <SelectValue placeholder="Select community..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {communities.map((c) => (
+                    <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {availCommunityId && (
+                <>
+                  <div className="mt-4 overflow-x-auto rounded-lg border border-hairline">
+                    <Table className="w-full min-w-[640px]">
+                      <TableHeader className="border-b border-hairline bg-surface-soft">
+                        <TableRow>
+                          <TableHead className="py-3 px-4 text-left text-xs font-bold uppercase tracking-machined text-muted">Service</TableHead>
+                          <TableHead className="py-3 px-4 text-center text-xs font-bold uppercase tracking-machined text-muted">Available</TableHead>
+                          <TableHead className="py-3 px-4 text-center text-xs font-bold uppercase tracking-machined text-muted">Discount %</TableHead>
+                          <TableHead className="py-3 px-4 text-center text-xs font-bold uppercase tracking-machined text-muted">Price Preview</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {services.map((s) => {
+                          const draft = draftAvail[s.name] || { enabled: true, discountPct: 0 };
+                          const { base, final } = previewPrice(s, draft.discountPct);
+                          return (
+                            <TableRow key={s.id} className="border-b border-hairline last:border-none hover:bg-surface-elevated transition-colors">
+                              <TableCell className="py-3 px-4">
+                                <p className="text-sm font-bold text-ink">{s.name}</p>
+                                <p className={`text-[10px] font-bold uppercase tracking-machined ${s.active === false ? "text-muted" : "text-success"}`}>{s.active === false ? "Inactive globally" : "Active"}</p>
+                              </TableCell>
+                              <TableCell className="py-3 px-4 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <span className={`text-[10px] font-bold uppercase tracking-machined ${draft.enabled ? "text-success" : "text-muted"}`}>{draft.enabled ? "Yes" : "No"}</span>
+                                  <Switch size="sm" checked={draft.enabled} onCheckedChange={(v) => setAvailEnabled(s.name, !!v)} aria-label={`${s.name} available in community`} />
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-3 px-4 text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Input type="number" min="0" max="100" value={draft.discountPct} disabled={!draft.enabled} onChange={(e) => setAvailDiscount(s.name, Number(e.target.value) || 0)} className="w-20 h-9 rounded-lg border border-hairline bg-surface-soft text-center text-sm font-bold text-ink focus:border-yellow-dark focus:outline-none disabled:opacity-40" aria-label={`${s.name} discount percent`} />
+                                  <span className="text-xs text-muted">%</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-3 px-4 text-center">
+                                {draft.enabled ? (
+                                  draft.discountPct > 0 ? (
+                                    <span className="text-sm">
+                                      <s className="text-muted">₹{base}</s>{" "}
+                                      <span className="font-bold text-yellow-dark">₹{final}</span>
+                                    </span>
+                                  ) : (
+                                    <span className="text-sm font-bold text-yellow-dark">₹{final}</span>
+                                  )
+                                ) : (
+                                  <span className="text-xs text-muted">Hidden</span>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-xs font-light text-muted">Prices preview uses the lowest base price across vehicle categories. Discount applies to all categories for the selected community.</p>
+                    <Button type="button" onClick={saveAvailSettings} className="flex items-center justify-center gap-2 bg-yellow-dark px-6 py-3 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light transition-colors">
+                      Save Community Settings
+                    </Button>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <ConfirmDialog
         open={deleteId !== null}

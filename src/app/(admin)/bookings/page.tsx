@@ -47,7 +47,33 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
-type BookingStatusType = "ALL" | "BOOKED" | "COMPLETED" | "CANCELLED";
+type BookingStatusType = "UPCOMING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+
+const STATUS_FILTERS: { key: BookingStatusType; label: string }[] = [
+  { key: "UPCOMING", label: "Upcoming" },
+  { key: "IN_PROGRESS", label: "In Progress" },
+  { key: "COMPLETED", label: "Completed" },
+  { key: "CANCELLED", label: "Cancelled" },
+];
+
+const pad = (n: number) => String(n).padStart(2, "0");
+
+// Normalize any stored booking date ("2026-09-24", "24/09/2026", "2026-09-24T10:00") to "YYYY-MM-DD".
+function toDateKey(value: string): string {
+  if (!value) return "";
+  const v = value.trim();
+  const iso = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const parts = v.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
+  if (parts) {
+    const a = Number(parts[1]);
+    const b = Number(parts[2]);
+    if (a <= 31 && b <= 12) return `${parts[3]}-${pad(b)}-${pad(a)}`;
+    if (a <= 12 && b <= 31) return `${parts[3]}-${pad(a)}-${pad(b)}`;
+  }
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? v : `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
 
 export default function BookingsPage() {
   const bookings = useStore((state) => state.bookings);
@@ -63,7 +89,15 @@ export default function BookingsPage() {
   const searchRef = useRef<HTMLInputElement>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<BookingStatusType>("ALL");
+  const [activeFilter, setActiveFilter] = useState<BookingStatusType>("IN_PROGRESS");
+
+  const statusKey = (b: { bookingStatus: string; date: string }): BookingStatusType => {
+    if (b.bookingStatus === "COMPLETED") return "COMPLETED";
+    if (b.bookingStatus === "CANCELLED") return "CANCELLED";
+    const now = new Date();
+    const todayKey = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    return toDateKey(b.date) > todayKey ? "UPCOMING" : "IN_PROGRESS";
+  };
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
@@ -81,7 +115,7 @@ export default function BookingsPage() {
       b.service.toLowerCase().includes(q) ||
       b.flat.toLowerCase().includes(q) ||
       b.community.toLowerCase().includes(q);
-    const matchesFilter = activeFilter === "ALL" || b.bookingStatus === activeFilter;
+    const matchesFilter = statusKey(b) === activeFilter;
     return matchesSearch && matchesFilter;
   });
 
@@ -205,16 +239,16 @@ export default function BookingsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-card p-2">
-          {(["ALL", "BOOKED", "COMPLETED", "CANCELLED"] as BookingStatusType[]).map(filter => (
+          {STATUS_FILTERS.map(filter => (
             <Button
-              key={filter}
-              onClick={() => setActiveFilter(filter)}
-              variant={activeFilter === filter ? "default" : "ghost"}
+              key={filter.key}
+              onClick={() => setActiveFilter(filter.key)}
+              variant={activeFilter === filter.key ? "default" : "ghost"}
               className={`h-auto rounded-full px-4 py-2 text-xs font-bold uppercase tracking-machined transition-colors ${
-                activeFilter === filter ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                activeFilter === filter.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {filter}
+              {filter.label}
             </Button>
           ))}
         </div>
@@ -248,7 +282,7 @@ export default function BookingsPage() {
                       <TableCell colSpan={9} className="py-10 text-center">
                         <p className="text-sm font-semibold text-ink">No bookings found</p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          No bookings match your search. Try a different booking code, customer, vehicle, or registration number.
+                          No bookings match this status and search. Try another status or a different booking code, customer, vehicle, or registration number.
                         </p>
                       </TableCell>
                     </TableRow>
@@ -275,7 +309,7 @@ export default function BookingsPage() {
                           b.bookingStatus === "COMPLETED" ? "bg-success/20 text-success" :
                           "bg-m-red/20 text-m-red"
                         }`}>
-                          {b.bookingStatus}
+                          {statusKey(b) === "IN_PROGRESS" ? "In Progress" : statusKey(b)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-center">

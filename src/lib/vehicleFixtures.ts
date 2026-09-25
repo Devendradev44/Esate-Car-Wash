@@ -177,8 +177,8 @@ export const vehicleFixtures: VehicleCategory[] = [
         models: [
           { id: "model_nexon", name: "Nexon" },
           { id: "model_harrier", name: "Harrier" },
-          { id: "model_safari", name: "Safari" },
-          { id: "model_punch", name: "Punch" },
+{ id: "model_safari", name: "Safari" },
+          { id: "model_punch_suv", name: "Punch" },
           { id: "model_curvv", name: "Curvv" },
         ],
       },

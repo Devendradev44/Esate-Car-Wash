@@ -31,9 +31,10 @@ type AdminUser = {
 
 type CustomerVehicle = { id: string; category: string; brand: string; model: string; reg: string; isDefault: boolean };
 type CustomerAddress = { id: string; community: string; flat: string };
-type Community = { id: string; name: string; address: string; status: "ACTIVE" | "HIDDEN"; slotCapacity: number; timeRange?: { start: string; end: string } };
+type CommunityServiceSetting = { serviceName: string; enabled: boolean; discountPct: number };
+type Community = { id: string; name: string; address: string; status: "ACTIVE" | "HIDDEN"; slotCapacity: number; timeRange?: { start: string; end: string }; serviceSettings?: CommunityServiceSetting[] };
 type TimeSlot = { id: string; label: string; startTime: string; endTime: string };
-type ServiceItem = { id: string; name: string; description: string; duration: number; pricing: Record<string, number> };
+type ServiceItem = { id: string; name: string; description: string; duration: number; pricing: Record<string, number>; active?: boolean };
 type BookingItem = { 
   id: string; bookingCode: string; date: string; time: string; 
   customer: string; flat: string; community: string; vehicle: string; regNumber: string; 
@@ -41,7 +42,7 @@ type BookingItem = {
   cancelledBy?: "CUSTOMER" | "ADMIN" | "STAFF";
   paymentMethod?: "CASH" | "UPI" | "ONLINE";
 };
-type ExpenseItem = { id: string; date: string; name: string; category: string; amount: number; paymentType: string; notes: string };
+type ExpenseItem = { id: string; date: string; name: string; category: string; amount: number; paymentType: string; notes: string; community?: string };
 type StaffItem = { id: string; name: string; phone: string; community: string; pin: string; status: "ACTIVE" | "DISABLED"; role: "STAFF" | "ADMIN" };
 
 // Simple mock hash function for demo (not secure, just for UI validation)
@@ -86,9 +87,9 @@ const initialCustomers: Customer[] = [];
 const initialBookings: BookingItem[] = [];
 
 const initialStaff: StaffItem[] = [
-  { id: "staff_1", name: "Vikram Singh", phone: "9911099110", community: "Estate Lakeside", pin: "1234", status: "ACTIVE", role: "STAFF" },
-  { id: "staff_2", name: "Manoj Patil", phone: "9922099220", community: "Vista Heights", pin: "5678", status: "ACTIVE", role: "STAFF" },
-  { id: "staff_3", name: "Sameer Khan", phone: "9933099330", community: "Estate Lakeside", pin: "9012", status: "DISABLED", role: "STAFF" },
+  { id: "staff_1", name: "Vikram Singh", phone: "9911099110", community: "Estate Lakeside", pin: "123456", status: "ACTIVE", role: "STAFF" },
+  { id: "staff_2", name: "Manoj Patil", phone: "9922099220", community: "Vista Heights", pin: "567890", status: "ACTIVE", role: "STAFF" },
+  { id: "staff_3", name: "Sameer Khan", phone: "9933099330", community: "Estate Lakeside", pin: "901234", status: "DISABLED", role: "STAFF" },
 ];
 
 // Default super admin - password: "Paddwird#1"
@@ -147,6 +148,7 @@ type AppStore = {
   updateCommunityStatus: (id: string, status: "ACTIVE" | "HIDDEN") => void;
   updateCommunity: (id: string, name: string, address: string, slotCapacity: number, timeRange?: { start: string; end: string }) => void;
   updateCommunityTimeRange: (id: string, start: string, end: string) => void;
+  updateCommunityServices: (id: string, serviceSettings: CommunityServiceSetting[]) => void;
   deleteCommunity: (id: string) => void;
 
   // Address Actions
@@ -172,6 +174,7 @@ deleteCustomerVehicle: (id: string) => void;
   // Service Actions
   addService: (service: ServiceItem) => void;
   updateService: (id: string, name: string, description: string, pricing: Record<string, number>) => void;
+  setServiceStatus: (id: string, active: boolean) => void;
   deleteService: (id: string) => void;
 
   // Booking Actions
@@ -180,7 +183,7 @@ deleteCustomerVehicle: (id: string) => void;
 
   // Expense Actions
   addExpense: (expense: ExpenseItem) => void;
-  updateExpense: (id: string, date: string, name: string, amount: number, category: string, paymentType: string, notes: string) => void;
+  updateExpense: (id: string, date: string, name: string, amount: number, category: string, paymentType: string, notes: string, community?: string) => void;
   deleteExpense: (id: string) => void;
 
   expenseCategories: string[];
@@ -275,6 +278,9 @@ updateMockUser: (data) => set((state) => {
       updateCommunityTimeRange: (id, start, end) => set((state) => ({
         communities: state.communities.map(c => c.id === id ? { ...c, timeRange: { start, end } } : c)
       })),
+      updateCommunityServices: (id, serviceSettings) => set((state) => ({
+        communities: state.communities.map(c => c.id === id ? { ...c, serviceSettings } : c)
+      })),
 
       // Address
       addAddress: (newAddress) => set((state) => ({ addresses: [...state.addresses, newAddress] })),
@@ -361,6 +367,9 @@ updateMockUser: (data) => set((state) => {
       updateService: (id, name, description, pricing) => set((state) => ({
         services: state.services.map(s => s.id === id ? { ...s, name, description, pricing } : s)
       })),
+      setServiceStatus: (id, active) => set((state) => ({
+        services: state.services.map(s => s.id === id ? { ...s, active } : s)
+      })),
       deleteService: (id) => set((state) => ({ services: state.services.filter(s => s.id !== id) })),
 
       // Bookings
@@ -373,8 +382,8 @@ updateMockUser: (data) => set((state) => {
 
       // Expenses
       addExpense: (newExpense) => set((state) => ({ expenses: [...state.expenses, newExpense] })),
-      updateExpense: (id, date, name, amount, category, paymentType, notes) => set((state) => ({
-        expenses: state.expenses.map(e => e.id === id ? { ...e, date, name, amount, category, paymentType, notes } : e)
+      updateExpense: (id, date, name, amount, category, paymentType, notes, community) => set((state) => ({
+        expenses: state.expenses.map(e => e.id === id ? { ...e, date, name, amount, category, paymentType, notes, community: community || undefined } : e)
       })),
       deleteExpense: (id) => set((state) => ({ expenses: state.expenses.filter(e => e.id !== id) })),
 
@@ -394,7 +403,7 @@ updateMockUser: (data) => set((state) => {
     }),
     {
       name: "estate-car-wash-v15",
-      version: 17,
+      version: 19,
       migrate: (persistedState) => {
         const state = persistedState && typeof persistedState === "object"
           ? persistedState as Partial<AppStore>
@@ -428,13 +437,48 @@ updateMockUser: (data) => set((state) => {
         const demoExpenseIds = new Set(["exp_1", "exp_2", "exp_3", "exp_4", "exp_5"]);
         const customers = (Array.isArray(state.customers) ? state.customers : []).filter((c) => !demoCustomerIds.has(String(c.id)));
         const communities = (Array.isArray(state.communities) ? state.communities : []).filter((c) => !demoCommunityIds.has(String(c.id)));
+        // v18: staff now require a 6-digit PIN, but persisted browsers may hold old 4-digit pins that can no longer log in.
+        // Keep the member (name/phone/community) and generate a fresh unique 6-digit PIN for anyone without a valid one.
+        const rawStaff = Array.isArray(state.staff) ? state.staff : initialStaff;
+        const keptPins = new Set(rawStaff.map((s) => String(s.pin ?? "")).filter((p) => /^\d{6}$/.test(p)));
+        const staff = rawStaff.map((s) => {
+          const pin = String(s.pin ?? "");
+          if (/^\d{6}$/.test(pin)) return s;
+          let np = String(Math.floor(100000 + Math.random() * 900000));
+          while (keptPins.has(np)) np = String(Math.floor(100000 + Math.random() * 900000));
+          keptPins.add(np);
+          return { ...s, pin: np };
+        });
+        // v19: seed fixtures reused id "model_punch" for both the Hatchback and SUV Tata Punch,
+        // which made <TableRow key={model.id}> collide on the vehicles page. Dedupe every id in
+        // the vehicle tree (ids are internal-only; bookings/garage store plain text names).
+        const seenVehicleIds = new Set<string>();
+        const uniqueVehicleId = (id: string) => {
+          if (!seenVehicleIds.has(id)) { seenVehicleIds.add(id); return id; }
+          let n = 2;
+          let next = id;
+          while (seenVehicleIds.has(next)) next = `${id}_${n++}`;
+          seenVehicleIds.add(next);
+          return next;
+        };
+        const dedupeVehicles = (vehicles: Array<{ id: string; brands: Array<{ id: string; models: Array<{ id: string }> }> }>) =>
+          vehicles.map((c) => ({
+            ...c,
+            id: uniqueVehicleId(String(c.id)),
+            brands: (Array.isArray(c.brands) ? c.brands : []).map((b) => ({
+              ...b,
+              id: uniqueVehicleId(String(b.id)),
+              models: (Array.isArray(b.models) ? b.models : []).map((m) => ({ ...m, id: uniqueVehicleId(String(m.id)) })),
+            })),
+          }));
         return {
           ...state,
           communities,
           customers,
           // reset a stale demo-customer session once their account is gone
           mockUser: state.mockUser && state.mockUser.role === "CUSTOMER" && demoCustomerIds.has(String(state.mockUser.id)) ? null : state.mockUser,
-          staff: Array.isArray(state.staff) ? state.staff : initialStaff,
+          staff,
+          vehicles: dedupeVehicles(Array.isArray(state.vehicles) ? state.vehicles as Array<{ id: string; brands: Array<{ id: string; models: Array<{ id: string }> }> }> : vehicleFixtures),
           expenses: (Array.isArray(state.expenses) ? state.expenses : []).filter((e) => !demoExpenseIds.has(String(e.id))),
           bookings: (Array.isArray(state.bookings) ? state.bookings : []).filter((b) => !/^b10\d{2}$/i.test(String(b.id))),
           addresses: (Array.isArray(state.addresses) ? state.addresses : []).filter((a) => !String(a.id).startsWith("addr_")),
