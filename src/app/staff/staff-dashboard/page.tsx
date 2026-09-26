@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { CheckCircle2, MapPin, Car, XCircle } from "lucide-react";
+import { toast } from "@/components/ui/toast";
 import { useStore } from "@/lib/store";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { Card } from "@/components/ui/card";
@@ -12,7 +13,12 @@ export default function StaffDashboard() {
   const bookings = useStore((state) => state.bookings);
   const completeBooking = useStore((state) => state.completeBooking);
   const cancelBooking = useStore((state) => state.cancelBooking);
+  const mockUser = useStore((state) => state.mockUser);
+  const staff = useStore((state) => state.staff);
   const [cancelId, setCancelId] = useState<string | null>(null);
+
+  // This staff member's assigned community (from their staff record)
+  const myCommunity = staff.find(s => s.id === mockUser?.id)?.community || "";
 
   
   const formatDate = (dateString: string) => {
@@ -22,15 +28,15 @@ export default function StaffDashboard() {
   };
 
 
-  // Today's scheduled bookings only (matches the "Today's Schedule" header)
+  // Today's scheduled bookings for THIS staff member's assigned community only
   const today = new Date().toISOString().slice(0, 10);
-  const todaysBookings = bookings.filter(b => b.date === today);
+  const todaysBookings = bookings.filter(b => b.date === today && b.community === myCommunity);
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas pb-24">
       <div className="border-b border-hairline bg-surface-soft p-6">
         <h1 className="text-2xl font-bold uppercase text-ink">Today&apos;s Schedule</h1>
-        <p className="mt-1 text-sm font-light text-body">All Community Assignments</p>
+        <p className="mt-1 text-sm font-light text-body">{myCommunity ? `${myCommunity} Assignments` : "Your Assignments"}</p>
       </div>
 
       <div className="flex-1 p-6 space-y-4">
@@ -64,13 +70,19 @@ export default function StaffDashboard() {
               <>
                 <div className="grid grid-cols-2 gap-2 mb-2">
                   <Button 
-                    onClick={() => completeBooking(b.id, "CASH")}
+                    onClick={() => {
+                      completeBooking(b.id, "CASH");
+                      toast.add({ type: "success", title: "Booking completed", description: `₹${b.amount} received in cash from ${b.customer} (${b.flat}, ${b.community}).` });
+                    }}
                     className="flex h-auto items-center justify-center gap-2 rounded-lg bg-success py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-success hover:brightness-110"
                   >
                     <CheckCircle2 size={14} /> Cash ₹{b.amount}
                   </Button>
                   <Button 
-                    onClick={() => completeBooking(b.id, "UPI")}
+                    onClick={() => {
+                      completeBooking(b.id, "UPI");
+                      toast.add({ type: "success", title: "Booking completed", description: `₹${b.amount} received via UPI from ${b.customer} (${b.flat}, ${b.community}).` });
+                    }}
                     className="flex h-auto items-center justify-center gap-2 rounded-lg bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light"
                   >
                     <CheckCircle2 size={14} /> UPI ₹{b.amount}
@@ -98,7 +110,11 @@ export default function StaffDashboard() {
         cancelLabel="Back"
         variant="destructive"
         onConfirm={() => {
-          if (cancelId) cancelBooking(cancelId, "STAFF");
+          if (cancelId) {
+            const bk = bookings.find(x => x.id === cancelId);
+            cancelBooking(cancelId, "STAFF");
+            toast.add({ type: "warning", title: "Booking cancelled", description: bk ? `${bk.service} for ${bk.customer} on ${formatDate(bk.date)} marked as no-show.` : "Booking marked as no-show." });
+          }
           setCancelId(null);
         }}
       />

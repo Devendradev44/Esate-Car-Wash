@@ -112,7 +112,7 @@ export default function GaragePage() {
   const stepClasses = "inline-flex items-center gap-1.5 rounded-full bg-yellow-dark/10 px-3 py-1 text-[10px] font-bold uppercase tracking-machined text-yellow-dark";
 
   return (
-    <div className="flex min-h-screen flex-col bg-canvas pb-28 md:pb-12">
+    <div className="flex min-h-screen flex-col bg-canvas">
       <div className="border-b border-hairline bg-surface-soft p-6 md:px-8 flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold uppercase tracking-normal text-ink">My Garage</h1>

@@ -9,7 +9,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
       <div className="min-h-screen bg-canvas">
         <CustomerSidebar />
         {/* Left padding accounts for the fixed desktop sidebar; extra bottom padding for mobile drawer spacing */}
-        <main className="flex-1 pb-24 pt-16 lg:pb-0 lg:pl-72 lg:pt-0">{children}</main>
+        <main className="flex-1 pb-8 pt-16 lg:pb-0 lg:pl-72 lg:pt-0">{children}</main>
         <Toaster position="top-right" />
       </div>
     </AuthGate>

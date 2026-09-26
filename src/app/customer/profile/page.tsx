@@ -67,7 +67,7 @@ export default function ProfilePage() {
   const profileInitials = ((displayFirstName[0] || "") + (displayLastName[0] || "")).toUpperCase();
 
   return (
-    <div className="flex min-h-screen flex-col bg-canvas pb-24">
+    <div className="flex min-h-screen flex-col bg-canvas">
       <div className="border-b border-hairline bg-surface-soft p-6 flex justify-between items-center">
         <h1 className="text-2xl font-bold uppercase text-ink">My Profile</h1>
         <Button
@@ -78,7 +78,7 @@ export default function ProfilePage() {
         </Button>
       </div>
 
-      <div className="flex-1 p-6 space-y-6">
+      <div className="mx-auto w-full max-w-3xl flex-1 p-6 space-y-6">
 <Card className="gap-0 flex flex-col items-center justify-center rounded-lg border border-hairline bg-surface-card p-8 ring-0">
             <div className="w-20 h-20 rounded-full bg-yellow-dark/20 flex items-center justify-center mb-4">
               {profileInitials ? (

@@ -15,7 +15,7 @@ import {
   CheckCircle2,
   Pencil,
   Trash2,
-  Activity,
+  History,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
@@ -126,7 +126,7 @@ export default function CustomerDashboard() {
   const quickActions = [
     { href: "/customer/book", label: "Book Service", sub: "Schedule a wash", icon: Wrench },
     { href: "/customer/garage", label: "Garage", sub: `${customerGarage.length} vehicles`, icon: Car },
-    { href: "/customer/activity", label: "Bookings", sub: `${totalBookings} bookings`, icon: Activity },
+    { href: "/customer/booking-history", label: "Booking History", sub: `${totalBookings} bookings`, icon: History },
     { href: "/customer/profile", label: "Profile", sub: "Account settings", icon: User },
   ];
 
@@ -345,7 +345,7 @@ export default function CustomerDashboard() {
         <motion.div variants={stagger} initial="hidden" animate="show" custom={3}>
           <div className="mb-2.5 flex items-center justify-between">
             <h2 className="text-xs font-bold uppercase tracking-machined text-muted">Recent Activity</h2>
-            <Link href="/customer/activity" className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-machined text-yellow-dark hover:text-yellow-light transition-colors">
+            <Link href="/customer/booking-history" className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-machined text-yellow-dark hover:text-yellow-light transition-colors">
               View all ({totalBookings}) <ArrowRight size={12} />
             </Link>
           </div>
@@ -426,22 +426,28 @@ export default function CustomerDashboard() {
                   <Label className="mb-2 block text-[11px] font-bold uppercase tracking-machined text-muted">
                     Time Slot <span className="text-m-red" aria-hidden="true">*</span>
                   </Label>
-                  <Select value={rescheduleTime || null} onValueChange={(v) => setRescheduleTime(v || "")}>
-                    <SelectTrigger className="w-full h-auto! rounded-xl border border-hairline bg-surface-card p-3.5 text-sm font-light text-ink transition-colors focus:border-yellow-dark focus:outline-none">
-                      <SelectValue placeholder="Select time" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {timeSlotOptions.map(slot => (
-                        <SelectItem key={slot.id} value={slot.label}>{slot.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {rescheduleDate && timeSlotOptions.length === 0 ? (
+                    <p data-testid="rs-no-slots-today" className="rounded-xl border border-hairline bg-surface-card px-4 py-3.5 text-sm font-light text-muted">
+                      No available slots for today.
+                    </p>
+                  ) : (
+                    <Select value={rescheduleTime || null} onValueChange={(v) => setRescheduleTime(v || "")}>
+                      <SelectTrigger className="w-full h-auto! rounded-xl border border-hairline bg-surface-card p-3.5 text-sm font-light text-ink transition-colors focus:border-yellow-dark focus:outline-none">
+                        <SelectValue placeholder="Select time" />
+                      </SelectTrigger>
+                      <SelectContent style={{ maxHeight: "min(17rem, 60vh)" }}>
+                        {timeSlotOptions.map(slot => (
+                          <SelectItem key={slot.id} value={slot.label}>{slot.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </div>
               <div className="mt-7 flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end">
                 <Button
                   variant="outline"
-                  onClick={() => setCancelModal(prev => ({ ...prev, mode: "confirm" }))}
+                  onClick={() => { setRescheduleDate(""); setRescheduleTime(""); setCancelModal({ booking: null, mode: "confirm" }); }}
                   className="h-auto rounded-xl border border-hairline py-3 text-sm font-bold text-body transition-colors hover:bg-surface-elevated hover:text-body"
                 >
                   Back

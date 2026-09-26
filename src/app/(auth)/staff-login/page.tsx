@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { AuthGate } from "@/components/AuthGate";
@@ -15,6 +16,7 @@ export default function StaffLoginPage() {
   const [error, setError] = useState("");
   const [phone, setPhone] = useState("");
   const [pin, setPin] = useState("");
+  const [showPin, setShowPin] = useState(false);
 
   const handleLogin = () => {
     setError("");
@@ -84,14 +86,26 @@ export default function StaffLoginPage() {
                 </div>
                 <div>
                   <Label className="mb-2 block text-[10px] font-bold leading-normal text-muted">6-Digit PIN</Label>
-                  <Input
-                    type="password"
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-                    placeholder="******"
-                    maxLength={6}
-                    className="text-center text-xl tracking-[0.5em]"
-                  />
+                  <div className="relative">
+                    <Input
+                      type={showPin ? "text" : "password"}
+                      value={pin}
+                      onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+                      placeholder="******"
+                      maxLength={6}
+                      className="text-center text-xl tracking-[0.5em] pr-12"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPin(!showPin)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-muted transition-colors hover:text-yellow-400"
+                      aria-label={showPin ? "Hide PIN" : "Show PIN"}
+                      aria-pressed={showPin}
+                      tabIndex={0}
+                    >
+                      {showPin ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
                 <Button
                   onClick={handleLogin}

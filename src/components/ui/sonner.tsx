@@ -5,11 +5,12 @@ import { Toaster as Sonner, type ToasterProps } from "sonner"
 import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
+  const { theme = "dark" } = useTheme()
 
   return (
     <Sonner
       theme={theme as ToasterProps["theme"]}
+      richColors
       className="toaster group"
       icons={{
         success: (
@@ -30,10 +31,22 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }}
       style={
         {
-          "--normal-bg": "var(--popover)",
-          "--normal-text": "var(--popover-foreground)",
-          "--normal-border": "var(--border)",
-          "--border-radius": "var(--radius)",
+          "--normal-bg": "var(--color-popover)",
+          "--normal-text": "var(--color-popover-foreground)",
+          "--normal-border": "var(--color-border)",
+          "--success-bg": "#11351f",
+          "--success-text": "#59f3a6",
+          "--success-border": "rgba(89, 243, 166, 0.28)",
+          "--warning-bg": "#3a2f00",
+          "--warning-text": "#ffd54f",
+          "--warning-border": "rgba(255, 213, 79, 0.28)",
+          "--error-bg": "#41130c",
+          "--error-text": "#ff8a80",
+          "--error-border": "rgba(255, 138, 128, 0.28)",
+          "--info-bg": "#0f2a3f",
+          "--info-text": "#8ecaff",
+          "--info-border": "rgba(142, 202, 255, 0.28)",
+          "--border-radius": "var(--radius-md)",
         } as React.CSSProperties
       }
       toastOptions={{

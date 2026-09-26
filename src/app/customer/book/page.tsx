@@ -98,27 +98,6 @@ export default function BookService() {
   const isServiceVisibleToCommunity = (serviceName: string) =>
     !selectedCommunityObj || communitySettingFor(serviceName).enabled !== false;
 
-  const isSlotDisabled = (slotLabel: string) => {
-    // 1. Check past time
-    if (selectedDate === getTodayDate()) {
-      const endTimeStr = slotLabel.split(" - ")[1]?.trim() || slotLabel.split("–")[1]?.trim();
-      if (endTimeStr) {
-        const slotEndTime = new Date(`${getTodayDate()}T${convertTo24Hour(endTimeStr)}`);
-        if (slotEndTime < new Date()) return true;
-      }
-    }
-
-    // 2. Check capacity
-    const bookedCount = bookings.filter(b => 
-      b.date === selectedDate && 
-      b.time === slotLabel && 
-      b.community === selectedCommunityName &&
-      b.bookingStatus === "BOOKED"
-    ).length;
-
-    return bookedCount >= slotCapacity;
-  };
-
   // Helper to convert 12-hour to 24-hour for comparison
   const convertTo24Hour = (time12h: string) => {
     const [time, modifier] = time12h.split(" ");
@@ -129,9 +108,32 @@ export default function BookService() {
     return `${h.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
   };
 
+  const isSlotPast = (slotLabel: string) => {
+    if (selectedDate !== getTodayDate()) return false;
+    const endTimeStr = slotLabel.split(" - ")[1]?.trim() || slotLabel.split("–")[1]?.trim();
+    if (!endTimeStr) return false;
+    const slotEndTime = new Date(`${getTodayDate()}T${convertTo24Hour(endTimeStr)}`);
+    return slotEndTime < new Date();
+  };
+
+  const isSlotDisabled = (slotLabel: string) => {
+    const bookedCount = bookings.filter(b => 
+      b.date === selectedDate && 
+      b.time === slotLabel && 
+      b.community === selectedCommunityName &&
+      b.bookingStatus === "BOOKED"
+    ).length;
+
+    return bookedCount >= slotCapacity;
+  };
+
+  const availableTimeSlots = [...scheduleTimeSlots]
+    .sort((a, b) => a.startTime.localeCompare(b.startTime))
+    .filter(t => !isSlotPast(t.label));
+
   const inputClasses = "w-full h-auto bg-surface-card border border-hairline text-ink p-4 text-sm font-light focus:border-yellow-dark focus:outline-none transition-colors appearance-none";
   const labelClasses = "flex items-center gap-2 text-xs font-bold uppercase tracking-machined text-muted mb-4 mt-8";
-  const cardClasses = "w-full h-auto rounded-lg border p-4 text-left transition-colors";
+  const cardClasses = "w-full h-auto rounded-lg border p-4 text-left whitespace-normal break-words transition-colors";
   const fieldLabelClasses = "block text-[11px] font-bold uppercase tracking-machined text-muted mb-2.5";
   const stepClasses = "inline-flex items-center gap-1.5 rounded-full bg-yellow-dark/10 px-3 py-1 text-[10px] font-bold uppercase tracking-machined text-yellow-dark";
   const dialogInputClasses = "w-full h-auto rounded-xl border border-hairline bg-surface-card px-4 py-4 text-sm font-light text-ink placeholder:text-muted focus:border-yellow-dark focus:outline-none focus:ring-2 focus:ring-yellow-dark/20 transition-all appearance-none";
@@ -154,6 +156,11 @@ export default function BookService() {
 
     const serviceObj = services.find(s => s.name === selectedService);
     if (!serviceObj) { setError("Please select a service."); return; }
+
+    if (!selectedTime) {
+      setError(selectedDate === getTodayDate() && availableTimeSlots.length === 0 ? "No available slots for today." : "Please select a time slot.");
+      return;
+    }
 
     const savedAddress =
       savedAddresses.find(a => a.id === selectedAddressId) ||
@@ -193,13 +200,13 @@ export default function BookService() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-canvas pb-44 md:pb-32">
-      <div className="border-b border-hairline bg-surface-soft p-6">
+    <div className="flex min-h-screen flex-col bg-canvas">
+      <div className="border-b border-hairline bg-surface-soft p-6 md:px-8">
         <h1 className="text-2xl font-bold uppercase text-ink">Book a Service</h1>
         <p className="mt-1 text-sm font-light text-body">Fill in the details below to reserve your wash.</p>
       </div>
 
-      <div className="flex-1 p-6 overflow-y-auto">
+      <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-6">
 
         {/* ================= SECTION 1: COMMUNITY & FLAT ================= */}
         <Label className={labelClasses}><MapPin size={14} /> Community & Flat</Label>
@@ -306,9 +313,9 @@ export default function BookService() {
                   ? "border-yellow-dark bg-yellow-dark/10 ring-1 ring-yellow-dark/60 hover:bg-yellow-dark/10"
                   : "border-hairline bg-surface-card hover:border-yellow-dark/60 hover:bg-surface-elevated"
               }`}>
-              <span className="text-left">
-                <p className="text-sm font-bold text-ink">{v.brand} {v.model}</p>
-                <p className="text-xs font-light text-muted mt-1">{v.reg} · {v.category}</p>
+              <span className="min-w-0 flex-1 text-left">
+                <p className="text-sm font-bold text-ink break-words">{v.brand} {v.model}</p>
+                <p className="text-xs font-light text-muted mt-1 break-words">{v.reg} · {v.category}</p>
               </span>
               {selectedVehicleId === v.id && (
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-yellow-dark text-ink">
@@ -442,13 +449,13 @@ export default function BookService() {
                       ? "border-yellow-dark bg-yellow-dark/10 ring-1 ring-yellow-dark/60 hover:bg-yellow-dark/10"
                       : "border-hairline bg-surface-card hover:border-yellow-dark/60 hover:bg-surface-elevated"
                   }`}>
-                  <span className="flex flex-col items-start gap-0.5">
-                    <span className="text-sm font-bold text-ink">{s.name}</span>
+                  <span className="min-w-0 flex-1 flex flex-col items-start gap-0.5">
+                    <span className="text-sm font-bold text-ink break-words">{s.name}</span>
                     {pct > 0 && base > 0 ? (
                       <span className="rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-machined text-success">{pct}% off</span>
                     ) : null}
                   </span>
-                  <span className="flex items-center gap-2">
+                  <span className="flex shrink-0 items-center gap-2">
                     <span className="text-xs font-bold text-yellow-dark">
                       {pct > 0 && base > 0 ? <s className="mr-1 text-muted">₹{base}</s> : null}
                       ₹{final}
@@ -491,39 +498,42 @@ export default function BookService() {
 
         <div className="mb-8">
           <p className="text-xs font-bold uppercase tracking-machined text-muted mb-2">Time Slot</p>
-          <div className="grid grid-cols-2 gap-3">
-            {[...scheduleTimeSlots].sort((a, b) => a.startTime.localeCompare(b.startTime)).map(t => {
-              const isFull = isSlotDisabled(t.label);
-              return (
-                <Button 
-                  key={t.id} 
-                  variant="outline"
-                  onClick={() => setSelectedTime(t.label)}
-                  disabled={isFull} 
-                  className={`h-auto rounded-lg border p-3 text-center transition-colors ${
-                    selectedTime === t.label ? "border-yellow-dark bg-yellow-dark/10 ring-1 ring-yellow-dark/60 hover:bg-yellow-dark/10" : "border-hairline bg-surface-card hover:border-yellow-dark/60 hover:bg-surface-elevated"
-                  } ${isFull ? "cursor-not-allowed disabled:opacity-30 hover:border-hairline" : ""}`}
-                >
-                  <p className="text-xs font-bold text-ink">{t.label}</p>
-                  {isFull && <p className="text-[9px] text-m-red mt-1">Fully Booked</p>}
-                </Button>
-              );
-            })}
-          </div>
+          {availableTimeSlots.length === 0 ? (
+            <p data-testid="no-slots-today" className="rounded-xl border border-hairline bg-surface-card px-4 py-4 text-sm font-light text-muted">
+              No available slots for today.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {availableTimeSlots.map(t => {
+                const isFull = isSlotDisabled(t.label);
+                return (
+                  <Button 
+                    key={t.id} 
+                    variant="outline"
+                    onClick={() => setSelectedTime(t.label)}
+                    disabled={isFull} 
+                    className={`h-auto rounded-lg border p-3 text-center transition-colors ${
+                      selectedTime === t.label ? "border-yellow-dark bg-yellow-dark/10 ring-1 ring-yellow-dark/60 hover:bg-yellow-dark/10" : "border-hairline bg-surface-card hover:border-yellow-dark/60 hover:bg-surface-elevated"
+                    } ${isFull ? "cursor-not-allowed disabled:opacity-30 hover:border-hairline" : ""}`}
+                  >
+                    <p className="text-xs font-bold text-ink">{t.label}</p>
+                    {isFull && <p className="text-[9px] text-m-red mt-1">Fully Booked</p>}
+                  </Button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-      </div>
-
-      {/* ================= FIXED BOTTOM RESERVE BUTTON ================= */}
-      <div className="fixed bottom-[60px] md:bottom-0 left-0 right-0 z-40 border-t border-hairline bg-canvas p-4 ">
+        {/* ================= RESERVE ACTION ================= */}
         {error && (
           <p className="text-xs font-bold uppercase tracking-machined text-m-red mb-3 text-center">
             {error}
           </p>
         )}
-        <Button 
+        <Button
           onClick={handleReserve}
-          className="flex w-full h-auto items-center justify-center gap-2 rounded-lg bg-success py-5 text-sm font-bold uppercase tracking-machined text-ink transition-colors hover:bg-success hover:brightness-110"
+          className="flex w-full h-auto items-center justify-center gap-2 rounded-xl bg-success py-4 text-sm font-bold uppercase tracking-machined text-ink transition-colors hover:bg-success hover:brightness-110"
         >
           Reserve Service <Check size={16} />
         </Button>

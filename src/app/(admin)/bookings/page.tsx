@@ -10,6 +10,7 @@ import {
   Upload,
   MoreHorizontal,
 } from "lucide-react";
+import { toast } from "@/components/ui/toast";
 import { useStore } from "@/lib/store";
 import { toCSV, downloadCSV, parseCSV } from "@/lib/csv";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -103,6 +104,11 @@ export default function BookingsPage() {
     if (!dateString) return "";
     const [year, month, day] = dateString.split("-");
     return `${day}-${String(month).padStart(2, "0")}-${year}`;
+  };
+
+  const cancelledByLabel = (cb: "CUSTOMER" | "ADMIN" | "STAFF" | undefined) => {
+    if (!cb) return "Unknown";
+    return cb === "ADMIN" ? "Admin" : cb === "STAFF" ? "Staff" : "Customer";
   };
 
   const filteredBookings = bookings.filter((b) => {
@@ -304,13 +310,20 @@ export default function BookingsPage() {
                       <TableCell>{b.service}</TableCell>
                       <TableCell className="text-center font-semibold">{b.amount}</TableCell>
                       <TableCell className="text-center">
-                        <Badge className={`h-auto rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${
-                          b.bookingStatus === "BOOKED" ? "bg-warning/20 text-warning" :
-                          b.bookingStatus === "COMPLETED" ? "bg-success/20 text-success" :
-                          "bg-m-red/20 text-m-red"
-                        }`}>
-                          {statusKey(b) === "IN_PROGRESS" ? "In Progress" : statusKey(b)}
-                        </Badge>
+                        <div className="flex flex-col items-center gap-1">
+                          <Badge className={`h-auto rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${
+                            b.bookingStatus === "BOOKED" ? "bg-warning/20 text-warning" :
+                            b.bookingStatus === "COMPLETED" ? "bg-success/20 text-success" :
+                            "bg-m-red/20 text-m-red"
+                          }`}>
+                            {statusKey(b) === "IN_PROGRESS" ? "In Progress" : statusKey(b)}
+                          </Badge>
+                          {b.bookingStatus === "CANCELLED" && (
+                            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                              by {cancelledByLabel(b.cancelledBy)}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-center">
                         <Badge variant={
@@ -342,7 +355,10 @@ export default function BookingsPage() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               variant="destructive"
-                              onClick={() => cancelBooking(b.id, "ADMIN")}
+                              onClick={() => {
+                                cancelBooking(b.id, "ADMIN");
+                                toast.add({ type: "warning", title: "Booking cancelled", description: `${b.bookingCode} for ${displayCustomerName(b.customer)} cancelled.` });
+                              }}
                             >
                               <XCircle size={14} className="mr-2" />
                               Cancel

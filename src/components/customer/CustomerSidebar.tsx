@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, CalendarPlus, Car, Activity, User, LogOut, Menu } from "lucide-react";
+import { Home, CalendarPlus, Car, MapPin, History, User, LogOut, Menu } from "lucide-react";
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -11,9 +11,10 @@ import { Sheet, SheetContent, SheetClose } from "@/components/ui/sheet";
 
 const NAV_ITEMS = [
   { href: "/customer/my-dashboard", label: "Home", icon: Home },
-  { href: "/customer/book", label: "Book Service", icon: CalendarPlus },
   { href: "/customer/garage", label: "My Garage", icon: Car },
-  { href: "/customer/activity", label: "Activity", icon: Activity },
+  { href: "/customer/addresses", label: "My Address", icon: MapPin },
+  { href: "/customer/book", label: "Book Service", icon: CalendarPlus },
+  { href: "/customer/booking-history", label: "Booking History", icon: History },
   { href: "/customer/profile", label: "Profile", icon: User },
 ] as const;
 
@@ -56,6 +57,7 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="space-y-3 border-t border-hairline p-4">
+      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted">Customer information</p>
       <div className="flex min-w-0 items-center gap-3">
         <Avatar size="sm" className="ring-1 ring-yellow-dark/20">
           <AvatarFallback className="bg-yellow-dark/10 text-yellow-dark">{initials}</AvatarFallback>

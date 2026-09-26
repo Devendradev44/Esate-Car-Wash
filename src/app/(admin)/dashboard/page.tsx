@@ -343,6 +343,11 @@ export default function AdminDashboard() {
                           {b.paymentStatus}
                         </Badge>
                       </div>
+                      {b.bookingStatus === "CANCELLED" && (
+                        <p className="mt-1 text-right text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          by {b.cancelledBy ? (b.cancelledBy === "ADMIN" ? "Admin" : b.cancelledBy === "STAFF" ? "Staff" : "Customer") : "Unknown"}
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}

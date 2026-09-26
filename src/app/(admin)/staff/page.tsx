@@ -52,11 +52,12 @@ export default function StaffPage() {
     setShowModal(true);
   };
 
-  const openEditModal = (id: string, n: string, p: string, c: string) => {
+  const openEditModal = (id: string, n: string, p: string, c: string, pinValue: string) => {
     setIsEditing(true);
     setFormError("");
     setCurrentId(id);
     setName(n); setPhone(p); setCommunity(c);
+    setPin(pinValue);
     setShowModal(true);
   };
 
@@ -65,10 +66,12 @@ export default function StaffPage() {
     if (!name.trim()) { setFormError("Full name is required."); return; }
     if (phone.length !== 10) { setFormError("Enter a valid 10-digit phone number."); return; }
     if (!community) { setFormError("Assign the staff member to a community."); return; }
+    if (!/^\d{6}$/.test(pin)) { setFormError("PIN must be exactly 6 digits."); return; }
+    if (staff.some(s => s.pin === pin && s.id !== currentId)) { setFormError("Another staff member already uses this PIN."); return; }
     if (staff.some(s => s.phone === phone && s.id !== currentId)) { setFormError("Another staff member already uses this phone number."); return; }
     if (isEditing) {
-      updateStaff(currentId, { name: name.trim(), phone, community });
-      setName(""); setPhone(""); setCommunity("");
+      updateStaff(currentId, { name: name.trim(), phone, community, pin });
+      setName(""); setPhone(""); setCommunity(""); setPin("");
       setShowModal(false);
       return;
     }
@@ -123,20 +126,34 @@ export default function StaffPage() {
                 </SelectContent>
               </Select>
             </div>
-            {!isEditing && (
-              <div className="mb-8">
-                <label className={labelClasses}>Generated PIN</label>
-                <div className="flex items-center gap-3">
+            <div className="mb-8">
+              <label className={labelClasses}>{isEditing ? "Sign-in PIN" : "Generated PIN"}</label>
+              <div className="flex items-center gap-3">
+                {isEditing ? (
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+                    className="h-12 flex-1 rounded-lg border border-hairline bg-surface-card text-center text-xl font-bold tracking-[0.4em] text-yellow-dark focus:border-yellow-dark focus:outline-none"
+                    aria-label="Staff PIN"
+                  />
+                ) : (
                   <span className="flex h-12 flex-1 items-center justify-center rounded-lg border border-dashed border-yellow-dark bg-yellow-dark/10 px-4 text-xl font-bold tracking-[0.4em] text-yellow-dark">
                     {pin}
                   </span>
-                  <Button type="button" variant="outline" onClick={() => setPin(genUniquePin())} className="h-12 rounded-lg border border-hairline bg-surface-card px-4 text-xs font-bold uppercase tracking-machined text-ink hover:border-yellow-dark hover:bg-surface-elevated transition-colors">
-                    Regenerate
-                  </Button>
-                </div>
-                <p className="mt-2 text-[10px] font-light text-muted">This is a unique 6-digit PIN. Share it with the staff member — they use it to sign in on the staff portal.</p>
+                )}
+                <Button type="button" variant="outline" onClick={() => setPin(genUniquePin())} className="h-12 rounded-lg border border-hairline bg-surface-card px-4 text-xs font-bold uppercase tracking-machined text-ink hover:border-yellow-dark hover:bg-surface-elevated transition-colors">
+                  Regenerate
+                </Button>
               </div>
-            )}
+              <p className="mt-2 text-[10px] font-light text-muted">
+                {isEditing
+                  ? "Regenerate a new PIN or type a custom 6-digit one. The staff member uses it to sign in on the staff portal. PIN changes take effect immediately."
+                  : "This is a unique 6-digit PIN. Share it with the staff member — they use it to sign in on the staff portal."}
+              </p>
+            </div>
             {formError && <p className="mb-6 text-xs font-semibold text-m-red bg-m-red/10 border border-m-red/20 py-2 rounded-lg text-center">{formError}</p>}
             <Button type="button" onClick={handleSaveStaff} className="flex w-full items-center justify-center gap-2 bg-yellow-dark py-4 text-xs font-bold uppercase tracking-machined text-ink hover:bg-yellow-light">
               {isEditing ? "Save Changes" : "Generate PIN & Save"}
@@ -172,7 +189,7 @@ export default function StaffPage() {
                 {s.status}
               </Badge>
               <div className="flex items-center justify-end gap-4">
-                <Button type="button" variant="ghost" size="icon-sm" onClick={() => openEditModal(s.id, s.name, s.phone, s.community)} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${s.name}`}><Edit size={16} /></Button>
+                <Button type="button" variant="ghost" size="icon-sm" onClick={() => openEditModal(s.id, s.name, s.phone, s.community, s.pin)} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${s.name}`}><Edit size={16} /></Button>
                 <Button type="button" variant="ghost" size="icon-sm" onClick={() => setDeleteId(s.id)} className="text-muted hover:text-m-red transition-colors" aria-label={`Delete ${s.name}`}><Trash2 size={16} /></Button>
               </div>
             </div>
@@ -207,7 +224,7 @@ export default function StaffPage() {
                 </TableCell>
                 <TableCell className="py-4 px-6 text-right">
                   <div className="flex items-center justify-end gap-3">
-                    <Button type="button" variant="ghost" size="icon-sm" onClick={() => openEditModal(s.id, s.name, s.phone, s.community)} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${s.name}`}><Edit size={16} /></Button>
+                    <Button type="button" variant="ghost" size="icon-sm" onClick={() => openEditModal(s.id, s.name, s.phone, s.community, s.pin)} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${s.name}`}><Edit size={16} /></Button>
                     <Button type="button" variant="ghost" size="icon-sm" onClick={() => setDeleteId(s.id)} className="text-muted hover:text-m-red transition-colors" aria-label={`Delete ${s.name}`}><Trash2 size={16} /></Button>
                   </div>
                 </TableCell>
