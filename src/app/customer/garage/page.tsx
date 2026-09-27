@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { motion } from "motion/react";
-import { Plus, Trash2, Edit, Car, CalendarClock, Hash, MoveUpRight } from "lucide-react";
+import { Plus, Trash2, Edit, Car } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -18,8 +18,8 @@ export default function GaragePage() {
     return value.toUpperCase().replace(/[^A-Z0-9 ]/g, '');
   };
 
-  const customerGarage = useStore((state) => state.customerGarage);
-  const bookings = useStore((state) => state.bookings);
+  const mockUser = useStore((state) => state.mockUser);
+  const customerGarage = useStore((state) => state.customerGarage).filter((v) => v.ownerId === mockUser?.id);
   const addCustomerVehicle = useStore((state) => state.addCustomerVehicle);
   const updateCustomerVehicle = useStore((state) => state.updateCustomerVehicle);
   const deleteCustomerVehicle = useStore((state) => state.deleteCustomerVehicle);
@@ -41,21 +41,6 @@ export default function GaragePage() {
 
   const brandsForNewCat = vehicleHierarchy.find(c => c.name === newCat)?.brands || [];
   const modelsForNewBrand = brandsForNewCat.find(b => b.name === newBrand)?.models || [];
-
-  const vehicleMeta = (v: { reg: string; brand: string; model: string }) => {
-    const byReg = bookings.filter(b => b.regNumber && b.regNumber.toUpperCase().replace(/\s/g, "") === v.reg.toUpperCase().replace(/\s/g, ""));
-    const matches = byReg.length > 0 ? byReg : bookings.filter(b => b.vehicle.includes(`${v.brand} ${v.model}`));
-    const completed = matches.filter(b => b.bookingStatus === "COMPLETED");
-    const lastWash = completed.length > 0 ? [...completed.map(b => b.date)].sort().reverse()[0] : "";
-    return { count: matches.length, lastWash };
-  };
-
-  const formatDate = (date: string) => {
-    if (!date) return "—";
-    const d = new Date(`${date}T00:00:00`);
-    if (isNaN(d.getTime())) return date;
-    return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-  };
 
   const handleSaveVehicle = () => {
     if (!newCat || !newBrand || !newModel || !newReg) {
@@ -123,7 +108,7 @@ export default function GaragePage() {
         </Button>
       </div>
 
-      <div className="mx-auto w-full max-w-3xl flex-1 p-6 space-y-4">
+      <div className="mx-auto w-full max-w-2xl flex-1 p-4 md:p-6 space-y-3">
         {customerGarage.length === 0 ? (
           <EmptyState
             icon={Car}
@@ -139,59 +124,42 @@ export default function GaragePage() {
             }
           />
         ) : (
-          customerGarage.map((v, i) => {
-            const meta = vehicleMeta(v);
-            return (
+          <div className="grid gap-3">
+            {customerGarage.map((v, i) => (
               <motion.div
                 key={v.id}
-                initial={{ opacity: 0, y: 16 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: i * 0.05, ease: [0.25, 0.1, 0.25, 1] }}
+                transition={{ duration: 0.28, delay: i * 0.04, ease: [0.25, 0.1, 0.25, 1] }}
               >
-                <div className="group relative overflow-hidden rounded-2xl border border-hairline bg-surface-card p-6 transition-all duration-200 hover:border-yellow-dark/50 hover:shadow-lg">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-yellow-dark/10 ring-1 ring-yellow-dark/20">
-                        <Car size={26} className="text-yellow-dark" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-lg font-bold text-ink">{v.brand} {v.model}</p>
-                          {v.isDefault && (
-                            <Badge variant="secondary" className="rounded-full bg-yellow-dark/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-machined text-yellow-dark">Primary</Badge>
-                          )}
-                        </div>
-                        <p className="mt-1 font-mono text-xs tracking-wider text-body">{v.reg}</p>
-                      </div>
+                <div className="group flex items-center gap-3 rounded-xl border border-hairline bg-surface-card px-4 py-3 transition-all duration-200 hover:border-yellow-dark/50 hover:bg-surface-elevated">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-yellow-dark/10 ring-1 ring-yellow-dark/20">
+                    <Car size={18} className="text-yellow-dark" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate text-sm font-bold text-ink">{v.brand} {v.model}</p>
+                      {v.isDefault && (
+                        <Badge variant="secondary" className="rounded-full bg-yellow-dark/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-machined text-yellow-dark">Primary</Badge>
+                      )}
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon-sm" onClick={() => openEditModal(v.id, v.reg)} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${v.brand} ${v.model}`}>
-                        <Edit size={16} />
-                      </Button>
-                      <Button variant="ghost" size="icon-sm" onClick={() => setDeleteId(v.id)} className="text-muted hover:text-m-red transition-colors" aria-label={`Remove ${v.brand} ${v.model}`}>
-                        <Trash2 size={16} />
-                      </Button>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                      <p className="font-mono text-[11px] tracking-wider text-body">{v.reg}</p>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">· {v.category}</span>
                     </div>
                   </div>
-
-                  <div className="mt-5 grid grid-cols-3 gap-3 border-t border-hairline pt-5">
-                    <div className="rounded-xl bg-surface-soft/80 px-4 py-3">
-                      <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-machined text-muted"><MoveUpRight size={11} /> Type</p>
-                      <p className="mt-1 truncate text-sm font-semibold text-ink">{v.category}</p>
-                    </div>
-                    <div className="rounded-xl bg-surface-soft/80 px-4 py-3">
-                      <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-machined text-muted"><CalendarClock size={11} /> Last Wash</p>
-                      <p className="mt-1 truncate text-sm font-semibold text-ink">{formatDate(meta.lastWash)}</p>
-                    </div>
-                    <div className="rounded-xl bg-surface-soft/80 px-4 py-3">
-                      <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-machined text-muted"><Hash size={11} /> Bookings</p>
-                      <p className="mt-1 truncate text-sm font-semibold text-ink">{meta.count}</p>
-                    </div>
+                  <div className="flex shrink-0 items-center gap-0.5">
+                    <Button variant="ghost" size="icon-sm" onClick={() => openEditModal(v.id, v.reg)} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${v.brand} ${v.model}`}>
+                      <Edit size={15} />
+                    </Button>
+                    <Button variant="ghost" size="icon-sm" onClick={() => setDeleteId(v.id)} className="text-muted hover:text-m-red transition-colors" aria-label={`Remove ${v.brand} ${v.model}`}>
+                      <Trash2 size={15} />
+                    </Button>
                   </div>
                 </div>
               </motion.div>
-            );
-          })
+            ))}
+          </div>
         )}
       </div>
 
@@ -313,7 +281,7 @@ export default function GaragePage() {
           if (deleteId) {
             const target = customerGarage.find((item) => item.id === deleteId);
             deleteCustomerVehicle(deleteId);
-            toast.warning("Vehicle removed", {
+            toast.error("Vehicle removed", {
               description: target ? `${target.brand} ${target.model} has been removed from your garage.` : "Vehicle removed.",
             });
           }

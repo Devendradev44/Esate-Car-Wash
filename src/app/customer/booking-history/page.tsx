@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ListSkeleton } from "@/components/animations";
 import { ActivityTimeline } from "@/components/customer/ActivityTimeline";
+import { sortByScheduledAt } from "@/lib/bookingSort";
 
 const easeOut: [number, number, number, number] = [0.25, 0.1, 0.25, 1];
 
@@ -25,7 +26,7 @@ export default function BookingHistoryPage() {
     return () => clearTimeout(t);
   }, []);
 
-  const myBookings = bookings.filter((b) => b.customer === (mockUser?.name || "Guest"));
+  const myBookings = bookings.filter((b) => b.customerId === mockUser?.id);
   const counts = {
     ALL: myBookings.length,
     BOOKED: myBookings.filter((b) => b.bookingStatus === "BOOKED").length,
@@ -33,7 +34,7 @@ export default function BookingHistoryPage() {
     CANCELLED: myBookings.filter((b) => b.bookingStatus === "CANCELLED").length,
   };
 
-  const sortedBookings = [...myBookings].sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+  const sortedBookings = sortByScheduledAt(myBookings, "asc");
   const filteredBookings = tab === "ALL" ? sortedBookings : sortedBookings.filter((b) => b.bookingStatus === tab);
   const washesDone = counts.COMPLETED;
 

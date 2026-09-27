@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 /* Black / Grey / Yellow Design System Configuration for Tailwind v4 */
 @theme {

@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, CalendarPlus, Car, MapPin, History, User, LogOut, Menu } from "lucide-react";
+import { Home, CalendarPlus, Car, MapPin, Users, History, User, LogOut, Menu } from "lucide-react";
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/customer/my-dashboard", label: "Home", icon: Home },
   { href: "/customer/garage", label: "My Garage", icon: Car },
   { href: "/customer/addresses", label: "My Address", icon: MapPin },
+  { href: "/customer/drivers", label: "My Drivers", icon: Users },
   { href: "/customer/book", label: "Book Service", icon: CalendarPlus },
   { href: "/customer/booking-history", label: "Booking History", icon: History },
   { href: "/customer/profile", label: "Profile", icon: User },

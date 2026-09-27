@@ -133,7 +133,15 @@ export default function BookingsPage() {
   };
 
   const handleExport = () => {
-    const csv = toCSV(bookings, [
+    const coordinatorLabel = (b: (typeof bookings)[0]) => {
+      if (!b.coordinator) return "";
+      const parts = [`${b.coordinator.type === "DRIVER" ? "Driver" : "Self"}: ${b.coordinator.name}`];
+      if (b.coordinator.phone) parts.push(b.coordinator.phone);
+      return parts.join(" · ");
+    };
+    const csv = toCSV(
+      bookings.map((b) => ({ ...b, coordinatorLabel: coordinatorLabel(b) })),
+      [
       { key: "bookingCode", header: "Booking Code" },
       { key: "date", header: "Date" },
       { key: "time", header: "Time" },
@@ -148,7 +156,9 @@ export default function BookingsPage() {
       { key: "paymentStatus", header: "Payment Status" },
       { key: "paymentMethod", header: "Payment Method" },
       { key: "cancelledBy", header: "Cancelled By" },
-    ]);
+      { key: "coordinatorLabel", header: "Coordinator" },
+      ]
+    );
     downloadCSV(`bookings_${new Date().toISOString().slice(0, 10)}.csv`, csv);
   };
 
@@ -302,6 +312,11 @@ export default function BookingsPage() {
                       <TableCell>
                         <p className="font-medium">{displayCustomerName(b.customer)}</p>
                         <p className="text-xs text-muted-foreground">{displayAddress(b)}</p>
+                        {b.coordinator && (
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {b.coordinator.type === "DRIVER" ? "Driver" : "Self"} · {b.coordinator.name}{b.coordinator.phone ? ` · ${b.coordinator.phone}` : ""}
+                          </p>
+                        )}
                       </TableCell>
                       <TableCell>
                         <p className="font-medium">{b.vehicle}</p>

@@ -6,7 +6,6 @@ import {
   CalendarDays,
   Car,
   Wrench,
-  User,
   ArrowRight,
   XCircle,
   Clock,
@@ -15,7 +14,6 @@ import {
   CheckCircle2,
   Pencil,
   Trash2,
-  History,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
@@ -28,6 +26,8 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { DashboardCardSkeleton, ListSkeleton } from "@/components/animations";
 import { ActivityTimeline, formatDateShort } from "@/components/customer/ActivityTimeline";
+import { StatusBadge } from "@/components/customer/StatusBadge";
+import { sortByScheduledAt } from "@/lib/bookingSort";
 
 const easeOut: [number, number, number, number] = [0.25, 0.1, 0.25, 1];
 
@@ -39,7 +39,7 @@ const stagger = {
 export default function CustomerDashboard() {
   const mockUser = useStore((state) => state.mockUser);
   const bookings = useStore((state) => state.bookings);
-  const customerGarage = useStore((state) => state.customerGarage);
+  const customerGarage = useStore((state) => state.customerGarage).filter((v) => v.ownerId === mockUser?.id);
   const cancelBooking = useStore((state) => state.cancelBooking);
   const rescheduleBooking = useStore((state) => state.rescheduleBooking);
   const deleteCustomerVehicle = useStore((state) => state.deleteCustomerVehicle);
@@ -65,30 +65,22 @@ export default function CustomerDashboard() {
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   };
 
-  const myBookings = bookings.filter((b) => b.customer === (mockUser?.name || "Guest"));
-  const upcomingBookings = myBookings.filter((b) => b.bookingStatus === "BOOKED").sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+  const myBookings = bookings.filter((b) => b.customerId === mockUser?.id);
+  const upcomingBookings = sortByScheduledAt(
+    myBookings.filter((b) => b.bookingStatus === "BOOKED"),
+    "asc"
+  );
   const nextUpcoming = upcomingBookings[0] || null;
   const pastBookings = myBookings.filter((b) => b.bookingStatus !== "BOOKED");
-  const recentActivity = [...upcomingBookings, ...pastBookings]
-    .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time))
-    .slice(0, 6);
+  const recentActivity = sortByScheduledAt([...upcomingBookings, ...pastBookings], "desc").slice(0, 6);
 
   const totalBookings = myBookings.length;
   const completedWashes = pastBookings.filter((b) => b.bookingStatus === "COMPLETED").length;
 
-  const statusBadge = (b: typeof bookings[0]) => {
-    const styles = b.bookingStatus === "BOOKED"
-      ? "bg-warning/20 text-warning"
-      : b.bookingStatus === "COMPLETED"
-        ? "bg-success/20 text-success"
-        : "bg-m-red/20 text-m-red";
-    return <Badge className={`h-auto rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${styles}`}>{b.bookingStatus}</Badge>;
-  };
-
   const handleConfirmCancel = () => {
     if (cancelModal.booking) {
       cancelBooking(cancelModal.booking.id, "CUSTOMER");
-      toast.warning("Booking cancelled", {
+      toast.error("Booking cancelled", {
         description: `Your ${cancelModal.booking.service} on ${formatDateShort(cancelModal.booking.date)} has been cancelled.`,
       });
     }
@@ -108,7 +100,7 @@ export default function CustomerDashboard() {
   const handleDeleteVehicle = () => {
     if (deleteVehicle) {
       deleteCustomerVehicle(deleteVehicle.id);
-      toast.warning("Vehicle removed", { description: `${deleteVehicle.brand} ${deleteVehicle.model} removed from your garage.` });
+      toast.error("Vehicle removed", { description: `${deleteVehicle.brand} ${deleteVehicle.model} removed from your garage.` });
     }
     setDeleteVehicle(null);
   };
@@ -122,13 +114,6 @@ export default function CustomerDashboard() {
       return true;
     })
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
-
-  const quickActions = [
-    { href: "/customer/book", label: "Book Service", sub: "Schedule a wash", icon: Wrench },
-    { href: "/customer/garage", label: "Garage", sub: `${customerGarage.length} vehicles`, icon: Car },
-    { href: "/customer/booking-history", label: "Booking History", sub: `${totalBookings} bookings`, icon: History },
-    { href: "/customer/profile", label: "Profile", sub: "Account settings", icon: User },
-  ];
 
   return (
     <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: easeOut }} className="mx-auto w-full max-w-5xl px-4 py-5 md:px-8 md:py-7">
@@ -180,34 +165,6 @@ export default function CustomerDashboard() {
           </motion.div>
         )}
 
-        {/* ================= QUICK ACTIONS ================= */}
-        {!ready ? (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="rounded-xl border border-hairline bg-surface-card p-4">
-                <DashboardCardSkeleton className="border-0 bg-transparent p-0" />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <motion.div variants={stagger} initial="hidden" animate="show" custom={1} className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {quickActions.map((item) => {
-              const Icon = item.icon;
-              return (
-                <motion.div key={item.label} whileHover={{ y: -3 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.2 }}>
-                  <Link href={item.href} className="flex h-full flex-col rounded-xl border border-hairline bg-surface-card p-4 transition-colors hover:border-yellow-dark/40">
-                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-dark/10 ring-1 ring-yellow-dark/20">
-                      <Icon size={18} className="text-yellow-dark" />
-                    </div>
-                    <p className="text-sm font-semibold text-ink">{item.label}</p>
-                    <p className="mt-0.5 text-xs font-light text-muted">{item.sub}</p>
-                  </Link>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-        )}
-
         {/* ================= UPCOMING BOOKING + GARAGE ================= */}
         {!ready ? (
           <div className="grid gap-5 md:grid-cols-5">
@@ -215,9 +172,9 @@ export default function CustomerDashboard() {
             <div className="md:col-span-2"><CardSkeletonWrap /></div>
           </div>
         ) : (
-          <motion.div variants={stagger} initial="hidden" animate="show" custom={2} className="grid gap-5 md:grid-cols-5">
+          <motion.div variants={stagger} initial="hidden" animate="show" custom={1} className="grid gap-5 md:grid-cols-5">
             {/* Upcoming booking */}
-            <div className="md:col-span-3">
+            <div className="min-w-0 md:col-span-3">
               <div className="mb-2.5 flex items-center justify-between">
                 <h2 className="text-xs font-bold uppercase tracking-machined text-muted">Next Wash</h2>
                 <Link href="/customer/book" className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-machined text-yellow-dark hover:text-yellow-light transition-colors">
@@ -244,7 +201,7 @@ export default function CustomerDashboard() {
                       <p className="truncate text-base font-bold text-ink">{nextUpcoming.service}</p>
                       <p className="mt-0.5 text-xs font-light text-body">{formatDateShort(nextUpcoming.date)} · {nextUpcoming.time}</p>
                     </div>
-                    {statusBadge(nextUpcoming)}
+                    <StatusBadge status={nextUpcoming.bookingStatus} />
                   </div>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-3 px-5 py-4">
                     <div className="flex items-center gap-2 text-xs font-light text-body">
@@ -258,7 +215,7 @@ export default function CustomerDashboard() {
                     </div>
                     <div className="flex items-center gap-2 text-xs font-light text-body">
                       <span className="font-bold text-ink">₹{nextUpcoming.amount}</span>
-                      <span className="text-muted">· {nextUpcoming.paymentStatus}</span>
+                      <StatusBadge status={nextUpcoming.paymentStatus} />
                     </div>
                   </div>
                   <div className="flex gap-3 border-t border-hairline px-5 py-3.5">
@@ -281,7 +238,7 @@ export default function CustomerDashboard() {
             </div>
 
             {/* Garage preview */}
-            <div className="md:col-span-2">
+            <div className="min-w-0 md:col-span-2">
               <div className="mb-2.5 flex items-center justify-between">
                 <h2 className="text-xs font-bold uppercase tracking-machined text-muted">Garage</h2>
                 <Link href="/customer/garage" className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-machined text-yellow-dark hover:text-yellow-light transition-colors">
@@ -302,11 +259,11 @@ export default function CustomerDashboard() {
                   </Link>
                 </div>
               ) : (
-                <div className="space-y-2.5">
-                  {customerGarage.slice(0, 3).map((v) => (
-                    <div key={v.id} className="flex items-center gap-3 rounded-xl border border-hairline bg-surface-card px-3.5 py-2.5 transition-colors hover:border-yellow-dark/40">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-yellow-dark/10 ring-1 ring-yellow-dark/20">
-                        <Car size={15} className="text-yellow-dark" />
+                <div className="overflow-hidden rounded-2xl border border-hairline bg-surface-card">
+                  {customerGarage.slice(0, 3).map((v, i) => (
+                    <div key={v.id} className={`flex items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-soft/60 ${i < Math.min(customerGarage.length, 3) - 1 ? "border-b border-hairline" : ""}`}>
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-yellow-dark/10 ring-1 ring-yellow-dark/20">
+                        <Car size={16} className="text-yellow-dark" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
@@ -333,7 +290,9 @@ export default function CustomerDashboard() {
                     </div>
                   ))}
                   {customerGarage.length > 3 && (
-                    <p className="pt-0.5 text-center text-[11px] font-semibold text-muted">+{customerGarage.length - 3} more in your garage</p>
+                    <Link href="/customer/garage" className="flex items-center justify-center gap-1 border-t border-hairline px-4 py-2.5 text-[11px] font-bold uppercase tracking-machined text-yellow-dark transition-colors hover:bg-surface-soft/60 hover:text-yellow-light">
+                      Manage all vehicles ({customerGarage.length - 3} more) <ArrowRight size={12} />
+                    </Link>
                   )}
                 </div>
               )}
@@ -342,7 +301,7 @@ export default function CustomerDashboard() {
         )}
 
         {/* ================= RECENT ACTIVITY ================= */}
-        <motion.div variants={stagger} initial="hidden" animate="show" custom={3}>
+        <motion.div variants={stagger} initial="hidden" animate="show" custom={2}>
           <div className="mb-2.5 flex items-center justify-between">
             <h2 className="text-xs font-bold uppercase tracking-machined text-muted">Recent Activity</h2>
             <Link href="/customer/booking-history" className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-machined text-yellow-dark hover:text-yellow-light transition-colors">

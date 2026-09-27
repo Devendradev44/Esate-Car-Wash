@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { CheckCircle2, MapPin, Car, XCircle } from "lucide-react";
+import { CheckCircle2, MapPin, Car, XCircle, Phone } from "lucide-react";
 import { toast } from "@/components/ui/toast";
 import { useStore } from "@/lib/store";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -62,6 +62,14 @@ export default function StaffDashboard() {
             <div className="space-y-2 mb-5 border-t border-hairline pt-4">
               <p className="text-sm font-light text-body flex items-center gap-2"><Car size={14} className="text-muted"/> {b.vehicle}</p>
               <p className="text-sm font-light text-body">Reg: <span className="font-bold text-ink">{b.regNumber}</span></p>
+              {b.coordinator && (
+                <p className="text-sm font-light text-body flex items-center gap-1.5">
+                  <Phone size={14} className="shrink-0 text-muted" />
+                  {b.coordinator.type === "DRIVER" ? "Driver" : "Coordinate with"}: <span className="font-bold text-ink">{b.coordinator.name}</span>
+                  {b.coordinator.phone ? <span className="ml-1 font-light text-muted">· {b.coordinator.phone}</span> : null}
+                  {b.coordinator.type !== "DRIVER" && <span className="ml-1 font-light text-muted">· self drop-off</span>}
+                </p>
+              )}
               <p className="text-sm font-light text-body">Service: <span className="font-bold text-ink">{b.service}</span></p>
               <p className="text-sm font-bold text-ink">Amount: ₹{b.amount}</p>
             </div>

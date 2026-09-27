@@ -2,8 +2,8 @@
 import { motion } from "motion/react";
 import { CheckCircle2, XCircle, Clock } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { StatusBadge } from "@/components/customer/StatusBadge";
 
 export type TimelineBooking = {
   id: string;
@@ -15,20 +15,6 @@ export type TimelineBooking = {
   bookingStatus: "BOOKED" | "COMPLETED" | "CANCELLED";
   paymentStatus?: string;
 };
-
-function StatusBadge({ status }: { status: TimelineBooking["bookingStatus"] }) {
-  const styles =
-    status === "BOOKED"
-      ? "bg-warning/20 text-warning"
-      : status === "COMPLETED"
-        ? "bg-success/20 text-success"
-        : "bg-m-red/20 text-m-red";
-  return (
-    <Badge className={cn("h-auto rounded-full px-2.5 py-1 text-[10px] font-bold uppercase", styles)}>
-      {status}
-    </Badge>
-  );
-}
 
 export function formatDateShort(dateString: string) {
   if (!dateString) return "";

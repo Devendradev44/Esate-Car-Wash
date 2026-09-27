@@ -29,18 +29,20 @@ type AdminUser = {
   status: "ACTIVE" | "DISABLED";
 };
 
-type CustomerVehicle = { id: string; category: string; brand: string; model: string; reg: string; isDefault: boolean };
-type CustomerAddress = { id: string; community: string; flat: string };
+type CustomerVehicle = { id: string; ownerId: string; category: string; brand: string; model: string; reg: string; isDefault: boolean };
+type CustomerAddress = { id: string; ownerId: string; community: string; flat: string };
+type CustomerDriver = { id: string; ownerId: string; name: string; phone: string };
 type CommunityServiceSetting = { serviceName: string; enabled: boolean; discountPct: number };
 type Community = { id: string; name: string; address: string; status: "ACTIVE" | "HIDDEN"; slotCapacity: number; timeRange?: { start: string; end: string }; serviceSettings?: CommunityServiceSetting[] };
 type TimeSlot = { id: string; label: string; startTime: string; endTime: string };
 type ServiceItem = { id: string; name: string; description: string; duration: number; pricing: Record<string, number>; active?: boolean };
 type BookingItem = { 
   id: string; bookingCode: string; date: string; time: string; 
-  customer: string; flat: string; community: string; vehicle: string; regNumber: string; 
+  customer: string; customerId: string; flat: string; community: string; vehicle: string; regNumber: string; 
   service: string; amount: number; bookingStatus: "BOOKED" | "COMPLETED" | "CANCELLED"; paymentStatus: "PENDING" | "PAID" | "REFUNDED";
   cancelledBy?: "CUSTOMER" | "ADMIN" | "STAFF";
   paymentMethod?: "CASH" | "UPI" | "ONLINE";
+  coordinator?: { type: "SELF" | "DRIVER"; name: string; phone: string };
 };
 type ExpenseItem = { id: string; date: string; name: string; category: string; amount: number; paymentType: string; notes: string; community?: string };
 type StaffItem = { id: string; name: string; phone: string; community: string; pin: string; status: "ACTIVE" | "DISABLED"; role: "STAFF" | "ADMIN" };
@@ -121,6 +123,7 @@ type AppStore = {
   staff: StaffItem[];
   addresses: CustomerAddress[];
   customerGarage: CustomerVehicle[];
+  drivers: CustomerDriver[];
 
   // Customers
   customers: Customer[];
@@ -152,14 +155,19 @@ type AppStore = {
   deleteCommunity: (id: string) => void;
 
   // Address Actions
-  addAddress: (address: CustomerAddress) => void;
+  addAddress: (address: Omit<CustomerAddress, "ownerId">) => void;
   updateAddress: (id: string, community: string, flat: string) => void;
   deleteAddress: (id: string) => void;
 
   // Vehicle Actions
-  addCustomerVehicle: (vehicle: CustomerVehicle) => void;
+  addCustomerVehicle: (vehicle: Omit<CustomerVehicle, "ownerId">) => void;
   updateCustomerVehicle: (id: string, reg: string) => void;
 deleteCustomerVehicle: (id: string) => void;
+
+  // Driver Actions
+  addDriver: (driver: Omit<CustomerDriver, "ownerId">) => void;
+  updateDriver: (id: string, name: string, phone: string) => void;
+  deleteDriver: (id: string) => void;
    
   addVehicleCategory: (category: VehicleCategory) => void;
   addVehicleBrand: (categoryId: string, brand: VehicleBrand) => void;
@@ -178,7 +186,7 @@ deleteCustomerVehicle: (id: string) => void;
   deleteService: (id: string) => void;
 
   // Booking Actions
-  addBooking: (booking: BookingItem) => void;
+  addBooking: (booking: Omit<BookingItem, "customerId">) => void;
   completeBooking: (id: string, method: "CASH" | "UPI" | "ONLINE") => void;
 
   // Expense Actions
@@ -263,6 +271,7 @@ updateMockUser: (data) => set((state) => {
 
       addresses: [],
       customerGarage: [],
+      drivers: [],
       customers: initialCustomers,
 
       // --- MUTATIONS ---
@@ -283,18 +292,34 @@ updateMockUser: (data) => set((state) => {
       })),
 
       // Address
-      addAddress: (newAddress) => set((state) => ({ addresses: [...state.addresses, newAddress] })),
+      addAddress: (newAddress) => set((state) => { 
+        const ownerId = state.mockUser?.id ?? "";
+        return { addresses: [...state.addresses, { ...newAddress, ownerId }] };
+      }),
       updateAddress: (id, community, flat) => set((state) => ({ 
         addresses: state.addresses.map(a => a.id === id ? { ...a, community, flat } : a) 
       })),
       deleteAddress: (id) => set((state) => ({ addresses: state.addresses.filter(a => a.id !== id) })),
 
       // Customer Vehicles
-      addCustomerVehicle: (newVehicle) => set((state) => ({ customerGarage: [...state.customerGarage, newVehicle] })),
+      addCustomerVehicle: (newVehicle) => set((state) => {
+        const ownerId = state.mockUser?.id ?? "";
+        return { customerGarage: [...state.customerGarage, { ...newVehicle, ownerId }] };
+      }),
       updateCustomerVehicle: (id, reg) => set((state) => ({
         customerGarage: state.customerGarage.map(v => v.id === id ? { ...v, reg } : v)
       })),
       deleteCustomerVehicle: (id) => set((state) => ({ customerGarage: state.customerGarage.filter(v => v.id !== id) })),
+
+      // Drivers
+      addDriver: (newDriver) => set((state) => {
+        const ownerId = state.mockUser?.id ?? "";
+        return { drivers: [...state.drivers, { ...newDriver, ownerId }] };
+      }),
+      updateDriver: (id, name, phone) => set((state) => ({
+        drivers: state.drivers.map(d => d.id === id ? { ...d, name, phone } : d)
+      })),
+      deleteDriver: (id) => set((state) => ({ drivers: state.drivers.filter(d => d.id !== id) })),
 
       // Customer Actions
       addCustomer: (newCustomer) => set((state) => ({ 
@@ -373,7 +398,12 @@ updateMockUser: (data) => set((state) => {
       deleteService: (id) => set((state) => ({ services: state.services.filter(s => s.id !== id) })),
 
       // Bookings
-      addBooking: (newBooking) => set((state) => ({ bookings: [newBooking, ...state.bookings] })),
+      addBooking: (newBooking) => set((state) => {
+        const owner = state.mockUser as MockUser | null | undefined;
+        const matched = (Array.isArray(state.customers) ? state.customers : []).find((c) => c.name === newBooking.customer);
+        const customerId = matched?.id || (owner?.role === "CUSTOMER" && owner.id ? owner.id : "");
+        return { bookings: [{ ...newBooking, customerId }, ...state.bookings] };
+      }),
       completeBooking: (id, method) => set((state) => ({
         bookings: state.bookings.map(b => 
           b.id === id ? { ...b, bookingStatus: "COMPLETED" as const, paymentStatus: "PAID" as const, paymentMethod: method } : b
@@ -403,7 +433,7 @@ updateMockUser: (data) => set((state) => {
     }),
     {
       name: "estate-car-wash-v15",
-      version: 19,
+      version: 21,
       migrate: (persistedState) => {
         const state = persistedState && typeof persistedState === "object"
           ? persistedState as Partial<AppStore>
@@ -471,6 +501,14 @@ updateMockUser: (data) => set((state) => {
               models: (Array.isArray(b.models) ? b.models : []).map((m) => ({ ...m, id: uniqueVehicleId(String(m.id)) })),
             })),
           }));
+        // v21: scope per-customer data. Addresses/garage/drivers belong to the owning customer;
+        // bookings carry a customerId derived from the customer record (name match) or, failing that,
+        // the active customer session. This stops a newly registered account from seeing another
+        // account's saved data.
+        const scopedOwnerId = state.mockUser && state.mockUser.role === "CUSTOMER" && state.mockUser.id ? String(state.mockUser.id) : "";
+        const customersByName = new Map((Array.isArray(state.customers) ? state.customers : []).map((c) => [c.name, String(c.id)]));
+        const addresses = (Array.isArray(state.addresses) ? state.addresses : []).filter((a) => !String(a.id).startsWith("addr_")).map((a) => ({ ...a, ownerId: scopedOwnerId }));
+        const customerGarage = (Array.isArray(state.customerGarage) ? state.customerGarage : []).filter((v) => !String(v.id).startsWith("veh_")).map((v) => ({ ...v, ownerId: scopedOwnerId }));
         return {
           ...state,
           communities,
@@ -478,11 +516,16 @@ updateMockUser: (data) => set((state) => {
           // reset a stale demo-customer session once their account is gone
           mockUser: state.mockUser && state.mockUser.role === "CUSTOMER" && demoCustomerIds.has(String(state.mockUser.id)) ? null : state.mockUser,
           staff,
+          // v20: saved drivers are user-created only; default to empty when absent
+          drivers: (Array.isArray(state.drivers) ? state.drivers : []).map((d) => ({ ...d, ownerId: scopedOwnerId })),
           vehicles: dedupeVehicles(Array.isArray(state.vehicles) ? state.vehicles as Array<{ id: string; brands: Array<{ id: string; models: Array<{ id: string }> }> }> : vehicleFixtures),
           expenses: (Array.isArray(state.expenses) ? state.expenses : []).filter((e) => !demoExpenseIds.has(String(e.id))),
-          bookings: (Array.isArray(state.bookings) ? state.bookings : []).filter((b) => !/^b10\d{2}$/i.test(String(b.id))),
-          addresses: (Array.isArray(state.addresses) ? state.addresses : []).filter((a) => !String(a.id).startsWith("addr_")),
-          customerGarage: (Array.isArray(state.customerGarage) ? state.customerGarage : []).filter((v) => !String(v.id).startsWith("veh_")),
+          bookings: (Array.isArray(state.bookings) ? state.bookings : []).filter((b) => !/^b10\d{2}$/i.test(String(b.id))).map((b) => ({
+            ...b,
+            customerId: customersByName.get(b.customer) ?? scopedOwnerId,
+          })),
+          addresses,
+          customerGarage,
           timeSlots: hasLegacyTimeSlots ? initialTimeSlots : (Array.isArray(state.timeSlots) ? state.timeSlots : initialTimeSlots),
         } as AppStore;
       },

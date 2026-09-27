@@ -12,7 +12,8 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 export default function AddressesPage() {
-  const addresses = useStore((state) => state.addresses);
+  const mockUser = useStore((state) => state.mockUser);
+  const addresses = useStore((state) => state.addresses).filter((a) => a.ownerId === mockUser?.id);
   const communities = useStore((state) => state.communities);
   const addAddress = useStore((state) => state.addAddress);
   const updateAddress = useStore((state) => state.updateAddress);
@@ -68,7 +69,7 @@ export default function AddressesPage() {
     const target = addresses.find(a => a.id === deleteId);
     deleteAddress(deleteId);
     setDeleteId(null);
-    toast.warning("Address removed", {
+    toast.error("Address removed", {
       description: target ? `${target.flat} in ${target.community} has been removed.` : "Address removed.",
     });
   };
@@ -89,7 +90,7 @@ export default function AddressesPage() {
         </Button>
       </div>
 
-      <div className="mx-auto w-full max-w-3xl flex-1 p-6 space-y-4">
+      <div className="mx-auto w-full max-w-2xl flex-1 p-4 md:p-6 space-y-3">
         {addresses.length === 0 ? (
           <EmptyState
             icon={MapPin}
@@ -105,39 +106,39 @@ export default function AddressesPage() {
             }
           />
         ) : (
-          addresses.map((a) => (
-            <div key={a.id} className="flex items-start justify-between gap-4 rounded-2xl border border-hairline bg-surface-card p-5 transition-colors hover:border-yellow-dark/40">
-              <div className="flex min-w-0 items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-yellow-dark/10 ring-1 ring-yellow-dark/20">
+          <div className="grid gap-3">
+            {addresses.map((a) => (
+              <div key={a.id} className="flex items-center gap-3 rounded-xl border border-hairline bg-surface-card px-4 py-3.5 transition-colors hover:border-yellow-dark/40 hover:bg-surface-elevated">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-yellow-dark/10 ring-1 ring-yellow-dark/20">
                   <MapPin size={18} className="text-yellow-dark" />
                 </div>
-                <div className="min-w-0">
-                  <p className="text-lg font-bold text-ink">{a.flat}</p>
-                  <p className="text-xs font-light text-muted mt-0.5">{a.community}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-base font-bold text-ink">{a.community}</p>
+                  <p className="mt-0.5 text-sm font-light text-muted">Flat · <span className="font-semibold text-body">{a.flat}</span></p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => openEditModal(a.id, a.community, a.flat)}
+                    aria-label={`Edit address ${a.flat} in ${a.community}`}
+                    className="text-muted hover:bg-surface-elevated hover:text-ink transition-colors"
+                  >
+                    <Edit size={16} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => setDeleteId(a.id)}
+                    aria-label={`Delete address ${a.flat} in ${a.community}`}
+                    className="text-muted hover:bg-m-red/10 hover:text-m-red transition-colors"
+                  >
+                    <Trash2 size={16} />
+                  </Button>
                 </div>
               </div>
-              <div className="flex shrink-0 items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => openEditModal(a.id, a.community, a.flat)}
-                  aria-label={`Edit address ${a.flat} in ${a.community}`}
-                  className="text-muted hover:bg-surface-elevated hover:text-ink transition-colors"
-                >
-                  <Edit size={16} />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => setDeleteId(a.id)}
-                  aria-label={`Delete address ${a.flat} in ${a.community}`}
-                  className="text-muted hover:bg-m-red/10 hover:text-m-red transition-colors"
-                >
-                  <Trash2 size={16} />
-                </Button>
-              </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
 
