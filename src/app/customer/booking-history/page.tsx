@@ -2,41 +2,82 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { History, CalendarDays, Car, CheckCircle2, Wrench } from "lucide-react";
+import { History, CalendarDays, Car, CheckCircle2, Wrench, CalendarRange, Building2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ListSkeleton } from "@/components/animations";
 import { ActivityTimeline } from "@/components/customer/ActivityTimeline";
-import { sortByScheduledAt } from "@/lib/bookingSort";
+import { sortByScheduledAt, dateToKey } from "@/lib/bookingSort";
 
 const easeOut: [number, number, number, number] = [0.25, 0.1, 0.25, 1];
 
 type Filter = "ALL" | "BOOKED" | "COMPLETED" | "CANCELLED";
 
+const DATE_OPTIONS = ["All dates", "Today", "Last 7 days", "Last 30 days", "This month"] as const;
+type DateFilter = (typeof DATE_OPTIONS)[number];
+
 export default function BookingHistoryPage() {
   const mockUser = useStore((state) => state.mockUser);
   const bookings = useStore((state) => state.bookings);
+  const addresses = useStore((state) => state.addresses);
 
   const [ready, setReady] = useState(false);
   const [tab, setTab] = useState<Filter>("ALL");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("All dates");
+  const [communityFilter, setCommunityFilter] = useState("All communities");
 
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 450);
     return () => clearTimeout(t);
   }, []);
 
+  const myAddresses = addresses.filter((a) => a.ownerId === mockUser?.id);
+  const addressCommunities = [...new Set(
+    myAddresses.map((a) => (a.community || "").trim()).filter(Boolean)
+  )];
+  const showCommunityFilter = addressCommunities.length > 1;
+
   const myBookings = bookings.filter((b) => b.customerId === mockUser?.id);
+
+  const today = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const todayKey = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+  const keyFromOffset = (days: number) => {
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - days);
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  };
+  const passesDate = (b: { date?: string }) => {
+    const key = dateToKey(b.date || "");
+    if (!key) return dateFilter === "All dates";
+    switch (dateFilter) {
+      case "Today": return key === todayKey;
+      case "Last 7 days": return key >= keyFromOffset(6) && key <= todayKey;
+      case "Last 30 days": return key >= keyFromOffset(29) && key <= todayKey;
+      case "This month": return key >= `${todayKey.slice(0, 7)}-01` && key <= todayKey;
+      default: return true;
+    }
+  };
+  const norm = (s?: string) => (s || "").trim().toLowerCase();
+  const passesCommunity = (b: { community?: string }) =>
+    communityFilter === "All communities" || norm(b.community) === norm(communityFilter);
+
+  const scopedBookings = myBookings.filter((b) => passesDate(b) && passesCommunity(b));
   const counts = {
-    ALL: myBookings.length,
-    BOOKED: myBookings.filter((b) => b.bookingStatus === "BOOKED").length,
-    COMPLETED: myBookings.filter((b) => b.bookingStatus === "COMPLETED").length,
-    CANCELLED: myBookings.filter((b) => b.bookingStatus === "CANCELLED").length,
+    ALL: scopedBookings.length,
+    BOOKED: scopedBookings.filter((b) => b.bookingStatus === "BOOKED").length,
+    COMPLETED: scopedBookings.filter((b) => b.bookingStatus === "COMPLETED").length,
+    CANCELLED: scopedBookings.filter((b) => b.bookingStatus === "CANCELLED").length,
   };
 
-  const sortedBookings = sortByScheduledAt(myBookings, "asc");
+  const sortedBookings = sortByScheduledAt(scopedBookings, "asc");
   const filteredBookings = tab === "ALL" ? sortedBookings : sortedBookings.filter((b) => b.bookingStatus === tab);
   const washesDone = counts.COMPLETED;
+
+  const filterSelectClasses =
+    "w-full h-auto rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm font-semibold text-ink";
 
   return (
     <motion.div
@@ -65,6 +106,42 @@ export default function BookingHistoryPage() {
           <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface-card px-2.5 py-1 text-[11px] font-semibold text-body">
             <CheckCircle2 size={12} className="text-yellow-dark" /> {washesDone} washes done
           </span>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-3">
+          <div className="flex w-full flex-col gap-1.5 sm:w-56">
+            <Label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted">
+              <CalendarRange size={12} className="text-yellow-dark" /> Date
+            </Label>
+            <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as DateFilter)}>
+              <SelectTrigger className={filterSelectClasses}>
+                <SelectValue placeholder="All dates" />
+              </SelectTrigger>
+              <SelectContent style={{ maxHeight: "min(17rem, 60vh)" }}>
+                {DATE_OPTIONS.map((d) => (
+                  <SelectItem key={d} value={d}>{d}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {showCommunityFilter && (
+            <div className="flex w-full flex-col gap-1.5 sm:w-56">
+              <Label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted">
+                <Building2 size={12} className="text-yellow-dark" /> Community
+              </Label>
+              <Select value={communityFilter} onValueChange={(v) => setCommunityFilter(v || "All communities")}>
+                <SelectTrigger className={filterSelectClasses}>
+                  <SelectValue placeholder="All communities" />
+                </SelectTrigger>
+                <SelectContent style={{ maxHeight: "min(17rem, 60vh)" }}>
+                  <SelectItem value="All communities">All communities</SelectItem>
+                  {addressCommunities.map((c) => (
+                    <SelectItem key={`HistComm_${c}`} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
       </div>
 

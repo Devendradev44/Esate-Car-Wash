@@ -17,6 +17,7 @@ import {
   Banknote,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { StaggerContainer, StaggerItem } from "@/components/animations/PageTransition";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/shared/StatCard";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -282,11 +283,13 @@ export default function AdminDashboard() {
 
         <SectionHeader title="Key Performance Indicators" description="Today's and overall business metrics." />
 
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StaggerContainer className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {kpis.map((kpi) => (
-            <StatCard key={kpi.title} title={kpi.title} value={kpi.value} icon={kpi.icon} trend={kpi.trend} />
+            <StaggerItem key={kpi.title}>
+              <StatCard title={kpi.title} value={kpi.value} icon={kpi.icon} trend={kpi.trend} />
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
 
         <Card className="mt-8">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">

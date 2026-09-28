@@ -6,7 +6,14 @@ import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
-    <PageTransition className="min-h-screen bg-black flex flex-col font-sans">
+    <PageTransition className="relative min-h-screen overflow-hidden bg-black flex flex-col font-sans">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        <div className="hero-glow absolute -top-32 left-1/4 h-[28rem] w-[28rem] rounded-full bg-yellow-400/20 blur-[120px]" />
+        <div
+          className="hero-glow absolute -bottom-24 right-[12%] h-80 w-80 rounded-full bg-yellow-500/10 blur-[110px]"
+          style={{ animationDelay: "-9s", animationDuration: "22s" }}
+        />
+      </div>
       
       {/* 1. HEADER (Pinned to top, aligned with content) */}
       <header className="w-full">

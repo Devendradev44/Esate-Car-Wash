@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { MotionConfig } from "motion/react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/shared";
 
@@ -34,7 +35,7 @@ export default function RootLayout({
     <html lang="en" className={cn("font-sans")}>
       <body className={`${fontClass} antialiased text-white`}>
         <TooltipProvider>
-          {children}
+          <MotionConfig reducedMotion="user">{children}</MotionConfig>
         </TooltipProvider>
         <Toaster />
       </body>

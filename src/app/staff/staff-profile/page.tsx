@@ -1,4 +1,5 @@
 "use client";
+import { motion } from "motion/react";
 import { User, LogOut, Phone, MapPin, KeyRound } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
@@ -29,19 +30,30 @@ export default function StaffProfilePage() {
       </div>
 
       <div className="flex-1 p-6 space-y-6">
-        <Card className="gap-0 flex flex-col items-center justify-center rounded-lg border border-hairline bg-surface-card p-8 ring-0">
-          <div className="w-20 h-20 rounded-full bg-yellow-dark/20 flex items-center justify-center mb-4">
-            {staffInitials ? (
-              <span className="text-2xl font-bold text-yellow-dark">{staffInitials}</span>
-            ) : (
-              <User size={32} className="text-yellow-dark" />
-            )}
-          </div>
-          <h2 className="text-xl font-bold text-ink">{myStaffDetails?.name || "Staff Member"}</h2>
-          <p className="text-sm font-light text-muted mt-1">Staff</p>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: [0.25, 0.1, 0.25, 1] }}
+        >
+          <Card className="gap-0 flex flex-col items-center justify-center rounded-lg border border-hairline bg-surface-card p-8 ring-0">
+            <div className="w-20 h-20 rounded-full bg-yellow-dark/20 flex items-center justify-center mb-4">
+              {staffInitials ? (
+                <span className="text-2xl font-bold text-yellow-dark">{staffInitials}</span>
+              ) : (
+                <User size={32} className="text-yellow-dark" />
+              )}
+            </div>
+            <h2 className="text-xl font-bold text-ink">{myStaffDetails?.name || "Staff Member"}</h2>
+            <p className="text-sm font-light text-muted mt-1">Staff</p>
+          </Card>
+        </motion.div>
 
-        <Card className="gap-0 rounded-lg border border-hairline bg-surface-card ring-0 divide-y divide-hairline">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, delay: 0.05, ease: [0.25, 0.1, 0.25, 1] }}
+        >
+          <Card className="gap-0 rounded-lg border border-hairline bg-surface-card ring-0 divide-y divide-hairline transition-all duration-200 hover:-translate-y-0.5 hover:border-yellow-dark/40">
           <div className="flex items-center p-4">
             <Phone size={16} className="text-muted mr-4" />
             <p className="text-sm font-light text-ink">{myStaffDetails?.phone || "N/A"}</p>
@@ -57,6 +69,7 @@ export default function StaffProfilePage() {
             </div>
           </div>
         </Card>
+        </motion.div>
 
         <Button onClick={handleLogout} variant="outline" className="flex w-full h-auto items-center justify-center gap-2 rounded-lg border border-m-red/50 bg-transparent py-4 text-xs font-bold uppercase tracking-machined text-m-red hover:bg-m-red hover:text-ink">
           <LogOut size={14} /> Logout

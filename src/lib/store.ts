@@ -114,6 +114,7 @@ type AppStore = {
   mockUser: MockUser | null;
   setMockUser: (user: MockUser) => void;
   logoutMockUser: () => void;
+  claimCustomerData: (id: string, name: string) => void;
 
   communities: Community[];
   vehicles: VehicleCategory[];
@@ -210,6 +211,22 @@ export const useStore = create<AppStore>()(
       mockUser: null,
       setMockUser: (user) => set({ mockUser: user }),
       logoutMockUser: () => set({ mockUser: null }),
+      // Heal for accounts whose data was backfilled while logged out (v21 migration stamped
+      // ownerId/customerId = "" because no customer session was active at first load). Only
+      // unowned records are claimed; anything already owned is left untouched.
+      claimCustomerData: (id, name) => set((state) => {
+        const owns = (v: unknown) => typeof v === "string" && v.trim() !== "";
+        return {
+          addresses: state.addresses.map((a) => (owns(a.ownerId) ? a : { ...a, ownerId: id })),
+          customerGarage: state.customerGarage.map((v) => (owns(v.ownerId) ? v : { ...v, ownerId: id })),
+          drivers: state.drivers.map((d) => (owns(d.ownerId) ? d : { ...d, ownerId: id })),
+          bookings: state.bookings.map((b) => {
+            if (owns(b.customerId)) return b;
+            const nameMatch = !b.customer || (typeof b.customer === "string" && b.customer.trim().toLowerCase() === (name || "").trim().toLowerCase());
+            return nameMatch ? { ...b, customerId: id } : b;
+          }),
+        };
+      }),
 
       communities: initialCommunities,
       vehicles: vehicleFixtures,
@@ -433,7 +450,7 @@ updateMockUser: (data) => set((state) => {
     }),
     {
       name: "estate-car-wash-v15",
-      version: 21,
+      version: 22,
       migrate: (persistedState) => {
         const state = persistedState && typeof persistedState === "object"
           ? persistedState as Partial<AppStore>
@@ -505,10 +522,17 @@ updateMockUser: (data) => set((state) => {
         // bookings carry a customerId derived from the customer record (name match) or, failing that,
         // the active customer session. This stops a newly registered account from seeing another
         // account's saved data.
+        // v22: the v21 backfill ONLY worked when a customer session was active at migration time —
+        // a logged-out browser got ownerId/customerId = "" and the strict owner filters hid that
+        // data after the next login. Reclaim any still-unowned record for the active customer
+        // session (non-empty owners are never touched); handleLogin additionally claims for
+        // existing accounts via claimCustomerData when no session existed at migrate time.
         const scopedOwnerId = state.mockUser && state.mockUser.role === "CUSTOMER" && state.mockUser.id ? String(state.mockUser.id) : "";
+        const claimOwner = (owner: unknown, fallback: string) =>
+          typeof owner === "string" && owner.trim() ? owner : fallback;
         const customersByName = new Map((Array.isArray(state.customers) ? state.customers : []).map((c) => [c.name, String(c.id)]));
-        const addresses = (Array.isArray(state.addresses) ? state.addresses : []).filter((a) => !String(a.id).startsWith("addr_")).map((a) => ({ ...a, ownerId: scopedOwnerId }));
-        const customerGarage = (Array.isArray(state.customerGarage) ? state.customerGarage : []).filter((v) => !String(v.id).startsWith("veh_")).map((v) => ({ ...v, ownerId: scopedOwnerId }));
+        const addresses = (Array.isArray(state.addresses) ? state.addresses : []).filter((a) => !String(a.id).startsWith("addr_")).map((a) => ({ ...a, ownerId: claimOwner(a.ownerId, scopedOwnerId) }));
+        const customerGarage = (Array.isArray(state.customerGarage) ? state.customerGarage : []).filter((v) => !String(v.id).startsWith("veh_")).map((v) => ({ ...v, ownerId: claimOwner(v.ownerId, scopedOwnerId) }));
         return {
           ...state,
           communities,
@@ -517,13 +541,13 @@ updateMockUser: (data) => set((state) => {
           mockUser: state.mockUser && state.mockUser.role === "CUSTOMER" && demoCustomerIds.has(String(state.mockUser.id)) ? null : state.mockUser,
           staff,
           // v20: saved drivers are user-created only; default to empty when absent
-          drivers: (Array.isArray(state.drivers) ? state.drivers : []).map((d) => ({ ...d, ownerId: scopedOwnerId })),
+          drivers: (Array.isArray(state.drivers) ? state.drivers : []).map((d) => ({ ...d, ownerId: claimOwner(d.ownerId, scopedOwnerId) })),
           vehicles: dedupeVehicles(Array.isArray(state.vehicles) ? state.vehicles as Array<{ id: string; brands: Array<{ id: string; models: Array<{ id: string }> }> }> : vehicleFixtures),
           expenses: (Array.isArray(state.expenses) ? state.expenses : []).filter((e) => !demoExpenseIds.has(String(e.id))),
-          bookings: (Array.isArray(state.bookings) ? state.bookings : []).filter((b) => !/^b10\d{2}$/i.test(String(b.id))).map((b) => ({
-            ...b,
-            customerId: customersByName.get(b.customer) ?? scopedOwnerId,
-          })),
+          bookings: (Array.isArray(state.bookings) ? state.bookings : []).filter((b) => !/^b10\d{2}$/i.test(String(b.id))).map((b) => {
+            const existingId = b.customerId && String(b.customerId).trim() ? String(b.customerId) : "";
+            return { ...b, customerId: existingId || (customersByName.get(b.customer) ?? scopedOwnerId) };
+          }),
           addresses,
           customerGarage,
           timeSlots: hasLegacyTimeSlots ? initialTimeSlots : (Array.isArray(state.timeSlots) ? state.timeSlots : initialTimeSlots),

@@ -1,10 +1,12 @@
 "use client";
 import { useState, useRef } from "react";
+import { motion } from "motion/react";
 import { Plus, Search, Trash2, X, Edit, Receipt, Tag, Download, Upload } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toCSV, downloadCSV, parseCSV } from "@/lib/csv";
+import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -83,6 +85,7 @@ export default function ExpensesPage() {
       const notesIdx = header.indexOf("NOTES");
       const communityIdx = header.indexOf("COMMUNITY");
 
+      let imported = 0;
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
         const dateVal = row[dateIdx]?.trim();
@@ -102,9 +105,15 @@ export default function ExpensesPage() {
           notes: notesIdx >= 0 ? row[notesIdx]?.trim() || "" : "",
           community: communityIdx >= 0 && row[communityIdx]?.trim() ? row[communityIdx].trim() : undefined,
         });
+        imported++;
       }
       setShowImportModal(false);
       setImportError("");
+      toast.add({
+        type: "success",
+        title: "Expenses imported",
+        description: `${imported} expense${imported === 1 ? "" : "s"} imported from the CSV.`,
+      });
     } catch {
       setImportError("Failed to parse CSV file.");
     }
@@ -129,8 +138,18 @@ export default function ExpensesPage() {
     if (!name || !amount || !date || !category) return;
     if (isEditing) {
       updateExpense(currentId, date, name, Number(amount), category, paymentType, notes, expenseCommunity || undefined);
+      toast.add({
+        type: "success",
+        title: "Expense updated",
+        description: `${name} has been updated.`,
+      });
     } else {
       addExpense({ id: `e${Date.now()}`, date, name, category, amount: Number(amount), paymentType, notes, community: expenseCommunity || undefined });
+      toast.add({
+        type: "success",
+        title: "Expense added",
+        description: `${name} has been added.`,
+      });
     }
     setDate(""); setName(""); setAmount(""); setNotes("");
     setCategory(expenseCategories[0] || ""); setPaymentType(expensePaymentMethods[0]); setExpenseCommunity("");
@@ -343,8 +362,14 @@ export default function ExpensesPage() {
         {filteredExpenses.length === 0 ? (
           <p className="text-center text-muted text-sm font-light py-10">No expenses found.</p>
         ) : (
-          filteredExpenses.map(e => (
-            <Card key={e.id} className="border border-hairline bg-surface-card p-4 gap-3 rounded-lg ring-0 ring-transparent">
+          filteredExpenses.map((e, i) => (
+            <motion.div
+              key={e.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.28, delay: i * 0.04, ease: [0.25, 0.1, 0.25, 1] }}
+            >
+              <Card className="border border-hairline bg-surface-card p-4 gap-3 rounded-lg ring-0 ring-transparent transition-all duration-200 hover:-translate-y-0.5 hover:border-yellow-dark/40">
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-lg font-bold text-ink flex items-center gap-2"><Receipt size={14} className="text-muted" /> {e.name}</p>
@@ -366,6 +391,7 @@ export default function ExpensesPage() {
                 <Button type="button" variant="ghost" size="icon-sm" onClick={() => setDeleteId(e.id)} className="text-muted hover:text-m-red transition-colors" aria-label={`Delete ${e.name}`}><Trash2 size={16} /></Button>
               </div>
             </Card>
+            </motion.div>
           ))
         )}
       </div>
@@ -420,7 +446,15 @@ export default function ExpensesPage() {
         cancelLabel="Cancel"
         variant="destructive"
         onConfirm={() => {
-          if (deleteId) deleteExpense(deleteId);
+          if (deleteId) {
+            const target = expenses.find((e) => e.id === deleteId);
+            deleteExpense(deleteId);
+            toast.add({
+              type: "error",
+              title: "Expense deleted",
+              description: target ? `${target.name} has been removed.` : "Expense removed.",
+            });
+          }
           setDeleteId(null);
         }}
       />

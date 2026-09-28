@@ -47,13 +47,18 @@ export function Sidebar() {
             <Link
               key={item.label}
               href={item.href}
-              className={`flex items-center gap-4 px-4 py-3 text-xs font-bold uppercase tracking-machined transition-all duration-200 ${
+              aria-current={isActive ? "page" : undefined}
+              className={`group flex items-center gap-4 px-4 py-3 text-xs font-bold uppercase tracking-machined transition-all duration-200 ${
                 isActive 
                   ? "bg-surface-elevated text-ink border-l-2 border-yellow-dark" 
                   : "text-body hover:bg-surface-soft hover:text-ink border-l-2 border-transparent"
               }`}
             >
-              <item.icon size={16} strokeWidth={1.5} />
+              <item.icon
+                size={16}
+                strokeWidth={1.5}
+                className={`transition-transform duration-200 ${isActive ? "translate-x-0.5" : "group-hover:translate-x-0.5"}`}
+              />
               {item.label}
             </Link>
           );

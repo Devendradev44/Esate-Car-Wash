@@ -424,7 +424,7 @@ export default function BookService() {
                 <SelectValue placeholder="Select Vehicle">
                   {(val: string) => {
                     const v = savedVehicles.find(x => x.id === val);
-                    return v ? `${v.brand} ${v.model} — ${v.reg} · ${v.category}` : null;
+                    return v ? `${v.brand} ${v.model} — ${v.reg} · ${v.category}` : "Select Vehicle";
                   }}
                 </SelectValue>
               </SelectTrigger>

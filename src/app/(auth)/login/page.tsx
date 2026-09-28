@@ -17,6 +17,7 @@ export default function LoginPage() {
   const router = useRouter();
   const setMockUser = useStore((state) => state.setMockUser);
   const addCustomer = useStore((state) => state.addCustomer);
+  const claimCustomerData = useStore((state) => state.claimCustomerData);
 
   const [step, setStep] = useState<Step>(Step.LOGIN);
   const [, setError] = useState("");
@@ -52,6 +53,10 @@ export default function LoginPage() {
       email: customer.email,
       phone: customer.phone,
     });
+
+    // claim any saved addresses/vehicles/drivers/bookings that were backfilled while logged out
+    // (ownerId/customerId = "") so they re-appear for this account.
+    claimCustomerData(customer.id, customer.name);
 
     router.replace("/customer/my-dashboard");
   };

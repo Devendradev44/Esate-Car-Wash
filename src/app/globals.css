@@ -113,3 +113,41 @@
 .animate-fade-in-up {
   animation: fadeInUp 0.4s ease-out forwards;
 }
+
+/* Ambient glow used by the landing hero (subtle drifting yellow light) */
+@keyframes heroGlowDrift {
+  0% {
+    opacity: 0.35;
+    transform: translate3d(-6%, -4%, 0) scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: translate3d(6%, 5%, 0) scale(1.08);
+  }
+  100% {
+    opacity: 0.35;
+    transform: translate3d(-6%, -4%, 0) scale(1);
+  }
+}
+
+.hero-glow {
+  animation: heroGlowDrift 18s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+/* Honor operating-system motion preferences for all CSS animations/transitions */
+@media (prefers-reduced-motion: reduce) {
+  .hero-glow,
+  .animate-fade-in-up {
+    animation: none !important;
+    opacity: 0.4;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}

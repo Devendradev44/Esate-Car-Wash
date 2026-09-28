@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { motion } from "motion/react";
 import { CheckCircle2, MapPin, Car, XCircle, Phone } from "lucide-react";
 import { toast } from "@/components/ui/toast";
 import { useStore } from "@/lib/store";
@@ -44,8 +45,14 @@ export default function StaffDashboard() {
           <div className="text-center text-muted text-sm font-light mt-20">No bookings scheduled for today.</div>
         )}
 
-        {todaysBookings.map(b => (
-          <Card key={b.id} className={`gap-0 rounded-lg border p-5 ring-0 ${b.bookingStatus === "COMPLETED" ? "border-success/30 bg-success/5" : "border-hairline bg-surface-card"}`}>
+        {todaysBookings.map((b, i) => (
+          <motion.div
+            key={b.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.28, delay: i * 0.05, ease: [0.25, 0.1, 0.25, 1] }}
+          >
+          <Card className={`gap-0 rounded-lg border p-5 ring-0 transition-all duration-200 hover:-translate-y-0.5 ${b.bookingStatus === "COMPLETED" ? "border-success/30 bg-success/5" : "border-hairline bg-surface-card hover:border-yellow-dark/40"}`}>
             <div className="flex justify-between items-start mb-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-machined text-yellow-dark mb-1">{b.time} | {formatDate(b.date)}</p>
@@ -106,6 +113,7 @@ export default function StaffDashboard() {
               </>
             )}
           </Card>
+          </motion.div>
         ))}
       </div>
 
