@@ -12,7 +12,7 @@ export type TimelineBooking = {
   vehicle: string;
   service: string;
   amount: number;
-  bookingStatus: "BOOKED" | "COMPLETED" | "CANCELLED";
+  bookingStatus: "BOOKED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
   paymentStatus?: string;
 };
 

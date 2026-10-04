@@ -14,6 +14,8 @@ import { toast } from "@/components/ui/toast";
 import { useStore } from "@/lib/store";
 import { toCSV, downloadCSV, parseCSV } from "@/lib/csv";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PlayCircle } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -59,6 +61,10 @@ const STATUS_FILTERS: { key: BookingStatusType; label: string }[] = [
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
+// Backup start flow: the assigned staff member must be active AND have access to the booking's community.
+const assignableStaffFor = (allStaff: Array<{ id: string; name: string; communities: string[]; status: string }>, community: string) =>
+  allStaff.filter(s => s.status === "ACTIVE" && (s.communities ?? []).includes(community));
+
 // Normalize any stored booking date ("2026-09-24", "24/09/2026", "2026-09-24T10:00") to "YYYY-MM-DD".
 function toDateKey(value: string): string {
   if (!value) return "";
@@ -81,9 +87,14 @@ export default function BookingsPage() {
   const cancelBooking = useStore((state) => state.cancelBooking);
   const completeBooking = useStore((state) => state.completeBooking);
   const addBooking = useStore((state) => state.addBooking);
+  const startService = useStore((state) => state.startService);
+  const staff = useStore((state) => state.staff);
 
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [activeBookingId, setActiveBookingId] = useState("");
+  const [showStartModal, setShowStartModal] = useState(false);
+  const [startBooking, setStartBooking] = useState<{ id: string; code: string; customer: string; service: string; community: string } | null>(null);
+  const [assigneeId, setAssigneeId] = useState("");
   const [showImportModal, setShowImportModal] = useState(false);
   const [importError, setImportError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
@@ -95,6 +106,7 @@ export default function BookingsPage() {
   const statusKey = (b: { bookingStatus: string; date: string }): BookingStatusType => {
     if (b.bookingStatus === "COMPLETED") return "COMPLETED";
     if (b.bookingStatus === "CANCELLED") return "CANCELLED";
+    if (b.bookingStatus === "IN_PROGRESS") return "IN_PROGRESS";
     const now = new Date();
     const todayKey = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
     return toDateKey(b.date) > todayKey ? "UPCOMING" : "IN_PROGRESS";
@@ -327,7 +339,7 @@ export default function BookingsPage() {
                       <TableCell className="text-center">
                         <div className="flex flex-col items-center gap-1">
                           <Badge className={`h-auto rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${
-                            b.bookingStatus === "BOOKED" ? "bg-warning/20 text-warning" :
+                            b.bookingStatus === "BOOKED" || b.bookingStatus === "IN_PROGRESS" ? "bg-warning/20 text-warning" :
                             b.bookingStatus === "COMPLETED" ? "bg-success/20 text-success" :
                             "bg-m-red/20 text-m-red"
                           }`}>
@@ -355,8 +367,24 @@ export default function BookingsPage() {
                         <MoreHorizontal size={16} />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" side="bottom" className="w-40">
-                        {b.bookingStatus === "BOOKED" && (
+                        {(b.bookingStatus === "BOOKED" || b.bookingStatus === "IN_PROGRESS") && (
                           <>
+                            {b.bookingStatus === "BOOKED" && (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setStartBooking({ id: b.id, code: b.bookingCode, customer: displayCustomerName(b.customer), service: b.service, community: b.community });
+                                    setAssigneeId("");
+                                    setShowStartModal(true);
+                                  }}
+                                  className="text-yellow-dark"
+                                >
+                                  <PlayCircle size={14} className="mr-2" />
+                                  Start Service
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                              </>
+                            )}
                             <DropdownMenuItem
                               onClick={() => {
                                 setActiveBookingId(b.id);
@@ -380,7 +408,7 @@ export default function BookingsPage() {
                             </DropdownMenuItem>
                           </>
                         )}
-                        {b.bookingStatus !== "BOOKED" && (
+                        {b.bookingStatus !== "BOOKED" && b.bookingStatus !== "IN_PROGRESS" && (
                           <DropdownMenuItem disabled className="text-muted-foreground">
                             No actions available
                           </DropdownMenuItem>
@@ -424,6 +452,58 @@ export default function BookingsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCompleteModal(false)}>Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showStartModal} onOpenChange={setShowStartModal}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Start Service</DialogTitle>
+            <DialogDescription>
+              {startBooking
+                ? `${startBooking.service} for ${startBooking.customer} (${startBooking.code}) · ${startBooking.community}.`
+                : "Assign a staff member to start this service."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 space-y-4">
+            <label className="block text-xs font-bold uppercase tracking-machined text-muted">Assign to staff (backup method)</label>
+            <Select value={assigneeId} onValueChange={(v) => setAssigneeId(v || "")}>
+              <SelectTrigger className="w-full rounded-lg border border-hairline bg-surface-card">
+                <SelectValue placeholder="Select staff member" />
+              </SelectTrigger>
+              <SelectContent style={{ maxHeight: "min(17rem, 55vh)" }}>
+                {startBooking && assignableStaffFor(staff, startBooking.community).length === 0 ? (
+                  <p className="px-3 py-2 text-xs font-light text-muted">
+                    No active staff are assigned to {startBooking.community}. Add staff under Staff first.
+                  </p>
+                ) : (
+                  startBooking && assignableStaffFor(staff, startBooking.community).map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            {startBooking && assignableStaffFor(staff, startBooking.community).length > 0 && assigneeId === "" && (
+              <p className="text-xs font-light text-muted">The chosen staff member will own this service and see it in their In Progress list.</p>
+            )}
+          </div>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setShowStartModal(false)}>Cancel</Button>
+            <Button
+              disabled={!assigneeId}
+              onClick={() => {
+                if (startBooking) {
+                  startService(startBooking.id, assigneeId);
+                  const n = staff.find(s => s.id === assigneeId)?.name ?? "Unknown";
+                  toast.add({ type: "success", title: "Service started", description: `${startBooking.service} for ${startBooking.customer} started — assigned to ${n}.` });
+                }
+                setShowStartModal(false);
+              }}
+              className="bg-yellow-dark text-ink hover:bg-yellow-light"
+            >
+              Start Service
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -257,7 +257,7 @@ const activeCount = customers.filter((c) => c.phone).length;
           </Button>
         </div>
 
-        <Card className="mt-8 rounded-xl shadow-sm">
+<Card className="mt-8 rounded-xl shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
               <CardTitle className="text-lg font-semibold">Customer Directory</CardTitle>
@@ -267,7 +267,7 @@ const activeCount = customers.filter((c) => c.phone).length;
               {filteredCustomers.length} of {customers.length} customers
             </div>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 overflow-x-auto">
             {loading && customers.length === 0 ? (
               <div className="p-6">
                 <TableSkeleton rows={6} cols={5} />

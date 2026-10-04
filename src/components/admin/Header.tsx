@@ -4,6 +4,7 @@ import { User, Settings, LogOut } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/components/shared/NotificationBell";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,7 +31,8 @@ export function Header() {
   };
 
   return (
-    <div className="sticky top-0 z-40 border-b border-hairline bg-canvas p-6 flex justify-end items-center relative">
+    <div className="sticky top-0 z-40 border-b border-hairline bg-canvas p-6 flex justify-end items-center gap-2 relative">
+      <NotificationBell role="ADMIN" />
       <DropdownMenu>
         <DropdownMenuTrigger
           render={

@@ -30,25 +30,27 @@ export function StatCard({
   const isDown = trend && trend.value < 0;
 
   return (
-    <Card className={`transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:ring-foreground/25 ${className}`}>
+    <Card className={`h-full transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:ring-foreground/25 ${className}`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
           {title}
         </CardTitle>
         {Icon && <Icon size={16} className={iconColor} />}
       </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold text-foreground">{value}</div>
-        {trend && (
-          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-            {isUp && <TrendingUp size={12} className="text-emerald-400" />}
-            {isDown && <TrendingDown size={12} className="text-destructive" />}
-            <span className={isUp ? "text-emerald-400" : isDown ? "text-destructive" : "text-muted-foreground"}>
-              {isUp ? "+" : ""}{trend.value}%
-            </span>
-            <span className="text-muted-foreground">{trend.label}</span>
-          </p>
-        )}
+      <CardContent className="flex flex-1 flex-col">
+        <div className="break-words text-2xl font-bold tracking-tight tabular-nums text-foreground">{value}</div>
+        <p className="mt-1 flex min-h-[1rem] items-center gap-1 text-xs text-muted-foreground">
+          {trend ? (
+            <>
+              {isUp && <TrendingUp size={12} className="shrink-0 text-emerald-400" />}
+              {isDown && <TrendingDown size={12} className="shrink-0 text-destructive" />}
+              <span className={isUp ? "text-emerald-400" : isDown ? "text-destructive" : "text-muted-foreground"}>
+                {isUp ? "+" : ""}{trend.value}%
+              </span>
+              <span className="truncate text-muted-foreground">{trend.label}</span>
+            </>
+          ) : null}
+        </p>
       </CardContent>
     </Card>
   );

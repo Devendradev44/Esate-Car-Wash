@@ -67,13 +67,16 @@ export default function BookingHistoryPage() {
   const scopedBookings = myBookings.filter((b) => passesDate(b) && passesCommunity(b));
   const counts = {
     ALL: scopedBookings.length,
-    BOOKED: scopedBookings.filter((b) => b.bookingStatus === "BOOKED").length,
+    BOOKED: scopedBookings.filter((b) => b.bookingStatus === "BOOKED" || b.bookingStatus === "IN_PROGRESS").length,
     COMPLETED: scopedBookings.filter((b) => b.bookingStatus === "COMPLETED").length,
     CANCELLED: scopedBookings.filter((b) => b.bookingStatus === "CANCELLED").length,
   };
 
   const sortedBookings = sortByScheduledAt(scopedBookings, "asc");
-  const filteredBookings = tab === "ALL" ? sortedBookings : sortedBookings.filter((b) => b.bookingStatus === tab);
+  const filteredBookings =
+    tab === "ALL"
+      ? sortedBookings
+      : sortedBookings.filter((b) => (tab === "BOOKED" ? b.bookingStatus === "BOOKED" || b.bookingStatus === "IN_PROGRESS" : b.bookingStatus === tab));
   const washesDone = counts.COMPLETED;
 
   const filterSelectClasses =

@@ -3,11 +3,11 @@ import { useState } from "react";
 import { Plus, Trash2, X, User, Phone, KeyRound, Edit } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 
 export default function StaffPage() {
@@ -23,7 +23,7 @@ export default function StaffPage() {
   const [currentId, setCurrentId] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [community, setCommunity] = useState("");
+  const [selectedCommunities, setSelectedCommunities] = useState<string[]>([]);
   const [pin, setPin] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showShare, setShowShare] = useState(false);
@@ -44,19 +44,23 @@ export default function StaffPage() {
     return candidate;
   };
 
+  const toggleCommunity = (name: string, checked: boolean) => {
+    setSelectedCommunities(prev => checked ? (prev.includes(name) ? prev : [...prev, name]) : prev.filter(n => n !== name));
+  };
+
   const openAddModal = () => {
     setIsEditing(false);
     setFormError("");
-    setName(""); setPhone(""); setCommunity("");
+    setName(""); setPhone(""); setSelectedCommunities([]);
     setPin(genUniquePin());
     setShowModal(true);
   };
 
-  const openEditModal = (id: string, n: string, p: string, c: string, pinValue: string) => {
+  const openEditModal = (id: string, n: string, p: string, c: string[], pinValue: string) => {
     setIsEditing(true);
     setFormError("");
     setCurrentId(id);
-    setName(n); setPhone(p); setCommunity(c);
+    setName(n); setPhone(p); setSelectedCommunities(Array.isArray(c) ? [...c] : []);
     setPin(pinValue);
     setShowModal(true);
   };
@@ -65,20 +69,20 @@ export default function StaffPage() {
     setFormError("");
     if (!name.trim()) { setFormError("Full name is required."); return; }
     if (phone.length !== 10) { setFormError("Enter a valid 10-digit phone number."); return; }
-    if (!community) { setFormError("Assign the staff member to a community."); return; }
+    if (selectedCommunities.length === 0) { setFormError("Assign the staff member to at least one community."); return; }
     if (!/^\d{6}$/.test(pin)) { setFormError("PIN must be exactly 6 digits."); return; }
     if (staff.some(s => s.pin === pin && s.id !== currentId)) { setFormError("Another staff member already uses this PIN."); return; }
     if (staff.some(s => s.phone === phone && s.id !== currentId)) { setFormError("Another staff member already uses this phone number."); return; }
     if (isEditing) {
-      updateStaff(currentId, { name: name.trim(), phone, community, pin });
-      setName(""); setPhone(""); setCommunity(""); setPin("");
+      updateStaff(currentId, { name: name.trim(), phone, communities: selectedCommunities, pin });
+      setName(""); setPhone(""); setSelectedCommunities([]); setPin("");
       setShowModal(false);
       return;
     }
-    addStaff({ id: `st_${Date.now()}`, name: name.trim(), phone, community, pin, status: "ACTIVE", role: "STAFF" });
+    addStaff({ id: `st_${Date.now()}`, name: name.trim(), phone, communities: selectedCommunities, pin, status: "ACTIVE", role: "STAFF" });
     setSharedPin(pin);
     setSharedName(name.trim());
-    setName(""); setPhone(""); setCommunity(""); setPin("");
+    setName(""); setPhone(""); setSelectedCommunities([]); setPin("");
     setShowModal(false);
     setShowShare(true);
   };
@@ -114,17 +118,25 @@ export default function StaffPage() {
               <Input type="tel" maxLength={10} value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} placeholder="9876543210" className={inputClasses} />
             </div>
             <div className="mb-8">
-              <label className={labelClasses}>Assign Community</label>
-              <Select value={community} onValueChange={(v) => setCommunity(v || "")}>
-                <SelectTrigger className={inputClasses}>
-                  <SelectValue placeholder="Select community" />
-                </SelectTrigger>
-                <SelectContent>
-                  {communities.map(c => (
-                    <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <label className={labelClasses}>Assign Communities</label>
+              {communities.length === 0 ? (
+                <p className="rounded-lg border border-dashed border-hairline bg-surface-card px-4 py-3 text-xs font-light text-muted">
+                  No communities yet — add them under Communities first.
+                </p>
+              ) : (
+                <div className="max-h-48 overflow-y-auto rounded-lg border border-hairline bg-surface-card">
+                  {communities.map(c => {
+                    const checked = selectedCommunities.includes(c.name);
+                    return (
+                      <label key={c.name} className="flex cursor-pointer items-center gap-3 border-b border-hairline last:border-none px-4 py-3 transition-colors hover:bg-surface-elevated">
+                        <Checkbox checked={checked} onCheckedChange={(v) => toggleCommunity(c.name, v === true)} />
+                        <span className="text-sm font-semibold text-ink">{c.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+              <p className="mt-2 text-[10px] font-light text-muted">Staff members see schedule for every assigned community. You can assign more than one.</p>
             </div>
             <div className="mb-8">
               <label className={labelClasses}>{isEditing ? "Sign-in PIN" : "Generated PIN"}</label>
@@ -183,13 +195,13 @@ export default function StaffPage() {
               </div>
               <span className="text-xs font-bold text-yellow-dark flex items-center gap-1"><KeyRound size={12} /> {s.pin}</span>
             </div>
-            <p className="text-xs font-light text-body">Community: {s.community}</p>
+            <p className="text-xs font-light text-body">Communities: {s.communities.join(", ")}</p>
             <div className="flex items-center justify-between border-t border-hairline pt-3">
               <Badge variant="ghost" className={`text-[10px] font-bold uppercase tracking-machined px-2 py-1 ${s.status === "ACTIVE" ? "text-success" : "text-muted"}`}>
                 {s.status}
               </Badge>
               <div className="flex items-center justify-end gap-4">
-                <Button type="button" variant="ghost" size="icon-sm" onClick={() => openEditModal(s.id, s.name, s.phone, s.community, s.pin)} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${s.name}`}><Edit size={16} /></Button>
+                <Button type="button" variant="ghost" size="icon-sm" onClick={() => openEditModal(s.id, s.name, s.phone, s.communities, s.pin)} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${s.name}`}><Edit size={16} /></Button>
                 <Button type="button" variant="ghost" size="icon-sm" onClick={() => setDeleteId(s.id)} className="text-muted hover:text-m-red transition-colors" aria-label={`Delete ${s.name}`}><Trash2 size={16} /></Button>
               </div>
             </div>
@@ -215,7 +227,7 @@ export default function StaffPage() {
               <TableRow key={s.id} className="border-b border-hairline last:border-none hover:bg-surface-elevated transition-colors">
                 <TableCell className="py-4 px-6 text-sm font-bold text-ink"><div className="flex items-center gap-2"><User size={14} className="text-muted"/> {s.name}</div></TableCell>
                 <TableCell className="py-4 px-6 text-sm font-light text-body"><div className="flex items-center gap-2"><Phone size={14} className="text-muted"/> {s.phone}</div></TableCell>
-                <TableCell className="py-4 px-6 text-sm font-light text-body">{s.community}</TableCell>
+                <TableCell className="py-4 px-6 text-sm font-light text-body">{s.communities.join(", ")}</TableCell>
                 <TableCell className="py-4 px-6 text-sm font-bold text-yellow-dark text-center"><div className="flex items-center justify-center gap-1"><KeyRound size={12} /> {s.pin}</div></TableCell>
                 <TableCell className="py-4 px-6 text-center">
                   <Badge variant="ghost" className={`text-xs font-bold uppercase tracking-machined px-2 py-1 ${s.status === "ACTIVE" ? "text-success" : "text-muted"}`}>
@@ -224,7 +236,7 @@ export default function StaffPage() {
                 </TableCell>
                 <TableCell className="py-4 px-6 text-right">
                   <div className="flex items-center justify-end gap-3">
-                    <Button type="button" variant="ghost" size="icon-sm" onClick={() => openEditModal(s.id, s.name, s.phone, s.community, s.pin)} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${s.name}`}><Edit size={16} /></Button>
+                    <Button type="button" variant="ghost" size="icon-sm" onClick={() => openEditModal(s.id, s.name, s.phone, s.communities, s.pin)} className="text-muted hover:text-ink transition-colors" aria-label={`Edit ${s.name}`}><Edit size={16} /></Button>
                     <Button type="button" variant="ghost" size="icon-sm" onClick={() => setDeleteId(s.id)} className="text-muted hover:text-m-red transition-colors" aria-label={`Delete ${s.name}`}><Trash2 size={16} /></Button>
                   </div>
                 </TableCell>

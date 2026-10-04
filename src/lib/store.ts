@@ -36,16 +36,22 @@ type CommunityServiceSetting = { serviceName: string; enabled: boolean; discount
 type Community = { id: string; name: string; address: string; status: "ACTIVE" | "HIDDEN"; slotCapacity: number; timeRange?: { start: string; end: string }; serviceSettings?: CommunityServiceSetting[] };
 type TimeSlot = { id: string; label: string; startTime: string; endTime: string };
 type ServiceItem = { id: string; name: string; description: string; duration: number; pricing: Record<string, number>; active?: boolean };
-type BookingItem = { 
+export type BookingItem = { 
   id: string; bookingCode: string; date: string; time: string; 
   customer: string; customerId: string; flat: string; community: string; vehicle: string; regNumber: string; 
-  service: string; amount: number; bookingStatus: "BOOKED" | "COMPLETED" | "CANCELLED"; paymentStatus: "PENDING" | "PAID" | "REFUNDED";
+  service: string; amount: number; bookingStatus: "BOOKED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED"; paymentStatus: "PENDING" | "PAID" | "REFUNDED";
   cancelledBy?: "CUSTOMER" | "ADMIN" | "STAFF";
+  cancelledAt?: string;
+  startTime?: string;
+  endTime?: string;
+  durationMin?: number;
   paymentMethod?: "CASH" | "UPI" | "ONLINE";
   coordinator?: { type: "SELF" | "DRIVER"; name: string; phone: string };
+  assignedTo?: string;
+  helperIds?: string[];
 };
 type ExpenseItem = { id: string; date: string; name: string; category: string; amount: number; paymentType: string; notes: string; community?: string };
-type StaffItem = { id: string; name: string; phone: string; community: string; pin: string; status: "ACTIVE" | "DISABLED"; role: "STAFF" | "ADMIN" };
+type StaffItem = { id: string; name: string; phone: string; communities: string[]; pin: string; status: "ACTIVE" | "DISABLED"; role: "STAFF" | "ADMIN" };
 
 // Simple mock hash function for demo (not secure, just for UI validation)
 export const mockHash = (password: string) => `hash_${btoa(password).slice(0, 16)}`;
@@ -89,9 +95,9 @@ const initialCustomers: Customer[] = [];
 const initialBookings: BookingItem[] = [];
 
 const initialStaff: StaffItem[] = [
-  { id: "staff_1", name: "Vikram Singh", phone: "9911099110", community: "Estate Lakeside", pin: "123456", status: "ACTIVE", role: "STAFF" },
-  { id: "staff_2", name: "Manoj Patil", phone: "9922099220", community: "Vista Heights", pin: "567890", status: "ACTIVE", role: "STAFF" },
-  { id: "staff_3", name: "Sameer Khan", phone: "9933099330", community: "Estate Lakeside", pin: "901234", status: "DISABLED", role: "STAFF" },
+  { id: "staff_1", name: "Vikram Singh", phone: "9911099110", communities: ["Estate Lakeside"], pin: "123456", status: "ACTIVE", role: "STAFF" },
+  { id: "staff_2", name: "Manoj Patil", phone: "9922099220", communities: ["Vista Heights"], pin: "567890", status: "ACTIVE", role: "STAFF" },
+  { id: "staff_3", name: "Sameer Khan", phone: "9933099330", communities: ["Estate Lakeside"], pin: "901234", status: "DISABLED", role: "STAFF" },
 ];
 
 // Default super admin - password: "Paddwird#1"
@@ -142,6 +148,9 @@ type AppStore = {
   updateMockUser: (data: { name?: string; phone?: string; email?: string }) => void;
   cancelBooking: (id: string, cancelledBy: "CUSTOMER" | "ADMIN" | "STAFF") => void;
   rescheduleBooking: (id: string, newDate: string, newTime: string) => void;
+  startService: (id: string, assignedTo?: string) => void;
+  reinstateBooking: (id: string) => void;
+  setHelpers: (id: string, helperIds: string[]) => void;
 
   timeSlots: TimeSlot[];
   addTimeSlot: (label: string, startTime: string, endTime?: string) => void;
@@ -188,7 +197,7 @@ deleteCustomerVehicle: (id: string) => void;
 
   // Booking Actions
   addBooking: (booking: Omit<BookingItem, "customerId">) => void;
-  completeBooking: (id: string, method: "CASH" | "UPI" | "ONLINE") => void;
+  completeBooking: (id: string, method: "CASH" | "UPI" | "ONLINE", received?: boolean) => void;
 
   // Expense Actions
   addExpense: (expense: ExpenseItem) => void;
@@ -201,7 +210,7 @@ deleteCustomerVehicle: (id: string) => void;
 
   // Staff Actions
   addStaff: (staff: StaffItem) => void;
-  updateStaff: (id: string, data: { name?: string; phone?: string; community?: string; pin?: string; status?: "ACTIVE" | "DISABLED" }) => void;
+  updateStaff: (id: string, data: { name?: string; phone?: string; communities?: string[]; pin?: string; status?: "ACTIVE" | "DISABLED" }) => void;
   deleteStaff: (id: string) => void;
 };
 
@@ -273,7 +282,22 @@ updateMockUser: (data) => set((state) => {
       
       cancelBooking: (id, cancelledBy) => set((state) => ({
         bookings: state.bookings.map(b => 
-          b.id === id ? { ...b, bookingStatus: "CANCELLED" as const, paymentStatus: "REFUNDED" as const, cancelledBy } : b
+          b.id === id ? { ...b, bookingStatus: "CANCELLED" as const, paymentStatus: "REFUNDED" as const, cancelledBy, cancelledAt: new Date().toISOString() } : b
+        )
+      })),
+      startService: (id, assignedTo) => set((state) => ({
+        bookings: state.bookings.map(b => 
+          b.id === id && b.bookingStatus === "BOOKED" ? { ...b, bookingStatus: "IN_PROGRESS" as const, startTime: new Date().toISOString(), ...(assignedTo ? { assignedTo } : {}) } : b
+        )
+      })),
+      setHelpers: (id, helperIds) => set((state) => ({
+        bookings: state.bookings.map(b => 
+          b.id === id ? { ...b, helperIds } : b
+        )
+      })),
+      reinstateBooking: (id) => set((state) => ({
+        bookings: state.bookings.map(b => 
+          b.id === id && b.bookingStatus === "CANCELLED" ? { ...b, bookingStatus: "BOOKED" as const, cancelledBy: undefined, cancelledAt: undefined, paymentStatus: b.paymentMethod && b.paymentMethod !== "CASH" ? "PAID" as const : "PENDING" as const } : b
         )
       })),
       rescheduleBooking: (id, newDate, newTime) => set((state) => ({
@@ -421,10 +445,13 @@ updateMockUser: (data) => set((state) => {
         const customerId = matched?.id || (owner?.role === "CUSTOMER" && owner.id ? owner.id : "");
         return { bookings: [{ ...newBooking, customerId }, ...state.bookings] };
       }),
-      completeBooking: (id, method) => set((state) => ({
-        bookings: state.bookings.map(b => 
-          b.id === id ? { ...b, bookingStatus: "COMPLETED" as const, paymentStatus: "PAID" as const, paymentMethod: method } : b
-        )
+      completeBooking: (id, method, received = true) => set((state) => ({
+        bookings: state.bookings.map(b => {
+          if (b.id !== id) return b;
+          const endTime = new Date().toISOString();
+          const durationMin = b.startTime ? Math.max(0, Math.round((Date.now() - new Date(b.startTime).getTime()) / 60000)) : undefined;
+          return { ...b, bookingStatus: "COMPLETED" as const, paymentStatus: received ? "PAID" as const : "PENDING" as const, paymentMethod: received ? method : b.paymentMethod, endTime, durationMin };
+        })
       })),
 
       // Expenses
@@ -443,14 +470,14 @@ updateMockUser: (data) => set((state) => {
 
       // Staff
       addStaff: (newStaff) => set((state) => ({ staff: [...state.staff, newStaff] })),
-      updateStaff: (id: string, data: { name?: string; phone?: string; community?: string; pin?: string; status?: "ACTIVE" | "DISABLED" }) => set((state) => ({
+      updateStaff: (id: string, data: { name?: string; phone?: string; communities?: string[]; pin?: string; status?: "ACTIVE" | "DISABLED" }) => set((state) => ({
         staff: state.staff.map(s => s.id === id ? { ...s, ...data } : s)
       })),
       deleteStaff: (id) => set((state) => ({ staff: state.staff.filter(s => s.id !== id) })),
     }),
     {
       name: "estate-car-wash-v15",
-      version: 22,
+      version: 24,
       migrate: (persistedState) => {
         const state = persistedState && typeof persistedState === "object"
           ? persistedState as Partial<AppStore>
@@ -486,15 +513,26 @@ updateMockUser: (data) => set((state) => {
         const communities = (Array.isArray(state.communities) ? state.communities : []).filter((c) => !demoCommunityIds.has(String(c.id)));
         // v18: staff now require a 6-digit PIN, but persisted browsers may hold old 4-digit pins that can no longer log in.
         // Keep the member (name/phone/community) and generate a fresh unique 6-digit PIN for anyone without a valid one.
+        // v23: StaffItem.community (single) -> staff.communities (array) so an admin can assign one person to multiple
+        // communities. Normalize whichever shape is persisted (old single string -> array of one).
         const rawStaff = Array.isArray(state.staff) ? state.staff : initialStaff;
-        const keptPins = new Set(rawStaff.map((s) => String(s.pin ?? "")).filter((p) => /^\d{6}$/.test(p)));
+        const keptPins = new Set(rawStaff.map((s) => String((s as { pin?: unknown }).pin ?? "")).filter((p) => /^\d{6}$/.test(p)));
         const staff = rawStaff.map((s) => {
-          const pin = String(s.pin ?? "");
-          if (/^\d{6}$/.test(pin)) return s;
+          const legacy = s as { community?: string; communities?: string[] };
+          const base = {
+            ...s,
+            communities: Array.isArray(legacy.communities)
+              ? legacy.communities
+              : legacy.community
+                ? [legacy.community]
+                : [],
+          };
+          const pin = String((base as { pin?: unknown }).pin ?? "");
+          if (/^\d{6}$/.test(pin)) return base;
           let np = String(Math.floor(100000 + Math.random() * 900000));
           while (keptPins.has(np)) np = String(Math.floor(100000 + Math.random() * 900000));
           keptPins.add(np);
-          return { ...s, pin: np };
+          return { ...base, pin: np };
         });
         // v19: seed fixtures reused id "model_punch" for both the Hatchback and SUV Tata Punch,
         // which made <TableRow key={model.id}> collide on the vehicles page. Dedupe every id in

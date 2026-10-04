@@ -58,9 +58,19 @@ export default function StaffProfilePage() {
             <Phone size={16} className="text-muted mr-4" />
             <p className="text-sm font-light text-ink">{myStaffDetails?.phone || "N/A"}</p>
           </div>
-          <div className="flex items-center p-4">
-            <MapPin size={16} className="text-muted mr-4" />
-            <p className="text-sm font-light text-ink">{myStaffDetails?.community || "N/A"}</p>
+          <div className="flex items-start p-4">
+            <MapPin size={16} className="text-muted mr-4 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-machined text-muted mb-1">Assignments</p>
+              <div className="flex flex-wrap gap-1.5">
+                {(myStaffDetails?.communities?.length
+                  ? myStaffDetails.communities
+                  : ["N/A"]
+                ).map(c => (
+                  <span key={c} className="rounded-full border border-hairline bg-surface-elevated px-2.5 py-1 text-xs font-semibold text-ink">{c}</span>
+                ))}
+              </div>
+            </div>
           </div>
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center">

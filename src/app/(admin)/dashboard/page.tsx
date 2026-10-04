@@ -20,6 +20,7 @@ import { useStore } from "@/lib/store";
 import { StaggerContainer, StaggerItem } from "@/components/animations/PageTransition";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/shared/StatCard";
+import { SlotLoadCard } from "@/components/dashboard/SlotLoadCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -139,7 +140,7 @@ export default function AdminDashboard() {
     const yesterdayBookings = bookings.filter(
       (b) => toDateKey(b.date) === yesterdayLocalStr && b.bookingStatus === "BOOKED" && matchesCommunityFilter(b, communityFilter)
     ).length;
-    const inProgress = filteredBookings.filter((b) => b.bookingStatus === "BOOKED").length;
+    const inProgress = filteredBookings.filter((b) => b.bookingStatus === "BOOKED" || b.bookingStatus === "IN_PROGRESS").length;
     const completed = filteredBookings.filter((b) => b.bookingStatus === "COMPLETED").length;
     const cancelled = filteredBookings.filter((b) => b.bookingStatus === "CANCELLED").length;
   const upcoming = bookings.filter(
@@ -291,6 +292,10 @@ export default function AdminDashboard() {
           ))}
         </StaggerContainer>
 
+        {startKey === endKey && (
+          <SlotLoadCard bookings={bookings} communities={communities} dayKey={startKey} communityFilter={communityFilter} />
+        )}
+
         <Card className="mt-8">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
@@ -332,12 +337,12 @@ export default function AdminDashboard() {
                       <div className="mt-1 flex items-center justify-end gap-1.5">
                         <Badge
                           className={`h-auto rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${
-                            b.bookingStatus === "BOOKED" ? "bg-warning/20 text-warning" :
+                            b.bookingStatus === "BOOKED" || b.bookingStatus === "IN_PROGRESS" ? "bg-warning/20 text-warning" :
                             b.bookingStatus === "COMPLETED" ? "bg-success/20 text-success" :
                             "bg-m-red/20 text-m-red"
                           }`}
                         >
-                          {b.bookingStatus}
+                          {b.bookingStatus === "IN_PROGRESS" ? "In Progress" : b.bookingStatus}
                         </Badge>
                         <Badge
                           variant={b.paymentStatus === "PAID" ? "default" : "secondary"}
